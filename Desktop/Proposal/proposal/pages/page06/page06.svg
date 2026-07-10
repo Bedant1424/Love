@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 595 842"
+     width="210mm" height="297mm">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&amp;family=Inter:wght@400;500&amp;display=swap');
+    </style>
+
+    <!-- Card shadow — consistent with pages 01/02/03/04/05 -->
+    <filter id="cardShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
+      <feOffset in="blur" dx="0" dy="1.5" result="offsetBlur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.06" result="color"/>
+      <feComposite in="color" in2="offsetBlur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Takeaway card shadow — lighter -->
+    <filter id="takeawayShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
+      <feOffset in="blur" dx="0" dy="1" result="offsetBlur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.04" result="color"/>
+      <feComposite in="color" in2="offsetBlur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- ================================================================ -->
+  <!-- PAGE BACKGROUND — A4 Portrait, Slate 50                         -->
+  <!-- ================================================================ -->
+  <rect width="595" height="842" fill="#F8FAFC"/>
+
+  <!-- ================================================================ -->
+  <!-- PAGE HEADER — Reused from Components Library                     -->
+  <!-- ================================================================ -->
+  <g id="proposalHeader">
+    <text x="42" y="40"
+          font-family="'Poppins', sans-serif"
+          font-weight="600"
+          font-size="8"
+          fill="#2563EB">LeadFlow</text>
+    <text x="553" y="36"
+          text-anchor="end"
+          font-family="'Poppins', sans-serif"
+          font-weight="600"
+          font-size="7.5"
+          fill="#111827">Page 06</text>
+    <text x="553" y="46"
+          text-anchor="end"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="7"
+          fill="#9CA3AF">Manager Dashboard</text>
+    <line x1="42" y1="52" x2="553" y2="52" stroke="#E5E7EB" stroke-width="0.75"/>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- SECTION HEADER — Reused from Components Library                  -->
+  <!-- ================================================================ -->
+  <g id="proposalSectionHeader">
+    <text x="42" y="84"
+          font-family="'Poppins', sans-serif"
+          font-weight="700"
+          font-size="24"
+          fill="#111827">Manager Dashboard</text>
+    <text x="42" y="102"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="9.5"
+          fill="#6B7280">Real-time visibility into daily recruitment operations.</text>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- INTRODUCTION TEXT                                                 -->
+  <!-- ================================================================ -->
+  <text x="42" y="130"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">LeadFlow centralizes recruitment oversight into a live, desktop dashboard. Managers monitor</text>
+  <text x="42" y="144"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">daily operations, track campaign performance, and review team output without manual intervention.</text>
+  <text x="42" y="166"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">By replacing scattered updates with centralized metrics, decision-makers gain immediate</text>
+  <text x="42" y="180"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">clarity on lead progression.</text>
+
+  <!-- ================================================================ -->
+  <!-- UI MOCKUP 02: MANAGER DASHBOARD (Dominant Visual)                 -->
+  <!-- Desktop browser layout (511x360)                                 -->
+  <!-- ================================================================ -->
+  <g id="managerDashboardMockup" filter="url(#cardShadow)">
+    <!-- Browser outer frame -->
+    <rect x="42" y="200" width="511" height="360" rx="12"
+          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    
+    <!-- Browser header bar -->
+    <path d="M 42,212 A 12,12 0 0 1 54,200 L 541,200 A 12,12 0 0 1 553,212 L 553,230 L 42,230 Z" fill="#F1F5F9"/>
+    
+    <!-- Window controls -->
+    <circle cx="56" cy="215" r="3.5" fill="#EF4444"/>
+    <circle cx="66" cy="215" r="3.5" fill="#F59E0B"/>
+    <circle cx="76" cy="215" r="3.5" fill="#10B981"/>
+
+    <!-- Browser Address Bar -->
+    <rect x="98" y="206" width="314" height="18" rx="4" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5"/>
+    <text x="106" y="218"
+          font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#9CA3AF">app.leadflow.com/dashboard</text>
+
+    <!-- Separator line -->
+    <line x1="42" y1="230" x2="553" y2="230" stroke="#E5E7EB" stroke-width="0.75"/>
+
+    <!-- ============================================================== -->
+    <!-- INNER WORKSPACE LAYOUT                                         -->
+    <!-- Left Navigation Sidebar + Right Content Workspace              -->
+    <!-- ============================================================== -->
+
+    <!-- Sidebar background (Slate 900) -->
+    <path d="M 42,230.75 L 114,230.75 L 114,560 L 54,560 A 12,12 0 0 1 42,548 Z" fill="#111827"/>
+
+    <!-- Sidebar Brand Node Icon -->
+    <line x1="70" y1="246" x2="86" y2="246" stroke="#2563EB" stroke-width="1.5"/>
+    <circle cx="68" cy="246" r="3" fill="#2563EB"/>
+    <circle cx="88" cy="246" r="3" fill="#2563EB"/>
+
+    <!-- Sidebar Dashboard Selected Highlight -->
+    <rect x="46" y="266" width="64" height="20" rx="4" fill="#2563EB"/>
+    <text x="56" y="279" font-family="'Inter', sans-serif" font-weight="500" font-size="7" fill="#FFFFFF">Dashboard</text>
+
+    <!-- Sidebar menu items (unselected) -->
+    <text x="56" y="306" font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#9CA3AF">Leads</text>
+    <text x="56" y="330" font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#9CA3AF">Batches</text>
+    <text x="56" y="354" font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#9CA3AF">Analytics</text>
+    <text x="56" y="378" font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#9CA3AF">Reports</text>
+
+    <!-- Main Content Area Background (Slate 50) -->
+    <path d="M 114,230.75 L 553,230.75 L 553,548 A 12,12 0 0 1 541,560 L 114,560 Z" fill="#F8FAFC"/>
+
+    <!-- Workspace Header -->
+    <text x="126" y="254"
+          font-family="'Poppins', sans-serif" font-weight="600" font-size="11" fill="#111827">Recruitment Dashboard</text>
+
+    <!-- Live Sync status indicator -->
+    <circle cx="538" cy="249" r="3" fill="#10B981"/>
+    <text x="530" y="252"
+          text-anchor="end"
+          font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#6B7280">Live Sync Active</text>
+
+    <!-- ============================================================== -->
+    <!-- ROW 1: METRIC CARDS                                            -->
+    <!-- ============================================================== -->
+
+    <!-- Card 1: Total Leads -->
+    <rect x="126" y="268" width="96" height="44" rx="6"
+          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5" filter="url(#cardShadow)"/>
+    <text x="134" y="280" font-family="'Inter', sans-serif" font-weight="400" font-size="6.5" fill="#6B7280">Total Leads</text>
+    <text x="134" y="300" font-family="'Poppins', sans-serif" font-weight="700" font-size="11" fill="#111827">4,250</text>
+
+    <!-- Card 2: Assigned Leads -->
+    <rect x="232" y="268" width="96" height="44" rx="6"
+          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5" filter="url(#cardShadow)"/>
+    <text x="240" y="280" font-family="'Inter', sans-serif" font-weight="400" font-size="6.5" fill="#6B7280">Assigned</text>
+    <text x="240" y="300" font-family="'Poppins', sans-serif" font-weight="700" font-size="11" fill="#111827">3,800</text>
+
+    <!-- Card 3: In Progress Leads -->
+    <rect x="338" y="268" width="96" height="44" rx="6"
+          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5" filter="url(#cardShadow)"/>
+    <text x="346" y="280" font-family="'Inter', sans-serif" font-weight="400" font-size="6.5" fill="#6B7280">In Progress</text>
+    <text x="346" y="300" font-family="'Poppins', sans-serif" font-weight="700" font-size="11" fill="#111827">1,240</text>
+
+    <!-- Card 4: Completed Leads -->
+    <rect x="444" y="268" width="96" height="44" rx="6"
+          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5" filter="url(#cardShadow)"/>
+    <text x="452" y="280" font-family="'Inter', sans-serif" font-weight="400" font-size="6.5" fill="#6B7280">Completed</text>
+    <text x="452" y="300" font-family="'Poppins', sans-serif" font-weight="700" font-size="11" fill="#111827">2,560</text>
+
+    <!-- ============================================================== -->
+    <!-- ROW 2: CHARTS AND ACTIVE RECRUITERS SNAPSHOT                    -->
+    <!-- ============================================================== -->
+
+    <!-- Column 1: Pipeline Conversion Card -->
+    <rect x="126" y="324" width="196" height="218" rx="8"
+          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5" filter="url(#cardShadow)"/>
+    <text x="138" y="342" font-family="'Poppins', sans-serif" font-weight="600" font-size="8.5" fill="#111827">Pipeline Conversion</text>
+
+    <!-- Funnel Bars -->
+    <!-- Imported -->
+    <rect x="138" y="360" width="172" height="12" rx="2" fill="#EFF6FF"/>
+    <rect x="138" y="360" width="172" height="12" rx="2" fill="#2563EB"/>
+    <text x="144" y="369" font-family="'Inter', sans-serif" font-weight="500" font-size="6.5" fill="#FFFFFF">Imported: 4,250</text>
+
+    <!-- Assigned -->
+    <rect x="138" y="378" width="172" height="12" rx="2" fill="#EFF6FF"/>
+    <rect x="138" y="378" width="154" height="12" rx="2" fill="#3B82F6"/>
+    <text x="144" y="387" font-family="'Inter', sans-serif" font-weight="500" font-size="6.5" fill="#FFFFFF">Assigned: 3,800</text>
+
+    <!-- Contacted -->
+    <rect x="138" y="396" width="172" height="12" rx="2" fill="#EFF6FF"/>
+    <rect x="138" y="396" width="113" height="12" rx="2" fill="#60A5FA"/>
+    <text x="144" y="405" font-family="'Inter', sans-serif" font-weight="500" font-size="6.5" fill="#FFFFFF">Contacted: 2,800</text>
+
+    <!-- Interested -->
+    <rect x="138" y="414" width="172" height="12" rx="2" fill="#EFF6FF"/>
+    <rect x="138" y="414" width="61" height="12" rx="2" fill="#93C5FD"/>
+    <text x="204" y="423" font-family="'Inter', sans-serif" font-weight="400" font-size="6.5" fill="#111827">Interested: 1,500</text>
+
+    <!-- Completed -->
+    <rect x="138" y="432" width="172" height="12" rx="2" fill="#EFF6FF"/>
+    <rect x="138" y="432" width="34" height="12" rx="2" fill="#BFDBFE"/>
+    <text x="178" y="441" font-family="'Inter', sans-serif" font-weight="400" font-size="6.5" fill="#111827">Completed: 850</text>
+
+    <!-- Conversion statistics -->
+    <text x="138" y="476" font-family="'Inter', sans-serif" font-weight="500" font-size="7" fill="#111827">Conversion Efficiency:</text>
+    <text x="138" y="488" font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#6B7280">Lead conversion rate maintains at 22.3%</text>
+    <text x="138" y="498" font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#6B7280">for active batch campaigns.</text>
+
+
+    <!-- Column 2: Active Interns Snapshot -->
+    <rect x="334" y="324" width="206" height="218" rx="8"
+          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5" filter="url(#cardShadow)"/>
+    <text x="346" y="342" font-family="'Poppins', sans-serif" font-weight="600" font-size="8.5" fill="#111827">Active Interns</text>
+
+    <!-- Headers -->
+    <text x="346" y="360" font-family="'Inter', sans-serif" font-weight="500" font-size="6.5" fill="#9CA3AF">Intern Name</text>
+    <text x="450" y="360" font-family="'Inter', sans-serif" font-weight="500" font-size="6.5" fill="#9CA3AF">Status</text>
+    <text x="528" y="360" text-anchor="end" font-family="'Inter', sans-serif" font-weight="500" font-size="6.5" fill="#9CA3AF">Output</text>
+
+    <!-- Row 1: Rahul Kumar -->
+    <text x="346" y="378" font-family="'Inter', sans-serif" font-weight="500" font-size="7.5" fill="#111827">Rahul Kumar</text>
+    <rect x="450" y="370" width="32" height="11" rx="2.5" fill="#D1FAE5"/>
+    <text x="466" y="378" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#065F46">Active</text>
+    <text x="528" y="378" text-anchor="end" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#111827">142 calls</text>
+    <line x1="346" y1="386" x2="528" y2="386" stroke="#F1F5F9" stroke-width="0.5"/>
+
+    <!-- Row 2: Priya Sharma -->
+    <text x="346" y="398" font-family="'Inter', sans-serif" font-weight="500" font-size="7.5" fill="#111827">Priya Sharma</text>
+    <rect x="450" y="390" width="32" height="11" rx="2.5" fill="#D1FAE5"/>
+    <text x="466" y="398" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#065F46">Active</text>
+    <text x="528" y="398" text-anchor="end" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#111827">128 calls</text>
+    <line x1="346" y1="406" x2="528" y2="406" stroke="#F1F5F9" stroke-width="0.5"/>
+
+    <!-- Row 3: Amit Patel -->
+    <text x="346" y="418" font-family="'Inter', sans-serif" font-weight="500" font-size="7.5" fill="#111827">Amit Patel</text>
+    <rect x="450" y="410" width="32" height="11" rx="2.5" fill="#D1FAE5"/>
+    <text x="466" y="418" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#065F46">Active</text>
+    <text x="528" y="418" text-anchor="end" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#111827">96 calls</text>
+    <line x1="346" y1="426" x2="528" y2="426" stroke="#F1F5F9" stroke-width="0.5"/>
+
+    <!-- Row 4: Sneha Reddy -->
+    <text x="346" y="438" font-family="'Inter', sans-serif" font-weight="500" font-size="7.5" fill="#111827">Sneha Reddy</text>
+    <rect x="450" y="430" width="32" height="11" rx="2.5" fill="#E5E7EB"/>
+    <text x="466" y="438" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#4B5563">Idle</text>
+    <text x="528" y="438" text-anchor="end" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#111827">84 calls</text>
+  </g>
+
+  <!-- Visual caption -->
+  <text x="297.5" y="596"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">The manager dashboard provides a central view of all campaigns, metrics, and active interns.</text>
+
+  <!-- ================================================================ -->
+  <!-- KEY TAKEAWAY — Reused from Components Library (Flexible y=722)    -->
+  <!-- ================================================================ -->
+  <foreignObject x="42" y="722" width="511" height="64">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="
+      background: #FFFFFF;
+      border: 0.75px solid #E5E7EB;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      border-left: 3px solid #2563EB;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 64px;
+      box-sizing: border-box;
+      height: 100%;
+    ">
+      <div style="
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        font-size: 11px;
+        color: #111827;
+        text-align: center;
+        line-height: 1.4;
+        max-width: 85%;
+      ">
+        The centralized manager dashboard replaces manual Excel tracking and WhatsApp coordination with real-time operational visibility.
+      </div>
+    </div>
+  </foreignObject>
+
+  <!-- ================================================================ -->
+  <!-- FOOTER — Reused from Components Library                          -->
+  <!-- ================================================================ -->
+  <g id="proposalFooter">
+    <text x="297.5" y="822"
+          text-anchor="middle"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="7"
+          fill="#9CA3AF">Prepared exclusively for Suryavanshi Finserv. Confidential and proprietary.</text>
+    <text x="553" y="822"
+          text-anchor="end"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="7"
+          fill="#9CA3AF">06</text>
+  </g>
+
+</svg>

@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 595 842"
+     width="210mm" height="297mm">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&amp;family=Inter:wght@400;500&amp;display=swap');
+    </style>
+
+    <!-- Card shadow — consistent with pages 01/02/03/04/05/06 -->
+    <filter id="cardShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
+      <feOffset in="blur" dx="0" dy="1.5" result="offsetBlur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.06" result="color"/>
+      <feComposite in="color" in2="offsetBlur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Takeaway card shadow — lighter -->
+    <filter id="takeawayShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
+      <feOffset in="blur" dx="0" dy="1" result="offsetBlur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.04" result="color"/>
+      <feComposite in="color" in2="offsetBlur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- ================================================================ -->
+  <!-- PAGE BACKGROUND — A4 Portrait, Slate 50                         -->
+  <!-- ================================================================ -->
+  <rect width="595" height="842" fill="#F8FAFC"/>
+
+  <!-- ================================================================ -->
+  <!-- PAGE HEADER — Reused from Components Library                     -->
+  <!-- ================================================================ -->
+  <g id="proposalHeader">
+    <text x="42" y="40"
+          font-family="'Poppins', sans-serif"
+          font-weight="600"
+          font-size="8"
+          fill="#2563EB">LeadFlow</text>
+    <text x="553" y="36"
+          text-anchor="end"
+          font-family="'Poppins', sans-serif"
+          font-weight="600"
+          font-size="7.5"
+          fill="#111827">Page 07</text>
+    <text x="553" y="46"
+          text-anchor="end"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="7"
+          fill="#9CA3AF">Intern Dashboard</text>
+    <line x1="42" y1="52" x2="553" y2="52" stroke="#E5E7EB" stroke-width="0.75"/>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- SECTION HEADER — Reused from Components Library                  -->
+  <!-- ================================================================ -->
+  <g id="proposalSectionHeader">
+    <text x="42" y="84"
+          font-family="'Poppins', sans-serif"
+          font-weight="700"
+          font-size="24"
+          fill="#111827">Intern Dashboard</text>
+    <text x="42" y="102"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="9.5"
+          fill="#6B7280">A focused workspace designed for recruitment productivity.</text>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- INTRODUCTION TEXT                                                 -->
+  <!-- ================================================================ -->
+  <text x="42" y="130"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">LeadFlow guides interns through their daily calling schedule. The interface prioritizes active</text>
+  <text x="42" y="144"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">assignments, displays real-time targets, and provides direct communication triggers for instant lead engagement.</text>
+  <text x="42" y="166"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">By consolidating tasks onto a single screen, interns focus entirely on outreach instead of</text>
+  <text x="42" y="180"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">administrative data entry.</text>
+
+  <!-- ================================================================ -->
+  <!-- UI MOCKUP 03: INTERN DASHBOARD (Dominant Visual)                 -->
+  <!-- Desktop browser layout (511x360)                                 -->
+  <!-- ================================================================ -->
+  <g id="internDashboardMockup" filter="url(#cardShadow)">
+    <!-- Browser outer frame -->
+    <rect x="42" y="200" width="511" height="360" rx="12"
+          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    
+    <!-- Browser header bar -->
+    <path d="M 42,212 A 12,12 0 0 1 54,200 L 541,200 A 12,12 0 0 1 553,212 L 553,230 L 42,230 Z" fill="#F1F5F9"/>
+    
+    <!-- Window controls -->
+    <circle cx="56" cy="215" r="3.5" fill="#EF4444"/>
+    <circle cx="66" cy="215" r="3.5" fill="#F59E0B"/>
+    <circle cx="76" cy="215" r="3.5" fill="#10B981"/>
+
+    <!-- Browser Address Bar -->
+    <rect x="98" y="206" width="314" height="18" rx="4" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5"/>
+    <text x="106" y="218"
+          font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#9CA3AF">app.leadflow.com/workspace</text>
+
+    <!-- Separator line -->
+    <line x1="42" y1="230" x2="553" y2="230" stroke="#E5E7EB" stroke-width="0.75"/>
+
+    <!-- ============================================================== -->
+    <!-- INNER WORKSPACE LAYOUT                                         -->
+    <!-- ============================================================== -->
+
+    <!-- Sidebar background (Slate 900) -->
+    <path d="M 42,230.75 L 114,230.75 L 114,560 L 54,560 A 12,12 0 0 1 42,548 Z" fill="#111827"/>
+
+    <!-- Sidebar Brand Node Icon -->
+    <line x1="70" y1="246" x2="86" y2="246" stroke="#2563EB" stroke-width="1.5"/>
+    <circle cx="68" cy="246" r="3" fill="#2563EB"/>
+    <circle cx="88" cy="246" r="3" fill="#2563EB"/>
+
+    <!-- Sidebar Menu Highlight -->
+    <rect x="46" y="266" width="64" height="20" rx="4" fill="#2563EB"/>
+    <text x="54" y="279" font-family="'Inter', sans-serif" font-weight="500" font-size="6.5" fill="#FFFFFF">Workspace</text>
+
+    <!-- Sidebar Menu unselected -->
+    <text x="54" y="306" font-family="'Inter', sans-serif" font-weight="400" font-size="6.5" fill="#9CA3AF">My Leads</text>
+
+    <!-- Main Content Area Background (Slate 50) -->
+    <path d="M 114,230.75 L 553,230.75 L 553,548 A 12,12 0 0 1 541,560 L 114,560 Z" fill="#F8FAFC"/>
+
+    <!-- Workspace Header Title -->
+    <text x="126" y="254"
+          font-family="'Poppins', sans-serif" font-weight="600" font-size="11" fill="#111827">My Calling Dashboard</text>
+
+    <!-- Active Campaign status -->
+    <text x="538" y="252"
+          text-anchor="end"
+          font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#6B7280">Campaign: Standard Batch</text>
+
+    <!-- ============================================================== -->
+    <!-- ROW 1: DAILY TARGET CARDS                                      -->
+    <!-- 3 Cards, width 128, height 44, h-gap 10                        -->
+    <!-- ============================================================== -->
+
+    <!-- Card 1: Daily Progress -->
+    <rect x="126" y="266" width="128" height="44" rx="6"
+          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5" filter="url(#cardShadow)"/>
+    <text x="134" y="278" font-family="'Inter', sans-serif" font-weight="400" font-size="6.5" fill="#6B7280">Daily Progress</text>
+    <text x="134" y="294" font-family="'Poppins', sans-serif" font-weight="600" font-size="9.5" fill="#111827">35 / 50 Calls</text>
+    <!-- Progress Bar -->
+    <rect x="134" y="299" width="112" height="3" rx="1.5" fill="#EFF6FF"/>
+    <rect x="134" y="299" width="78" height="3" rx="1.5" fill="#2563EB"/>
+
+    <!-- Card 2: Interested Leads -->
+    <rect x="264" y="266" width="128" height="44" rx="6"
+          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5" filter="url(#cardShadow)"/>
+    <text x="272" y="278" font-family="'Inter', sans-serif" font-weight="400" font-size="6.5" fill="#6B7280">Interested Leads</text>
+    <text x="272" y="296" font-family="'Poppins', sans-serif" font-weight="600" font-size="9.5" fill="#10B981">8 Leads</text>
+
+    <!-- Card 3: Remaining Calls -->
+    <rect x="402" y="266" width="128" height="44" rx="6"
+          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5" filter="url(#cardShadow)"/>
+    <text x="410" y="278" font-family="'Inter', sans-serif" font-weight="400" font-size="6.5" fill="#6B7280">Remaining Today</text>
+    <text x="410" y="296" font-family="'Poppins', sans-serif" font-weight="600" font-size="9.5" fill="#EF4444">15 Leads</text>
+
+
+    <!-- ============================================================== -->
+    <!-- ROW 2: ACTIVE CALLING QUEUE TABLE                              -->
+    <!-- x=126, width=404, height=210                                   -->
+    <!-- ============================================================== -->
+    <rect x="126" y="322" width="404" height="218" rx="8"
+          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5" filter="url(#cardShadow)"/>
+    
+    <!-- Table Header Title -->
+    <text x="138" y="340" font-family="'Poppins', sans-serif" font-weight="600" font-size="8.5" fill="#111827">Assigned Lead Queue</text>
+
+    <!-- Column Headers -->
+    <text x="138" y="358" font-family="'Inter', sans-serif" font-weight="500" font-size="6.5" fill="#9CA3AF">Name</text>
+    <text x="220" y="358" font-family="'Inter', sans-serif" font-weight="500" font-size="6.5" fill="#9CA3AF">Phone</text>
+    <text x="314" y="358" font-family="'Inter', sans-serif" font-weight="500" font-size="6.5" fill="#9CA3AF">Status</text>
+    <text x="400" y="358" font-family="'Inter', sans-serif" font-weight="500" font-size="6.5" fill="#9CA3AF">Direct Actions</text>
+
+    <line x1="138" y1="364" x2="518" y2="364" stroke="#E5E7EB" stroke-width="0.5"/>
+
+    <!-- Row 1: Amit Sharma -->
+    <text x="138" y="380" font-family="'Inter', sans-serif" font-weight="500" font-size="7.5" fill="#111827">Amit Sharma</text>
+    <text x="220" y="380" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">+91 98765 43210</text>
+    <!-- Call Back Badge -->
+    <rect x="314" y="371" width="46" height="11" rx="2.5" fill="#FEF3C7"/>
+    <text x="337" y="379" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#D97706">Call Back</text>
+    <!-- Call Trigger Button -->
+    <rect x="400" y="370" width="32" height="13" rx="3" fill="#2563EB"/>
+    <text x="416" y="379" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#FFFFFF">Call</text>
+    <!-- WhatsApp Trigger Button -->
+    <rect x="438" y="370" width="46" height="13" rx="3" fill="#10B981"/>
+    <text x="461" y="379" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#FFFFFF">WhatsApp</text>
+
+    <line x1="138" y1="389" x2="518" y2="389" stroke="#F1F5F9" stroke-width="0.5"/>
+
+    <!-- Row 2: Vikram Singh -->
+    <text x="138" y="402" font-family="'Inter', sans-serif" font-weight="500" font-size="7.5" fill="#111827">Vikram Singh</text>
+    <text x="220" y="402" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">+91 98234 56789</text>
+    <!-- Assigned Badge -->
+    <rect x="314" y="393" width="46" height="11" rx="2.5" fill="#EFF6FF"/>
+    <text x="337" y="401" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#2563EB">Assigned</text>
+    <!-- Call & WhatsApp Triggers -->
+    <rect x="400" y="392" width="32" height="13" rx="3" fill="#2563EB"/>
+    <text x="416" y="401" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#FFFFFF">Call</text>
+    <rect x="438" y="392" width="46" height="13" rx="3" fill="#10B981"/>
+    <text x="461" y="401" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#FFFFFF">WhatsApp</text>
+
+    <line x1="138" y1="411" x2="518" y2="411" stroke="#F1F5F9" stroke-width="0.5"/>
+
+    <!-- Row 3: Neha Patel -->
+    <text x="138" y="424" font-family="'Inter', sans-serif" font-weight="500" font-size="7.5" fill="#111827">Neha Patel</text>
+    <text x="220" y="424" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">+91 98123 45678</text>
+    <!-- No Answer Badge -->
+    <rect x="314" y="415" width="46" height="11" rx="2.5" fill="#FEE2E2"/>
+    <text x="337" y="423" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#EF4444">No Answer</text>
+    <!-- Call & WhatsApp Triggers -->
+    <rect x="400" y="414" width="32" height="13" rx="3" fill="#2563EB"/>
+    <text x="416" y="423" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#FFFFFF">Call</text>
+    <rect x="438" y="414" width="46" height="13" rx="3" fill="#10B981"/>
+    <text x="461" y="423" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#FFFFFF">WhatsApp</text>
+
+    <line x1="138" y1="433" x2="518" y2="433" stroke="#F1F5F9" stroke-width="0.5"/>
+
+    <!-- Row 4: Karan Johar -->
+    <text x="138" y="446" font-family="'Inter', sans-serif" font-weight="500" font-size="7.5" fill="#111827">Karan Johar</text>
+    <text x="220" y="446" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">+91 97123 45678</text>
+    <!-- Interested Badge -->
+    <rect x="314" y="437" width="46" height="11" rx="2.5" fill="#D1FAE5"/>
+    <text x="337" y="445" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#065F46">Interested</text>
+    <!-- Call & WhatsApp Triggers -->
+    <rect x="400" y="436" width="32" height="13" rx="3" fill="#2563EB"/>
+    <text x="416" y="445" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#FFFFFF">Call</text>
+    <rect x="438" y="436" width="46" height="13" rx="3" fill="#10B981"/>
+    <text x="461" y="445" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#FFFFFF">WhatsApp</text>
+  </g>
+
+  <!-- Visual caption -->
+  <text x="297.5" y="596"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">The intern dashboard provides a streamlined lead queue with integrated communication buttons.</text>
+
+  <!-- ================================================================ -->
+  <!-- KEY TAKEAWAY — Reused from Components Library (Flexible y=722)    -->
+  <!-- ================================================================ -->
+  <foreignObject x="42" y="722" width="511" height="64">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="
+      background: #FFFFFF;
+      border: 0.75px solid #E5E7EB;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      border-left: 3px solid #2563EB;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 64px;
+      box-sizing: border-box;
+      height: 100%;
+    ">
+      <div style="
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        font-size: 11px;
+        color: #111827;
+        text-align: center;
+        line-height: 1.4;
+        max-width: 85%;
+      ">
+        The focused intern dashboard provides immediate calling queues and direct communication tools, eliminating operational confusion.
+      </div>
+    </div>
+  </foreignObject>
+
+  <!-- ================================================================ -->
+  <!-- FOOTER — Reused from Components Library                          -->
+  <!-- ================================================================ -->
+  <g id="proposalFooter">
+    <text x="297.5" y="822"
+          text-anchor="middle"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="7"
+          fill="#9CA3AF">Prepared exclusively for Suryavanshi Finserv. Confidential and proprietary.</text>
+    <text x="553" y="822"
+          text-anchor="end"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="7"
+          fill="#9CA3AF">07</text>
+  </g>
+
+</svg>

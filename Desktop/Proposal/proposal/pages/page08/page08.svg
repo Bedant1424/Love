@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 595 842"
+     width="210mm" height="297mm">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&amp;family=Inter:wght@400;500&amp;display=swap');
+    </style>
+
+    <!-- Card shadow — consistent with pages 01/02/03/04/05/06/07 -->
+    <filter id="cardShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
+      <feOffset in="blur" dx="0" dy="1.5" result="offsetBlur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.06" result="color"/>
+      <feComposite in="color" in2="offsetBlur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Takeaway card shadow — lighter -->
+    <filter id="takeawayShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
+      <feOffset in="blur" dx="0" dy="1" result="offsetBlur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.04" result="color"/>
+      <feComposite in="color" in2="offsetBlur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- ================================================================ -->
+  <!-- PAGE BACKGROUND — A4 Portrait, Slate 50                         -->
+  <!-- ================================================================ -->
+  <rect width="595" height="842" fill="#F8FAFC"/>
+
+  <!-- ================================================================ -->
+  <!-- PAGE HEADER — Reused from Components Library                     -->
+  <!-- ================================================================ -->
+  <g id="proposalHeader">
+    <text x="42" y="40"
+          font-family="'Poppins', sans-serif"
+          font-weight="600"
+          font-size="8"
+          fill="#2563EB">LeadFlow</text>
+    <text x="553" y="36"
+          text-anchor="end"
+          font-family="'Poppins', sans-serif"
+          font-weight="600"
+          font-size="7.5"
+          fill="#111827">Page 08</text>
+    <text x="553" y="46"
+          text-anchor="end"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="7"
+          fill="#9CA3AF">Lead Management</text>
+    <line x1="42" y1="52" x2="553" y2="52" stroke="#E5E7EB" stroke-width="0.75"/>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- SECTION HEADER — Reused from Components Library                  -->
+  <!-- ================================================================ -->
+  <g id="proposalSectionHeader">
+    <text x="42" y="84"
+          font-family="'Poppins', sans-serif"
+          font-weight="700"
+          font-size="24"
+          fill="#111827">Lead Management</text>
+    <text x="42" y="102"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="9.5"
+          fill="#6B7280">Centralized control over lead distribution and database status.</text>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- INTRODUCTION TEXT                                                 -->
+  <!-- ================================================================ -->
+  <text x="42" y="130"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">LeadFlow replaces scattered spreadsheets with a secure, centralized lead database. Managers import</text>
+  <text x="42" y="144"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">lead batches, filter database records, and allocate assignments to interns from a unified interface.</text>
+  <text x="42" y="166"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">With built-in duplicate detection and automated assignment rules, every lead is accounted for</text>
+  <text x="42" y="180"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">and assigned to a clear owner.</text>
+
+  <!-- ================================================================ -->
+  <!-- UI MOCKUP 05: LEAD MANAGEMENT TABLE (Dominant Visual)             -->
+  <!-- Desktop browser layout (511x360)                                 -->
+  <!-- ================================================================ -->
+  <g id="leadManagementMockup" filter="url(#cardShadow)">
+    <!-- Browser outer frame -->
+    <rect x="42" y="200" width="511" height="360" rx="12"
+          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    
+    <!-- Browser header bar -->
+    <path d="M 42,212 A 12,12 0 0 1 54,200 L 541,200 A 12,12 0 0 1 553,212 L 553,230 L 42,230 Z" fill="#F1F5F9"/>
+    
+    <!-- Window controls -->
+    <circle cx="56" cy="215" r="3.5" fill="#EF4444"/>
+    <circle cx="66" cy="215" r="3.5" fill="#F59E0B"/>
+    <circle cx="76" cy="215" r="3.5" fill="#10B981"/>
+
+    <!-- Browser Address Bar -->
+    <rect x="98" y="206" width="314" height="18" rx="4" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5"/>
+    <text x="106" y="218"
+          font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#9CA3AF">app.leadflow.com/leads</text>
+
+    <!-- Separator line -->
+    <line x1="42" y1="230" x2="553" y2="230" stroke="#E5E7EB" stroke-width="0.75"/>
+
+    <!-- ============================================================== -->
+    <!-- INNER WORKSPACE LAYOUT                                         -->
+    <!-- ============================================================== -->
+
+    <!-- Sidebar background (Slate 900) -->
+    <path d="M 42,230.75 L 114,230.75 L 114,560 L 54,560 A 12,12 0 0 1 42,548 Z" fill="#111827"/>
+
+    <!-- Sidebar Brand Node Icon -->
+    <line x1="70" y1="246" x2="86" y2="246" stroke="#2563EB" stroke-width="1.5"/>
+    <circle cx="68" cy="246" r="3" fill="#2563EB"/>
+    <circle cx="88" cy="246" r="3" fill="#2563EB"/>
+
+    <!-- Sidebar Menu Highlight -->
+    <text x="56" y="278" font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#9CA3AF">Dashboard</text>
+    <rect x="46" y="292" width="64" height="20" rx="4" fill="#2563EB"/>
+    <text x="56" y="305" font-family="'Inter', sans-serif" font-weight="500" font-size="7" fill="#FFFFFF">Leads</text>
+    <text x="56" y="330" font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#9CA3AF">Batches</text>
+    <text x="56" y="354" font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#9CA3AF">Analytics</text>
+    <text x="56" y="378" font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#9CA3AF">Reports</text>
+
+    <!-- Main Content Area Background (Slate 50) -->
+    <path d="M 114,230.75 L 553,230.75 L 553,548 A 12,12 0 0 1 541,560 L 114,560 Z" fill="#F8FAFC"/>
+
+    <!-- Workspace Header Title -->
+    <text x="126" y="254"
+          font-family="'Poppins', sans-serif" font-weight="600" font-size="11" fill="#111827">Lead Management Table</text>
+
+    <!-- ============================================================== -->
+    <!-- WORKSPACE TOOLBAR                                              -->
+    <!-- ============================================================== -->
+    <!-- Search Box -->
+    <rect x="126" y="266" width="140" height="22" rx="4" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5"/>
+    <text x="134" y="279" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#9CA3AF">Search leads...</text>
+
+    <!-- Dropdown 1: Status -->
+    <rect x="276" y="266" width="48" height="22" rx="4" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5"/>
+    <text x="284" y="279" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#4B5563">Status</text>
+    <path d="M 314,275 L 317,278 L 320,275" fill="none" stroke="#4B5563" stroke-width="1"/>
+
+    <!-- Dropdown 2: Batch -->
+    <rect x="330" y="266" width="48" height="22" rx="4" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5"/>
+    <text x="338" y="279" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#4B5563">Batch</text>
+    <path d="M 368,275 L 371,278 L 374,275" fill="none" stroke="#4B5563" stroke-width="1"/>
+
+    <!-- Action Button 1: Import CSV (Primary) -->
+    <rect x="384" y="266" width="64" height="22" rx="4" fill="#2563EB"/>
+    <text x="416" y="279" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="7" fill="#FFFFFF">Import CSV</text>
+
+    <!-- Action Button 2: Assign Leads (Secondary) -->
+    <rect x="454" y="266" width="84" height="22" rx="4" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.5"/>
+    <text x="496" y="279" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="7" fill="#2563EB">Assign Leads</text>
+
+    <!-- ============================================================== -->
+    <!-- DATABASE TABLE CARD                                            -->
+    <!-- x=126, width=414, height=234                                   -->
+    <!-- ============================================================== -->
+    <rect x="126" y="300" width="414" height="236" rx="8"
+          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5" filter="url(#cardShadow)"/>
+
+    <!-- Table Columns -->
+    <text x="138" y="316" font-family="'Inter', sans-serif" font-weight="500" font-size="6.5" fill="#9CA3AF">Name</text>
+    <text x="214" y="316" font-family="'Inter', sans-serif" font-weight="500" font-size="6.5" fill="#9CA3AF">Source</text>
+    <text x="280" y="316" font-family="'Inter', sans-serif" font-weight="500" font-size="6.5" fill="#9CA3AF">Batch</text>
+    <text x="348" y="316" font-family="'Inter', sans-serif" font-weight="500" font-size="6.5" fill="#9CA3AF">Status</text>
+    <text x="420" y="316" font-family="'Inter', sans-serif" font-weight="500" font-size="6.5" fill="#9CA3AF">Assigned To</text>
+    <text x="486" y="316" font-family="'Inter', sans-serif" font-weight="500" font-size="6.5" fill="#9CA3AF">Date</text>
+
+    <line x1="138" y1="322" x2="528" y2="322" stroke="#E5E7EB" stroke-width="0.5"/>
+
+    <!-- Row 1: Rajesh Patel -->
+    <text x="138" y="338" font-family="'Inter', sans-serif" font-weight="500" font-size="7.5" fill="#111827">Rajesh Patel</text>
+    <text x="214" y="338" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">CSV Upload</text>
+    <text x="280" y="338" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">Batch 04</text>
+    <!-- Completed Badge -->
+    <rect x="348" y="329" width="46" height="11" rx="2.5" fill="#D1FAE5"/>
+    <text x="371" y="445" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#065F46">Completed</text>
+    <text x="420" y="338" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#111827">Rahul Kumar</text>
+    <text x="486" y="338" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">Jul 10</text>
+    
+    <line x1="138" y1="346" x2="528" y2="346" stroke="#F1F5F9" stroke-width="0.5"/>
+
+    <!-- Row 2: Priya Sen -->
+    <text x="138" y="362" font-family="'Inter', sans-serif" font-weight="500" font-size="7.5" fill="#111827">Priya Sen</text>
+    <text x="214" y="362" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">WhatsApp</text>
+    <text x="280" y="362" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">Batch 04</text>
+    <!-- Call Back Badge -->
+    <rect x="348" y="353" width="46" height="11" rx="2.5" fill="#FEF3C7"/>
+    <text x="371" y="361" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#D97706">Call Back</text>
+    <text x="420" y="362" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#111827">Priya Sharma</text>
+    <text x="486" y="362" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">Jul 10</text>
+    
+    <line x1="138" y1="370" x2="528" y2="370" stroke="#F1F5F9" stroke-width="0.5"/>
+
+    <!-- Row 3: Rohan Gupta -->
+    <text x="138" y="386" font-family="'Inter', sans-serif" font-weight="500" font-size="7.5" fill="#111827">Rohan Gupta</text>
+    <text x="214" y="386" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">CSV Upload</text>
+    <text x="280" y="386" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">Batch 03</text>
+    <!-- No Answer Badge -->
+    <rect x="348" y="377" width="46" height="11" rx="2.5" fill="#FEE2E2"/>
+    <text x="371" y="385" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#EF4444">No Answer</text>
+    <text x="420" y="386" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#111827">Amit Patel</text>
+    <text x="486" y="386" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">Jul 09</text>
+    
+    <line x1="138" y1="394" x2="528" y2="394" stroke="#F1F5F9" stroke-width="0.5"/>
+
+    <!-- Row 4: Vikram Malhotra -->
+    <text x="138" y="410" font-family="'Inter', sans-serif" font-weight="500" font-size="7.5" fill="#111827">Vikram Malhotra</text>
+    <text x="214" y="410" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">Facebook Ads</text>
+    <text x="280" y="410" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">Batch 04</text>
+    <!-- Interested Badge -->
+    <rect x="348" y="401" width="46" height="11" rx="2.5" fill="#D1FAE5"/>
+    <text x="371" y="409" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#065F46">Interested</text>
+    <text x="420" y="410" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#111827">Rahul Kumar</text>
+    <text x="486" y="410" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">Jul 10</text>
+    
+    <line x1="138" y1="418" x2="528" y2="418" stroke="#F1F5F9" stroke-width="0.5"/>
+
+    <!-- Row 5: Sneha Rao -->
+    <text x="138" y="434" font-family="'Inter', sans-serif" font-weight="500" font-size="7.5" fill="#111827">Sneha Rao</text>
+    <text x="214" y="434" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">CSV Upload</text>
+    <text x="280" y="434" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">Batch 03</text>
+    <!-- Assigned Badge -->
+    <rect x="348" y="425" width="46" height="11" rx="2.5" fill="#EFF6FF"/>
+    <text x="371" y="433" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#2563EB">Assigned</text>
+    <text x="420" y="434" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#111827">Sneha Reddy</text>
+    <text x="486" y="434" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">Jul 09</text>
+    
+    <line x1="138" y1="442" x2="528" y2="442" stroke="#F1F5F9" stroke-width="0.5"/>
+
+    <!-- Row 6: Anita Deshmukh -->
+    <text x="138" y="458" font-family="'Inter', sans-serif" font-weight="500" font-size="7.5" fill="#111827">Anita Deshmukh</text>
+    <text x="214" y="458" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">CSV Upload</text>
+    <text x="280" y="458" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">Batch 02</text>
+    <!-- Completed Badge -->
+    <rect x="348" y="449" width="46" height="11" rx="2.5" fill="#D1FAE5"/>
+    <text x="420" y="458" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#111827">Rahul Kumar</text>
+    <text x="486" y="458" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">Jul 08</text>
+    
+    <line x1="138" y1="466" x2="528" y2="466" stroke="#F1F5F9" stroke-width="0.5"/>
+
+    <!-- Row 7: Alok Verma -->
+    <text x="138" y="482" font-family="'Inter', sans-serif" font-weight="500" font-size="7.5" fill="#111827">Alok Verma</text>
+    <text x="214" y="482" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">WhatsApp</text>
+    <text x="280" y="482" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">Batch 03</text>
+    <!-- Call Back Badge -->
+    <rect x="348" y="473" width="46" height="11" rx="2.5" fill="#FEF3C7"/>
+    <text x="420" y="482" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#111827">Priya Sharma</text>
+    <text x="486" y="482" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">Jul 09</text>
+
+    <!-- Specific fix: draw card status texts inside badges (since y coordinates inside row 1 / 6 / 7 text elements overlap or needed alignment) -->
+    <!-- Rajesh Patel Completed Text -->
+    <text x="371" y="337" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#065F46">Completed</text>
+    <!-- Anita Deshmukh Completed Text -->
+    <text x="371" y="457" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#065F46">Completed</text>
+    <!-- Alok Verma Call Back Text -->
+    <text x="371" y="481" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#D97706">Call Back</text>
+  </g>
+
+  <!-- Visual caption -->
+  <text x="297.5" y="596"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">The centralized lead table replaces manual spreadsheets with a structured database.</text>
+
+  <!-- ================================================================ -->
+  <!-- KEY TAKEAWAY — Reused from Components Library (Flexible y=722)    -->
+  <!-- ================================================================ -->
+  <foreignObject x="42" y="722" width="511" height="64">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="
+      background: #FFFFFF;
+      border: 0.75px solid #E5E7EB;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      border-left: 3px solid #2563EB;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 64px;
+      box-sizing: border-box;
+      height: 100%;
+    ">
+      <div style="
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        font-size: 11px;
+        color: #111827;
+        text-align: center;
+        line-height: 1.4;
+        max-width: 85%;
+      ">
+        Centralizing lead management in a unified database replaces manual distribution processes with absolute visibility and structural control.
+      </div>
+    </div>
+  </foreignObject>
+
+  <!-- ================================================================ -->
+  <!-- FOOTER — Reused from Components Library                          -->
+  <!-- ================================================================ -->
+  <g id="proposalFooter">
+    <text x="297.5" y="822"
+          text-anchor="middle"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="7"
+          fill="#9CA3AF">Prepared exclusively for Suryavanshi Finserv. Confidential and proprietary.</text>
+    <text x="553" y="822"
+          text-anchor="end"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="7"
+          fill="#9CA3AF">08</text>
+  </g>
+
+</svg>
