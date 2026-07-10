@@ -1,0 +1,29 @@
+<!-- 
+  Workflow Step Card Reusable Component
+  - Sizing: width 180pt, height 40pt, rx 8pt
+  - Two modes: Current State (Rose-tinted) vs. LeadFlow State (Blue-tinted)
+-->
+
+<!-- Current State Card Mode (Rose-tinted) -->
+<g id="workflowStepCurrent">
+  <rect x="[INSERT_X]" y="[INSERT_Y]" width="180" height="40" rx="8"
+        fill="#FEF2F2" stroke="#FECACA" stroke-width="0.75"/>
+  <!-- Number badge -->
+  <text x="[INSERT_X + 16]" y="[INSERT_Y + 16]"
+        font-family="'Inter', sans-serif" font-weight="500" font-size="7" fill="#EF4444">[INSERT_STEP_INDEX]</text>
+  <!-- Step text -->
+  <text x="[INSERT_X + 34]" y="[INSERT_Y + 26]"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="9" fill="#111827">[INSERT_STEP_TEXT]</text>
+</g>
+
+<!-- LeadFlow State Card Mode (Blue-tinted) -->
+<g id="workflowStepLeadFlow">
+  <rect x="[INSERT_X]" y="[INSERT_Y]" width="180" height="40" rx="8"
+        fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.75"/>
+  <!-- Number badge -->
+  <text x="[INSERT_X + 16]" y="[INSERT_Y + 16]"
+        font-family="'Inter', sans-serif" font-weight="500" font-size="7" fill="#2563EB">[INSERT_STEP_INDEX]</text>
+  <!-- Step text -->
+  <text x="[INSERT_X + 34]" y="[INSERT_Y + 26]"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="9" fill="#111827">[INSERT_STEP_TEXT]</text>
+</g>

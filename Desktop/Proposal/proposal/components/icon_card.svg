@@ -1,0 +1,26 @@
+<!-- 
+  Icon Card Reusable Component
+  - Standard styling: White background (#FFFFFF), border 0.75px (#E5E7EB), corner radius 8pt, card shadow filter.
+  - Flexible layout: Can be sized for 2-column grid (width 243pt) or 3-column grid (width 159pt).
+-->
+<g id="proposalIconCard">
+  <!-- Card surface container -->
+  <rect x="[INSERT_X]" y="[INSERT_Y]" width="[INSERT_WIDTH]" height="[INSERT_HEIGHT]" rx="8"
+        fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"
+        filter="url(#cardShadow)"/>
+
+  <!-- Lucide Icon (monochrome, LeadFlow Blue) -->
+  <g transform="translate([INSERT_ICON_X], [INSERT_ICON_Y])" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    [INSERT_SVG_ICON_PATHS]
+  </g>
+
+  <!-- Card title -->
+  <text x="[INSERT_TEXT_X]" y="[INSERT_TITLE_Y]"
+        font-family="'Poppins', sans-serif" font-weight="600" font-size="9.5" fill="#111827">[INSERT_CARD_TITLE]</text>
+
+  <!-- Card descriptions (multi-line) -->
+  <text x="[INSERT_TEXT_X]" y="[INSERT_DESC_Y_LINE1]"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">[INSERT_DESC_LINE1]</text>
+  <text x="[INSERT_TEXT_X]" y="[INSERT_DESC_Y_LINE2]"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">[INSERT_DESC_LINE2]</text>
+</g>

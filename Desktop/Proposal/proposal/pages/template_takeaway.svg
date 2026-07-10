@@ -1,0 +1,55 @@
+<!-- ========================================================================= -->
+<!-- LEADFLOW PROPOSAL SYSTEM — REUSABLE KEY TAKEAWAY MASTER COMPONENT         -->
+<!-- ========================================================================= -->
+<!-- 
+  This component is the standard takeaway implementation for the proposal pipeline.
+  It uses SVG <foreignObject> containing flexible HTML block elements to allow
+  browser-native text wrapping, centering, and dynamic height expansion.
+
+  LAYOUT STANDARDS:
+  - Width: 511 pt (aligned to L=42, R=553 margins)
+  - Minimum Height: 64 pt (for 1 to 2 lines of text)
+  - Vertical Padding: 16 pt top and bottom
+  - Horizontal Padding: 20 pt left and right
+  - Text Width Limit: max-width: 85% of content area (~400px width limit)
+  - Footer Safe Area: Minimum 32 pt spacing between the takeaway card bottom and
+    the page footer at y=822. (Maximum y-coordinate for the card bottom is y=790).
+
+  DYNAMIC HEIGHT CALCULATIONS & POSITIONING:
+  - For standard 1-2 line text:
+    - Use foreignObject height="64" at y="722" (Card bottom = 786, Footer gap = 36).
+  - For 3-line text (requires ~80px height):
+    - Use foreignObject height="80" at y="710" (Card bottom = 790, Footer gap = 32).
+  - For 4-line text (requires ~96px height):
+    - Use foreignObject height="96" at y="694" (Card bottom = 790, Footer gap = 32).
+-->
+
+<foreignObject x="42" y="722" width="511" height="64" id="takeawayComponent">
+  <div xmlns="http://www.w3.org/1999/xhtml" style="
+    background: #FFFFFF;
+    border: 0.75px solid #E5E7EB;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    border-left: 3px solid #2563EB;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 64px;
+    box-sizing: border-box;
+    height: 100%;
+  ">
+    <div style="
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      font-size: 11px;
+      color: #111827;
+      text-align: center;
+      line-height: 1.4;
+      max-width: 85%;
+    ">
+      <!-- INSERT TAKEAWAY TEXT HERE -->
+      Centralizing recruitment operations is the key to reducing administrative overhead and accelerating hiring cycles.
+    </div>
+  </div>
+</foreignObject>

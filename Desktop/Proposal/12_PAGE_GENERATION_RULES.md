@@ -147,19 +147,38 @@ Every sentence should contribute to the page objective.
 
 # Layout Rules
 
-Respect the LeadFlow Design System.
+Respect the LeadFlow Design System and the Component Library under `proposal/components/`.
 
 Maintain:
 
-- Margins
-- Typography
-- White space
-- Card styles
-- Icon usage
-- Color palette
+- Margins (42pt left, 553pt right)
+- Typography (Poppins for headings, Inter for body and labels)
+- White space (8pt spacing system)
+- Card styles (White, 8pt corner radius, Slate 200 border, soft shadow)
+- Icon usage (Monochrome LeadFlow Blue Lucide-style SVG paths)
+- Color palette (LeadFlow Blue primary, neutral Slate backgrounds)
 - Visual hierarchy
 
-Do not introduce new layout styles.
+### Component Library Integration:
+Every future proposal page must reuse the master components defined in `proposal/components/` instead of recreating them from scratch:
+- `header.svg`: Page headers (brand and section metadata)
+- `footer.svg`: Centered confidential notice and page index
+- `section_header.svg`: Section hero headers (title and subtitle)
+- `takeaway.svg`: Highlighted callout takeaways at the bottom of the page
+- `icon_card.svg`: Unified grid layouts (both 2-column value grids and 3-column challenge grids)
+- `workflow_card.svg`: Vertical workflow step indicators
+- `metric_card.svg`: Business impact indicators
+- `comparison_layout.svg`: Parallel workflow comparisons
+
+### Reusable Takeaway Sizing Formula:
+The Takeaway component height must be calculated dynamically based on the text layout to ensure it does not overflow or clip:
+- Formula: `cardHeight = max(minHeight, textHeight + topPadding + bottomPadding)`
+- Standards: `minHeight = 64pt`, `topPadding = 16pt`, `bottomPadding = 16pt`
+- Adjust the `y` coordinate of the component to preserve the minimum `32pt` footer safe area above the footer at `y=822`.
+- Typical positions:
+  - 1–2 lines (Height = 64): Use `y="722"`
+  - 3 lines (Height = 80): Use `y="710"`
+  - 4 lines (Height = 96): Use `y="694"`
 
 ---
 

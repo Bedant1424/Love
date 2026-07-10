@@ -1,0 +1,20 @@
+<!-- 
+  Section Header (Hero Title + Subtitle) Component
+  - Title: Poppins Bold 24pt, Slate 900 (y=84)
+  - Subtitle: Inter Regular 9.5pt, Slate 500 (y=102)
+-->
+<g id="proposalSectionHeader">
+  <!-- Hero title -->
+  <text x="42" y="84"
+        font-family="'Poppins', sans-serif"
+        font-weight="700"
+        font-size="24"
+        fill="#111827">[INSERT_HERO_TITLE]</text>
+
+  <!-- Subtitle -->
+  <text x="42" y="102"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="9.5"
+        fill="#6B7280">[INSERT_HERO_SUBTITLE]</text>
+</g>

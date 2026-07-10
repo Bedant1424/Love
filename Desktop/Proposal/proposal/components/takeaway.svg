@@ -1,0 +1,35 @@
+<!-- 
+  Takeaway Reusable Component
+  - Sizing Formula: cardHeight = max(minHeight, textHeight + topPadding + bottomPadding)
+  - Standards: minHeight = 64pt, topPadding = 16pt, bottomPadding = 16pt, horizontalPadding = 20pt.
+  - Width: 511pt (x=42 to 553)
+  - Usage: Insert at bottom (typically y=722 for 64pt height) keeping a 32pt safe area above the footer (y=822).
+-->
+<foreignObject x="42" y="[INSERT_Y_COORDINATE]" width="511" height="[INSERT_CALCULATED_HEIGHT]">
+  <div xmlns="http://www.w3.org/1999/xhtml" style="
+    background: #FFFFFF;
+    border: 0.75px solid #E5E7EB;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    border-left: 3px solid #2563EB;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 64px;
+    box-sizing: border-box;
+    height: 100%;
+  ">
+    <div style="
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      font-size: 11px;
+      color: #111827;
+      text-align: center;
+      line-height: 1.4;
+      max-width: 85%;
+    ">
+      [INSERT_TAKEAWAY_TEXT]
+    </div>
+  </div>
+</foreignObject>

@@ -1,0 +1,33 @@
+<!-- 
+  Header Reusable Component
+  - Left: Brand mark (LeadFlow)
+  - Right: Page index and Section Title (vertical stack)
+  - Line separator at y=52
+-->
+<g id="proposalHeader">
+  <!-- Brand logo mark -->
+  <text x="42" y="40"
+        font-family="'Poppins', sans-serif"
+        font-weight="600"
+        font-size="8"
+        fill="#2563EB">LeadFlow</text>
+
+  <!-- Page numbering (Page XX) -->
+  <text x="553" y="36"
+        text-anchor="end"
+        font-family="'Poppins', sans-serif"
+        font-weight="600"
+        font-size="7.5"
+        fill="#111827">[INSERT_PAGE_NUMBER_LABEL]</text>
+
+  <!-- Section label -->
+  <text x="553" y="46"
+        text-anchor="end"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="7"
+        fill="#9CA3AF">[INSERT_SECTION_LABEL]</text>
+
+  <!-- Divider line -->
+  <line x1="42" y1="52" x2="553" y2="52" stroke="#E5E7EB" stroke-width="0.75"/>
+</g>

@@ -1,0 +1,25 @@
+<!-- 
+  Metric/KPI Card Reusable Component
+  - Standard Sizing: width 118pt, height 64pt, rx 8pt
+  - White container card with subtle border and card shadow
+  - Contains monochrome icon, small title (Poppins SemiBold 8pt), and sublabel (Inter Regular 7pt)
+-->
+<g id="proposalMetricCard">
+  <!-- Card background -->
+  <rect x="[INSERT_X]" y="[INSERT_Y]" width="118" height="64" rx="8"
+        fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"
+        filter="url(#cardShadow)"/>
+  
+  <!-- Icon container (x_offset = INSERT_X + 12, y_offset = INSERT_Y + 12) -->
+  <g transform="translate([INSERT_ICON_X], [INSERT_ICON_Y])" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    [INSERT_SVG_ICON_PATHS]
+  </g>
+
+  <!-- Title label -->
+  <text x="[INSERT_TEXT_X]" y="[INSERT_TITLE_Y]"
+        font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#2563EB">[INSERT_METRIC_TITLE]</text>
+
+  <!-- Description label -->
+  <text x="[INSERT_TEXT_X]" y="[INSERT_DESC_Y]"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#6B7280">[INSERT_METRIC_SUBTITLE]</text>
+</g>

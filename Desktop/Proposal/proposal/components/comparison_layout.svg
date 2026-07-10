@@ -1,0 +1,68 @@
+<!-- 
+  Comparison Layout Reusable Component (from Page 02)
+  - Container card size: width 511pt, height 400pt, rx 12pt
+  - Layout: Left Column (Manual/Current) vs Right Column (Streamlined/LeadFlow)
+  - Features a vertical dashed divider and central transformation element (double chevron)
+-->
+<g id="proposalComparisonLayout">
+  <!-- Container Card -->
+  <rect x="42" y="[INSERT_Y]" width="511" height="400" rx="12"
+        fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"
+        filter="url(#cardShadow)"/>
+
+  <!-- Section Title -->
+  <text x="297.5" y="[INSERT_Y + 24]"
+        text-anchor="middle"
+        font-family="'Poppins', sans-serif" font-weight="600" font-size="12" fill="#111827">[INSERT_LAYOUT_TITLE]</text>
+
+  <!-- Left Header -->
+  <text x="162" y="[INSERT_Y + 46]"
+        text-anchor="middle"
+        font-family="'Poppins', sans-serif" font-weight="600" font-size="9" fill="#EF4444">[INSERT_LEFT_HEADER]</text>
+  <text x="162" y="[INSERT_Y + 58]"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">[INSERT_LEFT_SUBHEADER]</text>
+
+  <!-- Right Header -->
+  <text x="435" y="[INSERT_Y + 46]"
+        text-anchor="middle"
+        font-family="'Poppins', sans-serif" font-weight="600" font-size="9" fill="#2563EB">[INSERT_RIGHT_HEADER]</text>
+  <text x="435" y="[INSERT_Y + 58]"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">[INSERT_RIGHT_SUBHEADER]</text>
+
+  <!-- Vertical dashed separator -->
+  <line x1="297.5" y1="[INSERT_Y + 42]" x2="297.5" y2="[INSERT_Y + 370]"
+        stroke="#E5E7EB" stroke-width="0.75" stroke-dasharray="4 3"/>
+
+  <!-- ============================================================== -->
+  <!-- CENTER TRANSFORMATION ELEMENT                                   -->
+  <!-- ============================================================== -->
+  <!-- Outer glow ring -->
+  <circle cx="297.5" cy="[INSERT_Y + 206]" r="32"
+          fill="none" stroke="#2563EB" stroke-width="1.5" opacity="0.12"/>
+  <!-- Inner accent ring -->
+  <circle cx="297.5" cy="[INSERT_Y + 206]" r="29"
+          fill="none" stroke="#2563EB" stroke-width="0.75" opacity="0.06"/>
+  <!-- Main transformation circle -->
+  <circle cx="297.5" cy="[INSERT_Y + 206]" r="26" fill="#2563EB"/>
+  <!-- Double chevron >> -->
+  <g stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <polyline points="289,[INSERT_Y + 198] 297,[INSERT_Y + 206] 289,[INSERT_Y + 214]"/>
+    <polyline points="299,[INSERT_Y + 198] 307,[INSERT_Y + 206] 299,[INSERT_Y + 214]"/>
+  </g>
+
+  <!-- Left horizontal connection line -->
+  <line x1="254" y1="[INSERT_Y + 206]" x2="264" y2="[INSERT_Y + 206]"
+        stroke="#2563EB" stroke-width="1" opacity="0.3" stroke-dasharray="3 2"/>
+  <!-- Right horizontal connection line -->
+  <line x1="325" y1="[INSERT_Y + 206]" x2="343" y2="[INSERT_Y + 206]"
+        stroke="#2563EB" stroke-width="1" opacity="0.3" stroke-dasharray="3 2"/>
+  <polyline points="340,[INSERT_Y + 203] 345,[INSERT_Y + 206] 340,[INSERT_Y + 209]"
+            fill="none" stroke="#2563EB" stroke-width="1" opacity="0.3" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Caption text below container -->
+  <text x="297.5" y="[INSERT_Y + 380]"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">[INSERT_LAYOUT_CAPTION]</text>
+</g>

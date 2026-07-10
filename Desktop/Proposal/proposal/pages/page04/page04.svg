@@ -295,19 +295,36 @@
         font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">without manual reporting.</text>
 
   <!-- ================================================================ -->
-  <!-- KEY TAKEAWAY                                                     -->
+  <!-- KEY TAKEAWAY — Reusable Master Template                          -->
   <!-- ================================================================ -->
-  <g filter="url(#takeawayShadow)">
-    <rect x="42" y="722" width="511" height="48" rx="8"
-          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
-    <rect x="42" y="722" width="3" height="48" rx="1.5" fill="#2563EB"/>
-    <text x="297.5" y="750"
-          text-anchor="middle"
-          font-family="'Inter', sans-serif"
-          font-weight="500"
-          font-size="11"
-          fill="#111827">Centralizing recruitment operations is the key to reducing administrative overhead and accelerating hiring cycles.</text>
-  </g>
+  <foreignObject x="42" y="722" width="511" height="64">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="
+      background: #FFFFFF;
+      border: 0.75px solid #E5E7EB;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      border-left: 3px solid #2563EB;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 64px;
+      box-sizing: border-box;
+      height: 100%;
+    ">
+      <div style="
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        font-size: 11px;
+        color: #111827;
+        text-align: center;
+        line-height: 1.4;
+        max-width: 85%;
+      ">
+        Centralizing recruitment operations is the key to reducing administrative overhead and accelerating hiring cycles.
+      </div>
+    </div>
+  </foreignObject>
 
   <!-- ================================================================ -->
   <!-- FOOTER                                                           -->

@@ -1,0 +1,23 @@
+<!-- 
+  Footer Reusable Component
+  - Center: Confidentiality notice
+  - Right: Page number index
+  - Aligned to y=822
+-->
+<g id="proposalFooter">
+  <!-- Confidentiality notice (centered) -->
+  <text x="297.5" y="822"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="7"
+        fill="#9CA3AF">Prepared exclusively for Suryavanshi Finserv. Confidential and proprietary.</text>
+
+  <!-- Page number right-aligned -->
+  <text x="553" y="822"
+        text-anchor="end"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="7"
+        fill="#9CA3AF">[INSERT_PAGE_NUMBER]</text>
+</g>
