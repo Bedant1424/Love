@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 595 842"
+     width="210mm" height="297mm">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&amp;family=Inter:wght@400;500;600&amp;display=swap');
+    </style>
+
+    <!-- Card shadow — consistent with pages 01–09 -->
+    <filter id="cardShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
+      <feOffset in="blur" dx="0" dy="1.5" result="offsetBlur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.06" result="color"/>
+      <feComposite in="color" in2="offsetBlur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Takeaway card shadow — lighter -->
+    <filter id="takeawayShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
+      <feOffset in="blur" dx="0" dy="1" result="offsetBlur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.04" result="color"/>
+      <feComposite in="color" in2="offsetBlur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- ================================================================ -->
+  <!-- PAGE BACKGROUND — A4 Portrait, Slate 50                         -->
+  <!-- ================================================================ -->
+  <rect width="595" height="842" fill="#F8FAFC"/>
+
+  <!-- ================================================================ -->
+  <!-- PAGE HEADER — Reused from Components Library                     -->
+  <!-- ================================================================ -->
+  <g id="proposalHeader">
+    <text x="42" y="40"
+          font-family="'Poppins', sans-serif"
+          font-weight="600"
+          font-size="8"
+          fill="#2563EB">LeadFlow</text>
+    <text x="553" y="36"
+          text-anchor="end"
+          font-family="'Poppins', sans-serif"
+          font-weight="600"
+          font-size="7.5"
+          fill="#111827">Page 10</text>
+    <text x="553" y="46"
+          text-anchor="end"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="7"
+          fill="#9CA3AF">Mobile PWA Experience</text>
+    <line x1="42" y1="52" x2="553" y2="52" stroke="#E5E7EB" stroke-width="0.75"/>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- SECTION HEADER — Reused from Components Library                  -->
+  <!-- ================================================================ -->
+  <g id="proposalSectionHeader">
+    <text x="42" y="84"
+          font-family="'Poppins', sans-serif"
+          font-weight="700"
+          font-size="24"
+          fill="#111827">Mobile PWA Experience</text>
+    <text x="42" y="102"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="9.5"
+          fill="#6B7280">Fully functional recruitment workspace on any device.</text>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- INTRODUCTION TEXT                                                 -->
+  <!-- ================================================================ -->
+  <text x="42" y="130"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">LeadFlow is built as a Progressive Web App (PWA) that loads instantly in any mobile browser. It requires</text>
+  <text x="42" y="144"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">no App Store download or manual installation, ensuring seamless onboarding for recruitment teams.</text>
+
+  <!-- ================================================================ -->
+  <!-- SYSTEM VISUAL — MOBILE DEVICE FRAME & FEATURES                 -->
+  <!-- ================================================================ -->
+
+  <!-- Left Column Callouts -->
+  <!-- Callout 1: Browser-Based Access -->
+  <g id="calloutLeft1" filter="url(#cardShadow)">
+    <rect x="42" y="210" width="136" height="54" rx="8" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <text x="50" y="226" font-family="'Poppins', sans-serif" font-weight="600" font-size="7.5" fill="#2563EB">Browser-Based Access</text>
+    <text x="50" y="238" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#4B5563">Runs in Safari, Chrome, or</text>
+    <text x="50" y="247" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#4B5563">any mobile browser directly.</text>
+    <!-- Connector -->
+    <line x1="178" y1="237" x2="196" y2="237" stroke="#2563EB" stroke-width="0.75" stroke-dasharray="2,2"/>
+    <circle cx="178" cy="237" r="1.5" fill="#2563EB"/>
+    <circle cx="196.5" cy="237" r="1.5" fill="#2563EB"/>
+  </g>
+
+  <!-- Callout 2: Zero Installation -->
+  <g id="calloutLeft2" filter="url(#cardShadow)">
+    <rect x="42" y="345" width="136" height="54" rx="8" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <text x="50" y="361" font-family="'Poppins', sans-serif" font-weight="600" font-size="7.5" fill="#2563EB">Zero Installation</text>
+    <text x="50" y="373" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#4B5563">No App Store download.</text>
+    <text x="50" y="382" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#4B5563">Instant access via single URL.</text>
+    <!-- Connector -->
+    <line x1="178" y1="372" x2="196" y2="372" stroke="#2563EB" stroke-width="0.75" stroke-dasharray="2,2"/>
+    <circle cx="178" cy="372" r="1.5" fill="#2563EB"/>
+    <circle cx="196.5" cy="372" r="1.5" fill="#2563EB"/>
+  </g>
+
+  <!-- Callout 3: Fast Performance -->
+  <g id="calloutLeft3" filter="url(#cardShadow)">
+    <rect x="42" y="480" width="136" height="54" rx="8" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <text x="50" y="496" font-family="'Poppins', sans-serif" font-weight="600" font-size="7.5" fill="#2563EB">Fast Performance</text>
+    <text x="50" y="508" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#4B5563">Lightweight and optimized for</text>
+    <text x="50" y="517" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#4B5563">swift loads on cellular data.</text>
+    <!-- Connector -->
+    <line x1="178" y1="507" x2="196" y2="507" stroke="#2563EB" stroke-width="0.75" stroke-dasharray="2,2"/>
+    <circle cx="178" cy="507" r="1.5" fill="#2563EB"/>
+    <circle cx="196.5" cy="507" r="1.5" fill="#2563EB"/>
+  </g>
+
+  <!-- Center Column: Smartphone Mockup (Dominant Visual) -->
+  <g id="phoneMockup" filter="url(#cardShadow)">
+    <!-- Phone Outer Body Frame -->
+    <rect x="196.5" y="200" width="202" height="400" rx="24"
+          fill="#0F172A" stroke="#1E293B" stroke-width="2"/>
+    
+    <!-- Phone Inner Screen Area -->
+    <rect x="201.5" y="208" width="192" height="384" rx="16"
+          fill="#F8FAFC" stroke="#E5E7EB" stroke-width="0.5"/>
+
+    <!-- iPhone Notch / Island -->
+    <rect x="272.5" y="204" width="50" height="10" rx="5" fill="#0F172A"/>
+
+    <!-- ============================================================== -->
+    <!-- PHONE UI SCREEN CONTENT                                        -->
+    <!-- ============================================================== -->
+    
+    <!-- Screen Header (y=208 to 238) -->
+    <rect x="201.5" y="208" width="192" height="30" fill="#FFFFFF"/>
+    
+    <!-- Brand Title -->
+    <text x="297.5" y="227" text-anchor="middle"
+          font-family="'Poppins', sans-serif" font-weight="700" font-size="8.5" fill="#2563EB">LeadFlow</text>
+    
+    <!-- Sync Status -->
+    <circle cx="214" cy="226" r="2.2" fill="#10B981"/>
+    <text x="219" y="228" font-family="'Inter', sans-serif" font-weight="500" font-size="5.5" fill="#6B7280">Sync Active</text>
+    
+    <!-- Profile Button -->
+    <circle cx="378" cy="226" r="5.5" fill="#2563EB"/>
+    <text x="378" y="228" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="5.5" fill="#FFFFFF">R</text>
+
+    <!-- Header divider -->
+    <line x1="201.5" y1="238" x2="393.5" y2="238" stroke="#E5E7EB" stroke-width="0.5"/>
+
+    <!-- Workspace Greeting -->
+    <text x="211.5" y="252" font-family="'Poppins', sans-serif" font-weight="600" font-size="8.5" fill="#111827">Hello, Rahul</text>
+    <text x="211.5" y="260" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#6B7280">Today's calling queue</text>
+
+    <!-- Quick Action Shortcut Buttons -->
+    <!-- Start Queue (Blue) -->
+    <rect x="211.5" y="266" width="80" height="22" rx="4" fill="#2563EB"/>
+    <text x="251.5" y="279" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="600" font-size="6.5" fill="#FFFFFF">Start Queue</text>
+    
+    <!-- View Batches (White) -->
+    <rect x="300.5" y="266" width="81" height="22" rx="4" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5"/>
+    <text x="341" y="279" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="600" font-size="6.5" fill="#4B5563">View Batches</text>
+
+    <!-- Stacked Lead Cards List (y=296 to 552) -->
+    <!-- Stacked Card 1: Rajesh Patel -->
+    <g id="phoneCard1">
+      <rect x="211.5" y="296" width="170" height="54" rx="6" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5" filter="url(#cardShadow)"/>
+      <text x="219.5" y="309" font-family="'Poppins', sans-serif" font-weight="600" font-size="7.5" fill="#111827">Rajesh Patel</text>
+      <!-- Status Badge (Call Back - Amber) -->
+      <rect x="333" y="301" width="40" height="10" rx="2" fill="#FEF3C7"/>
+      <text x="353" y="308" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="600" font-size="5" fill="#D97706">Call Back</text>
+      <!-- Sublabel info -->
+      <text x="219.5" y="319" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#9CA3AF">CSV Upload • Batch 04</text>
+      
+      <!-- Action triggers -->
+      <rect x="219.5" y="326" width="34" height="14" rx="3" fill="#2563EB"/>
+      <text x="236.5" y="335" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="5.5" fill="#FFFFFF">Call</text>
+
+      <rect x="259.5" y="326" width="54" height="14" rx="3" fill="#10B981"/>
+      <text x="286.5" y="335" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="5.5" fill="#FFFFFF">WhatsApp</text>
+
+      <rect x="319.5" y="326" width="54" height="14" rx="3" fill="#F1F5F9" stroke="#E5E7EB" stroke-width="0.5"/>
+      <text x="346.5" y="335" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="5.5" fill="#4B5563">Update</text>
+    </g>
+
+    <!-- Stacked Card 2: Priya Sen -->
+    <g id="phoneCard2">
+      <rect x="211.5" y="358" width="170" height="54" rx="6" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5" filter="url(#cardShadow)"/>
+      <text x="219.5" y="371" font-family="'Poppins', sans-serif" font-weight="600" font-size="7.5" fill="#111827">Priya Sen</text>
+      <!-- Status Badge (Interested - Green) -->
+      <rect x="333" y="363" width="40" height="10" rx="2" fill="#D1FAE5"/>
+      <text x="353" y="370" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="600" font-size="5" fill="#065F46">Interested</text>
+      
+      <text x="219.5" y="381" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#9CA3AF">WhatsApp • Batch 04</text>
+      
+      <!-- Action triggers -->
+      <rect x="219.5" y="388" width="34" height="14" rx="3" fill="#2563EB"/>
+      <text x="236.5" y="397" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="5.5" fill="#FFFFFF">Call</text>
+
+      <rect x="259.5" y="388" width="54" height="14" rx="3" fill="#10B981"/>
+      <text x="286.5" y="397" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="5.5" fill="#FFFFFF">WhatsApp</text>
+
+      <rect x="319.5" y="388" width="54" height="14" rx="3" fill="#F1F5F9" stroke="#E5E7EB" stroke-width="0.5"/>
+      <text x="346.5" y="397" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="5.5" fill="#4B5563">Update</text>
+    </g>
+
+    <!-- Stacked Card 3: Rohan Gupta -->
+    <g id="phoneCard3">
+      <rect x="211.5" y="420" width="170" height="54" rx="6" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5" filter="url(#cardShadow)"/>
+      <text x="219.5" y="433" font-family="'Poppins', sans-serif" font-weight="600" font-size="7.5" fill="#111827">Rohan Gupta</text>
+      <!-- Status Badge (No Answer - Red) -->
+      <rect x="333" y="425" width="40" height="10" rx="2" fill="#FEE2E2"/>
+      <text x="353" y="432" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="600" font-size="5" fill="#EF4444">No Answer</text>
+      
+      <text x="219.5" y="443" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#9CA3AF">CSV Upload • Batch 03</text>
+      
+      <!-- Action triggers -->
+      <rect x="219.5" y="450" width="34" height="14" rx="3" fill="#2563EB"/>
+      <text x="236.5" y="459" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="5.5" fill="#FFFFFF">Call</text>
+
+      <rect x="259.5" y="450" width="54" height="14" rx="3" fill="#10B981"/>
+      <text x="286.5" y="459" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="5.5" fill="#FFFFFF">WhatsApp</text>
+
+      <rect x="319.5" y="450" width="54" height="14" rx="3" fill="#F1F5F9" stroke="#E5E7EB" stroke-width="0.5"/>
+      <text x="346.5" y="459" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="5.5" fill="#4B5563">Update</text>
+    </g>
+
+    <!-- Stacked Card 4: Partially cropped card at bottom -->
+    <g id="phoneCard4">
+      <rect x="211.5" y="482" width="170" height="54" rx="6" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.5" filter="url(#cardShadow)"/>
+      <text x="219.5" y="495" font-family="'Poppins', sans-serif" font-weight="600" font-size="7.5" fill="#111827">Vikram Malhotra</text>
+      <!-- Status Badge (Assigned - Blue) -->
+      <rect x="333" y="487" width="40" height="10" rx="2" fill="#EFF6FF"/>
+      <text x="353" y="494" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="600" font-size="5" fill="#2563EB">Assigned</text>
+      
+      <text x="219.5" y="505" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#9CA3AF">Facebook Ads • Batch 04</text>
+    </g>
+
+    <!-- Screen Navigation Bar (y=556 to 592) -->
+    <rect x="201.5" y="556" width="192" height="36" fill="#FFFFFF"/>
+    <line x1="201.5" y1="556" x2="393.5" y2="556" stroke="#E5E7EB" stroke-width="0.5"/>
+    
+    <!-- Item 1: Dashboard -->
+    <circle cx="233.5" cy="568" r="2.5" fill="#9CA3AF"/>
+    <text x="233.5" y="580" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="5.5" fill="#9CA3AF">Dashboard</text>
+    
+    <!-- Item 2: Workspace (Active Highlight) -->
+    <circle cx="297.5" cy="568" r="3.2" fill="#2563EB"/>
+    <text x="297.5" y="580" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="600" font-size="5.5" fill="#2563EB">Workspace</text>
+    
+    <!-- Item 3: Reports -->
+    <circle cx="361.5" cy="568" r="2.5" fill="#9CA3AF"/>
+    <text x="361.5" y="580" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="5.5" fill="#9CA3AF">Reports</text>
+  </g>
+
+  <!-- Right Column Callouts -->
+  <!-- Callout 4: App-Like Experience -->
+  <g id="calloutRight1" filter="url(#cardShadow)">
+    <rect x="417" y="250" width="136" height="54" rx="8" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <text x="425" y="266" font-family="'Poppins', sans-serif" font-weight="600" font-size="7.5" fill="#2563EB">App-Like Experience</text>
+    <text x="425" y="278" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#4B5563">Smooth transitions, native-</text>
+    <text x="425" y="287" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#4B5563">feeling touch interactions.</text>
+    <!-- Connector -->
+    <line x1="417" y1="277" x2="399" y2="277" stroke="#2563EB" stroke-width="0.75" stroke-dasharray="2,2"/>
+    <circle cx="417" cy="277" r="1.5" fill="#2563EB"/>
+    <circle cx="398.5" cy="277" r="1.5" fill="#2563EB"/>
+  </g>
+
+  <!-- Callout 5: Responsive Layout -->
+  <g id="calloutRight2" filter="url(#cardShadow)">
+    <rect x="417" y="410" width="136" height="54" rx="8" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <text x="425" y="426" font-family="'Poppins', sans-serif" font-weight="600" font-size="7.5" fill="#2563EB">Responsive Layout</text>
+    <text x="425" y="438" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#4B5563">Automatically adapts views</text>
+    <text x="425" y="447" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#4B5563">to fit any screen size cleanly.</text>
+    <!-- Connector -->
+    <line x1="417" y1="437" x2="399" y2="437" stroke="#2563EB" stroke-width="0.75" stroke-dasharray="2,2"/>
+    <circle cx="417" cy="437" r="1.5" fill="#2563EB"/>
+    <circle cx="398.5" cy="437" r="1.5" fill="#2563EB"/>
+  </g>
+
+  <!-- Visual caption -->
+  <text x="297.5" y="628"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">The mobile PWA dashboard delivers a fully responsive, installation-free experience in any mobile browser.</text>
+
+  <!-- ================================================================ -->
+  <!-- KEY TAKEAWAY — Reused from Components Library (Flexible y=722)    -->
+  <!-- ================================================================ -->
+  <foreignObject x="42" y="722" width="511" height="64" id="takeawayComponent">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="
+      background: #FFFFFF;
+      border: 0.75px solid #E5E7EB;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      border-left: 3px solid #2563EB;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 64px;
+      box-sizing: border-box;
+      height: 100%;
+    ">
+      <div style="
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        font-size: 11px;
+        color: #111827;
+        text-align: center;
+        line-height: 1.4;
+        max-width: 85%;
+      ">
+        A responsive PWA architecture allows recruitment teams to stay productive from anywhere without the friction of app store installations.
+      </div>
+    </div>
+  </foreignObject>
+
+  <!-- ================================================================ -->
+  <!-- FOOTER — Reused from Components Library                          -->
+  <!-- ================================================================ -->
+  <g id="proposalFooter">
+    <text x="297.5" y="822"
+          text-anchor="middle"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="7"
+          fill="#9CA3AF">Prepared exclusively for Suryavanshi Finserv. Confidential and proprietary.</text>
+    <text x="553" y="822"
+          text-anchor="end"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="7"
+          fill="#9CA3AF">10</text>
+  </g>
+
+</svg>
