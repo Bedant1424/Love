@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 595 842"
+     width="210mm" height="297mm">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&amp;family=Inter:wght@400;500&amp;display=swap');
+    </style>
+
+    <!-- Card shadow — consistent with pages 01/02/03 -->
+    <filter id="cardShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
+      <feOffset in="blur" dx="0" dy="1.5" result="offsetBlur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.06" result="color"/>
+      <feComposite in="color" in2="offsetBlur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Takeaway card shadow — lighter -->
+    <filter id="takeawayShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
+      <feOffset in="blur" dx="0" dy="1" result="offsetBlur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.04" result="color"/>
+      <feComposite in="color" in2="offsetBlur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- ================================================================ -->
+  <!-- PAGE BACKGROUND — A4 Portrait, Slate 50                         -->
+  <!-- ================================================================ -->
+  <rect width="595" height="842" fill="#F8FAFC"/>
+
+  <!-- ================================================================ -->
+  <!-- PAGE HEADER — Brand left, page identifier right                  -->
+  <!-- Consistent with pages 02/03                                      -->
+  <!-- ================================================================ -->
+  <text x="42" y="40"
+        font-family="'Poppins', sans-serif"
+        font-weight="600"
+        font-size="8"
+        fill="#2563EB">LeadFlow</text>
+
+  <text x="553" y="36"
+        text-anchor="end"
+        font-family="'Poppins', sans-serif"
+        font-weight="600"
+        font-size="7.5"
+        fill="#111827">Page 04</text>
+  <text x="553" y="46"
+        text-anchor="end"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="7"
+        fill="#9CA3AF">Why Change?</text>
+
+  <line x1="42" y1="52" x2="553" y2="52" stroke="#E5E7EB" stroke-width="0.75"/>
+
+  <!-- ================================================================ -->
+  <!-- HERO SECTION                                                     -->
+  <!-- Poppins Bold 24pt title, Inter 9.5pt subtitle                    -->
+  <!-- ================================================================ -->
+  <text x="42" y="84"
+        font-family="'Poppins', sans-serif"
+        font-weight="700"
+        font-size="24"
+        fill="#111827">Why Change?</text>
+
+  <text x="42" y="102"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="9.5"
+        fill="#6B7280">Unlocking efficiency and visibility in recruitment operations.</text>
+
+  <!-- ================================================================ -->
+  <!-- INTRODUCTION TEXT                                                 -->
+  <!-- Inter Regular 10pt, Slate 900, max ~70 chars/line                 -->
+  <!-- ================================================================ -->
+  <text x="42" y="130"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">Continuing with manual recruitment processes limits team growth and daily operational reach.</text>
+  <text x="42" y="144"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">Centralizing operations creates a transparent environment where every lead is tracked.</text>
+
+  <!-- ================================================================ -->
+  <!-- THE LEADFLOW TRANSFORMATION (Dominant Visual Ecosystem)           -->
+  <!-- White card container, x=42, y=170, width=511, height=260         -->
+  <!-- ================================================================ -->
+  <rect x="42" y="170" width="511" height="260" rx="12"
+        fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"
+        filter="url(#cardShadow)"/>
+
+  <text x="297.5" y="194"
+        text-anchor="middle"
+        font-family="'Poppins', sans-serif"
+        font-weight="600"
+        font-size="11"
+        fill="#111827">The LeadFlow Transformation</text>
+
+  <!-- Columns Section Labels -->
+  <text x="98" y="214"
+        text-anchor="middle"
+        font-family="'Poppins', sans-serif"
+        font-weight="600"
+        font-size="8"
+        fill="#6B7280">FRAGMENTED INPUTS</text>
+
+  <text x="297.5" y="214"
+        text-anchor="middle"
+        font-family="'Poppins', sans-serif"
+        font-weight="600"
+        font-size="8"
+        fill="#6B7280">CENTRAL HUB</text>
+
+  <text x="497" y="214"
+        text-anchor="middle"
+        font-family="'Poppins', sans-serif"
+        font-weight="600"
+        font-size="8"
+        fill="#6B7280">STREAMLINED OUTPUTS</text>
+
+  <!-- LEFT COLUMN: Fragmented Inputs (Excel, WhatsApp, Manual Reports) -->
+  <!-- Excel Sheets -->
+  <rect x="48" y="228" width="100" height="28" rx="6"
+        fill="#FEF2F2" stroke="#FECACA" stroke-width="0.75"/>
+  <text x="98" y="245"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#111827">Excel Sheets</text>
+
+  <!-- WhatsApp Updates -->
+  <rect x="48" y="276" width="100" height="28" rx="6"
+        fill="#FEF2F2" stroke="#FECACA" stroke-width="0.75"/>
+  <text x="98" y="293"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#111827">WhatsApp Updates</text>
+
+  <!-- Manual Reports -->
+  <rect x="48" y="324" width="100" height="28" rx="6"
+        fill="#FEF2F2" stroke="#FECACA" stroke-width="0.75"/>
+  <text x="98" y="341"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#111827">Manual Reports</text>
+
+  <!-- LEFT CONNECTORS (Dashed lines to center) -->
+  <path d="M 148,242 C 200,242 220,290 265.5,290"
+        fill="none" stroke="#EF4444" stroke-width="1.2" stroke-dasharray="3 2" opacity="0.4"/>
+  <line x1="148" y1="290" x2="265.5" y2="290"
+        stroke="#EF4444" stroke-width="1.2" stroke-dasharray="3 2" opacity="0.4"/>
+  <path d="M 148,338 C 200,338 220,290 265.5,290"
+        fill="none" stroke="#EF4444" stroke-width="1.2" stroke-dasharray="3 2" opacity="0.4"/>
+
+  <!-- CENTER ENGINE (LeadFlow Hub Circle) -->
+  <circle cx="297.5" cy="290" r="32" fill="#2563EB"
+          stroke="#EFF6FF" stroke-width="2"/>
+  
+  <!-- Outer aura ring -->
+  <circle cx="297.5" cy="290" r="36" fill="none" stroke="#2563EB" stroke-width="1" opacity="0.15"/>
+
+  <!-- Database Cylinder Icon inside center engine -->
+  <ellipse cx="297.5" cy="281" rx="8" ry="3" fill="none" stroke="#FFFFFF" stroke-width="1.2"/>
+  <path d="M289.5,281 L289.5,288 C289.5,289.5 293,291 297.5,291 C302,291 305.5,289.5 305.5,288 L305.5,281"
+        fill="none" stroke="#FFFFFF" stroke-width="1.2"/>
+  <path d="M289.5,288 L289.5,295 C289.5,296.5 293,298 297.5,298 C302,298 305.5,296.5 305.5,295 L305.5,288"
+        fill="none" stroke="#FFFFFF" stroke-width="1.2"/>
+  <path d="M289.5,295 L289.5,302 C289.5,303.5 293,305 297.5,305 C302,305 305.5,303.5 305.5,302 L305.5,295"
+        fill="none" stroke="#FFFFFF" stroke-width="1.2"/>
+
+  <!-- Label below circle -->
+  <text x="297.5" y="336"
+        text-anchor="middle"
+        font-family="'Poppins', sans-serif" font-weight="600" font-size="8.5" fill="#2563EB">LeadFlow Hub</text>
+
+  <!-- RIGHT CONNECTORS (Solid Blue Lines) -->
+  <path d="M 329.5,290 C 375,290 395,242 447,242"
+        fill="none" stroke="#2563EB" stroke-width="1.5"/>
+  <line x1="329.5" y1="290" x2="447" y2="290"
+        stroke="#2563EB" stroke-width="1.5"/>
+  <path d="M 329.5,290 C 375,290 395,338 447,338"
+        fill="none" stroke="#2563EB" stroke-width="1.5"/>
+
+  <!-- Right Connectors Arrowheads -->
+  <polygon points="443,239 447,242 443,245" fill="#2563EB"/>
+  <polygon points="443,287 447,290 443,293" fill="#2563EB"/>
+  <polygon points="443,335 447,338 443,341" fill="#2563EB"/>
+
+  <!-- RIGHT COLUMN: Streamlined Outputs -->
+  <!-- Auto Assignment -->
+  <rect x="447" y="228" width="100" height="28" rx="6"
+        fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.75"/>
+  <text x="497" y="245"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#111827">Auto Assignment</text>
+
+  <!-- Real-Time Reports -->
+  <rect x="447" y="276" width="100" height="28" rx="6"
+        fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.75"/>
+  <text x="497" y="293"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#111827">Real-Time Reports</text>
+
+  <!-- Analytics Dashboard -->
+  <rect x="447" y="324" width="100" height="28" rx="6"
+        fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.75"/>
+  <text x="497" y="341"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#111827">Analytics Dashboard</text>
+
+  <text x="297.5" y="396"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">LeadFlow consolidates fragmented workflows into a single digital workspace.</text>
+
+  <!-- ================================================================ -->
+  <!-- VALUE PROPOSITIONS (2x2 Grid)                                     -->
+  <!-- Rows at y=446 and y=576. Cards width=243, height=114              -->
+  <!-- ================================================================ -->
+
+  <!-- Card 1: Automated Efficiency -->
+  <rect x="42" y="446" width="243" height="114" rx="8"
+        fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"
+        filter="url(#cardShadow)"/>
+  <!-- Zap Icon -->
+  <path d="M60,461 L65,461 L62,467 L68,467 L59,478 L61,471 L56,471 Z"
+        fill="none" stroke="#2563EB" stroke-width="1.2"
+        stroke-linejoin="round" stroke-linecap="round"/>
+  <text x="56" y="492"
+        font-family="'Poppins', sans-serif" font-weight="600" font-size="9.5" fill="#111827">Automated Efficiency</text>
+  <text x="56" y="508"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">Eliminate manual data transfers. Interns receive</text>
+  <text x="56" y="520"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">assigned leads instantly and start calling without</text>
+  <text x="56" y="532"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">administrative delays.</text>
+
+  <!-- Card 2: Complete Visibility -->
+  <rect x="309" y="446" width="243" height="114" rx="8"
+        fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"
+        filter="url(#cardShadow)"/>
+  <!-- Eye Icon -->
+  <ellipse cx="327" cy="469" rx="8" ry="5" fill="none" stroke="#2563EB" stroke-width="1.2"/>
+  <circle cx="327" cy="469" r="2.2" fill="none" stroke="#2563EB" stroke-width="1.2"/>
+  <text x="323" y="492"
+        font-family="'Poppins', sans-serif" font-weight="600" font-size="9.5" fill="#111827">Complete Visibility</text>
+  <text x="323" y="508"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">Access real-time pipeline status. Managers track</text>
+  <text x="323" y="520"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">progress across all recruitment campaigns without</text>
+  <text x="323" y="532"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">requesting updates.</text>
+
+  <!-- Card 3: Structured Ownership -->
+  <rect x="42" y="576" width="243" height="114" rx="8"
+        fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"
+        filter="url(#cardShadow)"/>
+  <!-- UserCheck Icon -->
+  <circle cx="68" cy="599" r="3.2" fill="none" stroke="#2563EB" stroke-width="1.2"/>
+  <path d="M62,608 C62,604 65,602 68,602 C71,602 74,604 74,608"
+        fill="none" stroke="#2563EB" stroke-width="1.2" stroke-linecap="round"/>
+  <polyline points="76,600 78,602 82,598"
+            fill="none" stroke="#2563EB" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="56" y="622"
+        font-family="'Poppins', sans-serif" font-weight="600" font-size="9.5" fill="#111827">Structured Ownership</text>
+  <text x="56" y="638"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">Assign every lead to a specific owner. Eliminate</text>
+  <text x="56" y="650"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">duplicate lead outreach and ensure clear team</text>
+  <text x="56" y="662"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">accountability.</text>
+
+  <!-- Card 4: Instant Analytics -->
+  <rect x="309" y="576" width="243" height="114" rx="8"
+        fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"
+        filter="url(#cardShadow)"/>
+  <!-- BarChart3 Icon -->
+  <rect x="322" y="602" width="3.5" height="8" rx="0.5" fill="#2563EB"/>
+  <rect x="328" y="598" width="3.5" height="12" rx="0.5" fill="#2563EB"/>
+  <rect x="334" y="594" width="3.5" height="16" rx="0.5" fill="#2563EB"/>
+  <text x="323" y="622"
+        font-family="'Poppins', sans-serif" font-weight="600" font-size="9.5" fill="#111827">Instant Analytics</text>
+  <text x="323" y="638"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">Generate daily performance reports automatically.</text>
+  <text x="323" y="650"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">Monitor key metrics and identify bottlenecks</text>
+  <text x="323" y="662"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">without manual reporting.</text>
+
+  <!-- ================================================================ -->
+  <!-- KEY TAKEAWAY                                                     -->
+  <!-- ================================================================ -->
+  <g filter="url(#takeawayShadow)">
+    <rect x="42" y="722" width="511" height="48" rx="8"
+          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <rect x="42" y="722" width="3" height="48" rx="1.5" fill="#2563EB"/>
+    <text x="297.5" y="750"
+          text-anchor="middle"
+          font-family="'Inter', sans-serif"
+          font-weight="500"
+          font-size="11"
+          fill="#111827">Centralizing recruitment operations is the key to reducing administrative overhead and accelerating hiring cycles.</text>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- FOOTER                                                           -->
+  <!-- ================================================================ -->
+  <text x="297.5" y="822"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="7"
+        fill="#9CA3AF">Prepared exclusively for Suryavanshi Finserv. Confidential and proprietary.</text>
+
+  <text x="553" y="822"
+        text-anchor="end"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="7"
+        fill="#9CA3AF">04</text>
+
+</svg>
