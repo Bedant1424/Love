@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 595 842"
+     width="210mm" height="297mm">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap');
+    </style>
+
+    <!-- Card shadow — consistent with pages 01–13 -->
+    <filter id="cardShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
+      <feOffset in="blur" dx="0" dy="1.5" result="offsetBlur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.06" result="color"/>
+      <feComposite in="color" in2="offsetBlur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Takeaway card shadow — lighter -->
+    <filter id="takeawayShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
+      <feOffset in="blur" dx="0" dy="1" result="offsetBlur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.04" result="color"/>
+      <feComposite in="color" in2="offsetBlur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- ================================================================ -->
+  <!-- PAGE BACKGROUND — A4 Portrait, Slate 50                         -->
+  <!-- ================================================================ -->
+  <rect width="595" height="842" fill="#F8FAFC"/>
+
+  <!-- ================================================================ -->
+  <!-- PAGE HEADER — Reused from Components Library                     -->
+  <!-- ================================================================ -->
+  <g id="proposalHeader">
+    <text x="42" y="40"
+          font-family="'Poppins', sans-serif"
+          font-weight="600"
+          font-size="8"
+          fill="#2563EB">LeadFlow</text>
+    <text x="553" y="36"
+          text-anchor="end"
+          font-family="'Poppins', sans-serif"
+          font-weight="600"
+          font-size="7.5"
+          fill="#111827">Page 14</text>
+    <text x="553" y="46"
+          text-anchor="end"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="7"
+          fill="#9CA3AF">Support &amp; Partnership</text>
+    <line x1="42" y1="52" x2="553" y2="52" stroke="#E5E7EB" stroke-width="0.75"/>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- SECTION HEADER — Reused from Components Library                  -->
+  <!-- ================================================================ -->
+  <g id="proposalSectionHeader">
+    <text x="42" y="84"
+          font-family="'Poppins', sans-serif"
+          font-weight="700"
+          font-size="24"
+          fill="#111827">Support &amp; Long-Term Partnership</text>
+    <text x="42" y="102"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="9.5"
+          fill="#6B7280">Supporting your team from launch through long-term growth.</text>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- INTRODUCTION TEXT                                                 -->
+  <!-- ================================================================ -->
+  <text x="42" y="130"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">LeadFlow is designed for long-term reliability and growth. We provide comprehensive onboarding support,</text>
+  <text x="42" y="144"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">ongoing maintenance, and clear pathways for future feature expansion.</text>
+
+  <!-- ================================================================ -->
+  <!-- DOMINANT VISUAL: LIFECYCLE TIMELINE                              -->
+  <!-- ================================================================ -->
+  <g id="partnershipLifecycle" filter="url(#cardShadow)">
+    <!-- Container Card (y=170 to 330, height 160) -->
+    <rect x="42" y="170" width="511" height="160" rx="12"
+          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+
+    <!-- Title inside card -->
+    <text x="297.5" y="196" text-anchor="middle"
+          font-family="'Poppins', sans-serif" font-weight="600" font-size="11" fill="#111827">Partnership Lifecycle</text>
+
+    <!-- Connecting Timeline Line -->
+    <line x1="64" y1="236" x2="531" y2="236" stroke="#2563EB" stroke-width="1.2"/>
+
+    <!-- 1. Launch (cx=64) -->
+    <g id="stage1">
+      <circle cx="64" cy="236" r="13" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.5"/>
+      <!-- Icon: Rocket Outline -->
+      <g transform="translate(64, 236)" fill="#2563EB">
+        <polygon points="-3,-5 5,0 -3,5"/>
+      </g>
+      <!-- Labels -->
+      <text x="64" y="262" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#111827">Platform</text>
+      <text x="64" y="272" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#111827">Launch</text>
+      <text x="64" y="288" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="400" font-size="6.5" fill="#6B7280">Production live setup.</text>
+    </g>
+
+    <!-- 2. Training (cx=180.75) -->
+    <g id="stage2">
+      <circle cx="180.75" cy="236" r="13" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.5"/>
+      <!-- Icon: Book Outline -->
+      <g transform="translate(180.75, 236)" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M -5,5 L 0,2 L 5,5 L 0,-2 Z"/>
+        <line x1="0" y1="2" x2="0" y2="8"/>
+      </g>
+      <!-- Labels -->
+      <text x="180.75" y="262" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#111827">Team</text>
+      <text x="180.75" y="272" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#111827">Onboarding</text>
+      <text x="180.75" y="288" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="400" font-size="6.5" fill="#6B7280">Manager/intern training.</text>
+    </g>
+
+    <!-- 3. Monitoring (cx=297.5) -->
+    <g id="stage3">
+      <circle cx="297.5" cy="236" r="13" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.5"/>
+      <!-- Icon: Monitoring Heartbeat Line -->
+      <g transform="translate(297.5, 236)" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M -6,0 L -3,0 L -1,-5 L 1,5 L 3,0 L 6,0"/>
+      </g>
+      <!-- Labels -->
+      <text x="297.5" y="262" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#111827">Live</text>
+      <text x="297.5" y="272" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#111827">Monitoring</text>
+      <text x="297.5" y="288" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="400" font-size="6.5" fill="#6B7280">System logs &amp; backups.</text>
+    </g>
+
+    <!-- 4. Support (cx=414.25) -->
+    <g id="stage4">
+      <circle cx="414.25" cy="236" r="13" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.5"/>
+      <!-- Icon: Lifesaver Support Outline -->
+      <g transform="translate(414.25, 236)" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="0" cy="0" r="7"/>
+        <line x1="-5" y1="-5" x2="5" y2="5"/>
+        <line x1="-5" y1="5" x2="5" y2="-5"/>
+      </g>
+      <!-- Labels -->
+      <text x="414.25" y="262" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#111827">Technical</text>
+      <text x="414.25" y="272" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#111827">Support</text>
+      <text x="414.25" y="288" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="400" font-size="6.5" fill="#6B7280">Dedicated bug resolution.</text>
+    </g>
+
+    <!-- 5. Continuous Improvement (cx=531) -->
+    <g id="stage5">
+      <circle cx="531" cy="236" r="13" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.5"/>
+      <!-- Icon: Rotation Arrow Outline -->
+      <g transform="translate(531, 236)" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M -4,-3 A 5,5 0 1,1 -4,3"/>
+        <polyline points="-5,-5 -4,-2 -1,-3"/>
+      </g>
+      <!-- Labels -->
+      <text x="531" y="262" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#111827">Future</text>
+      <text x="531" y="272" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#111827">Growth</text>
+      <text x="531" y="288" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="400" font-size="6.5" fill="#6B7280">Scoping new features.</text>
+    </g>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- TRUST INDICATOR BADGE (Subtle callout below the timeline card)   -->
+  <!-- ================================================================ -->
+  <g id="trustBadge">
+    <rect x="217.5" y="342" width="160" height="16" rx="8" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.5"/>
+    <text x="297.5" y="352.5" text-anchor="middle"
+          font-family="'Poppins', sans-serif" font-weight="600" font-size="6.5" fill="#2563EB">✓ Direct support during onboarding</text>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- SUPPORTING SECTION: LONG-TERM PARTNERSHIP (3 CARDS Shifted down) -->
+  <!-- ================================================================ -->
+
+  <!-- Card 1: Included Support -->
+  <g id="engagementCard1" filter="url(#cardShadow)">
+    <rect x="42" y="370" width="162" height="150" rx="12" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <!-- Icon: Lifesaver -->
+    <g transform="translate(70, 398)" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="0" cy="0" r="8"/>
+      <line x1="-8" y1="0" x2="8" y2="0"/>
+      <line x1="0" y1="-8" x2="0" y2="8"/>
+    </g>
+    <!-- Content -->
+    <text x="60" y="434" font-family="'Poppins', sans-serif" font-weight="600" font-size="10" fill="#111827">Included Support</text>
+    <text x="60" y="454" font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">• 2 Months free support</text>
+    <text x="60" y="466" font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">• Secure data protection</text>
+    <text x="60" y="478" font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">• Minor UI enhancements</text>
+  </g>
+
+  <!-- Card 2: Future Enhancements -->
+  <g id="engagementCard2" filter="url(#cardShadow)">
+    <rect x="216" y="370" width="162" height="150" rx="12" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <!-- Icon: Rocket -->
+    <g transform="translate(244, 398)" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="-3,-5 5,0 -3,5"/>
+      <line x1="-3" y1="0" x2="-7" y2="0"/>
+    </g>
+    <!-- Content -->
+    <text x="234" y="434" font-family="'Poppins', sans-serif" font-weight="600" font-size="10" fill="#111827">Future Enhancements</text>
+    <text x="234" y="454" font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">• WhatsApp Business API</text>
+    <text x="234" y="466" font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">• Scheduled email reports</text>
+    <text x="234" y="478" font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">• Recruiter scorecards</text>
+  </g>
+
+  <!-- Card 3: Dedicated Help -->
+  <g id="engagementCard3" filter="url(#cardShadow)">
+    <rect x="391" y="370" width="162" height="150" rx="12" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <!-- Icon: User Check -->
+    <g transform="translate(419, 398)" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M -5,5 A 4,4 0 0,1 1,5 M -2,-2 A 2.2,2.2 0 1,1 -2,-2.1"/>
+      <path d="M 3,0 L 5.5,2.5 L 9.5,-1.5"/>
+    </g>
+    <!-- Content -->
+    <text x="409" y="434" font-family="'Poppins', sans-serif" font-weight="600" font-size="10" fill="#111827">Dedicated Help</text>
+    <text x="409" y="454" font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">• Single onboarding contact</text>
+    <text x="409" y="466" font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">• Dedicated tech support</text>
+    <text x="409" y="478" font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">• Standard SLA response</text>
+  </g>
+
+  <!-- Visual caption -->
+  <text x="297.5" y="548"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">Structured support keeps your platform reliable as your business grows.</text>
+
+  <!-- ================================================================ -->
+  <!-- KEY TAKEAWAY — Reused from Components Library (Moved upward)      -->
+  <!-- ================================================================ -->
+  <foreignObject x="42" y="640" width="511" height="64" id="takeawayComponent">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="
+      background: #FFFFFF;
+      border: 0.75px solid #E5E7EB;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      border-left: 3px solid #2563EB;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 64px;
+      box-sizing: border-box;
+      height: 100%;
+    ">
+      <div style="
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        font-size: 11px;
+        color: #111827;
+        text-align: center;
+        line-height: 1.4;
+        max-width: 85%;
+      ">
+        A structured partnership ensures your platform remains reliable today while scaling to support future business milestones.
+      </div>
+    </div>
+  </foreignObject>
+
+  <!-- ================================================================ -->
+  <!-- FOOTER — Reused from Components Library                          -->
+  <!-- ================================================================ -->
+  <g id="proposalFooter">
+    <text x="297.5" y="822"
+          text-anchor="middle"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="7"
+          fill="#9CA3AF">Prepared exclusively for Suryavanshi Finserv. Confidential and proprietary.</text>
+    <text x="553" y="822"
+          text-anchor="end"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="7"
+          fill="#9CA3AF">14</text>
+  </g>
+
+</svg>

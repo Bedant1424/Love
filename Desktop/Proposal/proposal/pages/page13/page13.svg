@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 595 842"
+     width="210mm" height="297mm">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&amp;family=Inter:wght@400;500;600;700&amp;display=swap');
+    </style>
+
+    <!-- Card shadow — consistent with pages 01–12 -->
+    <filter id="cardShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
+      <feOffset in="blur" dx="0" dy="1.5" result="offsetBlur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.06" result="color"/>
+      <feComposite in="color" in2="offsetBlur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Takeaway card shadow — lighter -->
+    <filter id="takeawayShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
+      <feOffset in="blur" dx="0" dy="1" result="offsetBlur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.04" result="color"/>
+      <feComposite in="color" in2="offsetBlur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- ================================================================ -->
+  <!-- PAGE BACKGROUND — A4 Portrait, Slate 50                         -->
+  <!-- ================================================================ -->
+  <rect width="595" height="842" fill="#F8FAFC"/>
+
+  <!-- ================================================================ -->
+  <!-- PAGE HEADER — Reused from Components Library                     -->
+  <!-- ================================================================ -->
+  <g id="proposalHeader">
+    <text x="42" y="40"
+          font-family="'Poppins', sans-serif"
+          font-weight="600"
+          font-size="8"
+          fill="#2563EB">LeadFlow</text>
+    <text x="553" y="36"
+          text-anchor="end"
+          font-family="'Poppins', sans-serif"
+          font-weight="600"
+          font-size="7.5"
+          fill="#111827">Page 13</text>
+    <text x="553" y="46"
+          text-anchor="end"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="7"
+          fill="#9CA3AF">Return on Investment</text>
+    <line x1="42" y1="52" x2="553" y2="52" stroke="#E5E7EB" stroke-width="0.75"/>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- SECTION HEADER — Reused from Components Library                  -->
+  <!-- ================================================================ -->
+  <g id="proposalSectionHeader">
+    <text x="42" y="84"
+          font-family="'Poppins', sans-serif"
+          font-weight="700"
+          font-size="24"
+          fill="#111827">Return on Investment</text>
+    <text x="42" y="102"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="9.5"
+          fill="#6B7280">Replacing manual friction with optimized operational value.</text>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- INTRODUCTION TEXT                                                 -->
+  <!-- ================================================================ -->
+  <text x="42" y="130"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">Compare your current recruitment process with the streamlined workflow enabled by LeadFlow.</text>
+
+  <!-- ================================================================ -->
+  <!-- DOMINANT VISUAL: TWO-COLUMN COMPARISON (Height increased 20%)    -->
+  <!-- ================================================================ -->
+  <g id="workflowComparison" filter="url(#cardShadow)">
+    <!-- Comparison Container Card (y=180 to 400, height 220) -->
+    <rect x="42" y="180" width="511" height="220" rx="12"
+          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+
+    <!-- Section Title -->
+    <text x="297.5" y="202"
+          text-anchor="middle"
+          font-family="'Poppins', sans-serif" font-weight="600" font-size="11" fill="#111827">Workflow Comparison</text>
+
+    <!-- Left Column (Current Manual Process) -->
+    <g id="currentProcess">
+      <text x="64" y="224"
+            font-family="'Poppins', sans-serif" font-weight="600" font-size="9.5" fill="#EF4444">Current Manual Process</text>
+      
+      <!-- Bullet 1: Spreadsheet Icon + Text -->
+      <g transform="translate(64, 253)">
+        <rect x="-4" y="-5" width="8" height="10" rx="1" stroke="#EF4444" stroke-width="1.1" fill="none"/>
+        <line x1="-4" y1="-1" x2="4" y2="-1" stroke="#EF4444" stroke-width="1"/>
+        <line x1="-1" y1="-5" x2="-1" y2="5" stroke="#EF4444" stroke-width="1"/>
+      </g>
+      <text x="78" y="256" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#4B5563">Manual spreadsheets and copy-paste.</text>
+      
+      <!-- Bullet 2: Chat Icon + Text -->
+      <g transform="translate(64, 277)">
+        <rect x="-5" y="-4" width="10" height="8" rx="1" stroke="#EF4444" stroke-width="1.1" fill="none"/>
+        <path d="M -3,4 L -5,7 L -1,4" stroke="#EF4444" stroke-width="1.1" fill="none"/>
+      </g>
+      <text x="78" y="280" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#4B5563">WhatsApp updates and check-ins.</text>
+      
+      <!-- Bullet 3: Warning Icon + Text -->
+      <g transform="translate(64, 301)">
+        <polygon points="0,-5 -5,4 5,4" stroke="#EF4444" stroke-width="1.1" fill="none" stroke-linejoin="round"/>
+        <line x1="0" y1="-2" x2="0" y2="1" stroke="#EF4444" stroke-width="1.1"/>
+        <circle cx="0" cy="3" r="0.5" fill="#EF4444"/>
+      </g>
+      <text x="78" y="304" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#4B5563">Untracked leaks and duplicate calls.</text>
+    </g>
+
+    <!-- Right Column (LeadFlow Workflow) -->
+    <g id="leadflowWorkflow">
+      <text x="316" y="224"
+            font-family="'Poppins', sans-serif" font-weight="600" font-size="9.5" fill="#2563EB">LeadFlow Workflow</text>
+      
+      <!-- Bullet 1: Database Icon + Text -->
+      <g transform="translate(316, 253)">
+        <ellipse cx="0" cy="-3" rx="5" ry="2" stroke="#2563EB" stroke-width="1.1" fill="none"/>
+        <path d="M -5,-3 L -5,1 A 5,2 0 0,0 5,1 L 5,-3" stroke="#2563EB" stroke-width="1.1" fill="none"/>
+        <path d="M -5,1 L -5,5 A 5,2 0 0,0 5,5 L 5,1" stroke="#2563EB" stroke-width="1.1" fill="none"/>
+      </g>
+      <text x="330" y="256" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#4B5563">Centralized database, automatic checks.</text>
+      
+      <!-- Bullet 2: Dashboard Icon + Text -->
+      <g transform="translate(316, 277)">
+        <rect x="-5" y="-5" width="10" height="10" rx="1.5" stroke="#2563EB" stroke-width="1.1" fill="none"/>
+        <line x1="-5" y1="0" x2="5" y2="0" stroke="#2563EB" stroke-width="1.1"/>
+        <line x1="0" y1="0" x2="0" y2="5" stroke="#2563EB" stroke-width="1.1"/>
+      </g>
+      <text x="330" y="280" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#4B5563">Real-time sync and live dashboards.</text>
+      
+      <!-- Bullet 3: Check Circle Icon + Text -->
+      <g transform="translate(316, 301)">
+        <circle cx="0" cy="0" r="5" stroke="#2563EB" stroke-width="1.1" fill="none"/>
+        <path d="M -2,0 L -0.5,1.5 L 2,-1.5" stroke="#2563EB" stroke-width="1.1" fill="none"/>
+      </g>
+      <text x="330" y="304" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#4B5563">Direct wa.me one-click outreach.</text>
+    </g>
+
+    <!-- Vertical dashed divider -->
+    <line x1="297.5" y1="218" x2="297.5" y2="380"
+          stroke="#E5E7EB" stroke-width="0.75" stroke-dasharray="4 3"/>
+
+    <!-- Central Transition Element (Strengthened & larger) -->
+    <g opacity="0.85">
+      <!-- Glow rings -->
+      <circle cx="297.5" cy="290" r="24" fill="none" stroke="#2563EB" stroke-width="2" opacity="0.18"/>
+      <circle cx="297.5" cy="290" r="21" fill="none" stroke="#2563EB" stroke-width="1" opacity="0.1"/>
+      <!-- Main circle -->
+      <circle cx="297.5" cy="290" r="18" fill="#EFF6FF" stroke="#2563EB" stroke-width="1.5"/>
+      <!-- Strong arrow -->
+      <g stroke="#2563EB" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M 290,290 L 305,290"/>
+        <path d="M 299,284 L 305,290 L 299,296"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- SUPPORTING SECTION: OUTCOME CARDS (5 CARDS GRID)                 -->
+  <!-- ================================================================ -->
+
+  <!-- Row 1 Outcomes -->
+  <!-- Card 1: Reduced Manual Work -->
+  <g id="outcomeCard1" filter="url(#cardShadow)">
+    <rect x="42" y="416" width="162" height="60" rx="8" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <g transform="translate(60, 436)" stroke="#10B981" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="0" cy="0" r="6"/>
+      <path d="M -2,0 L -0.5,1.5 L 2,-1.5"/>
+    </g>
+    <text x="74" y="437" font-family="'Poppins', sans-serif" font-weight="600" font-size="8.5" fill="#111827">Reduced Manual Work</text>
+    <text x="74" y="450" font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#6B7280"><tspan font-weight="600" fill="#111827">Auto-generated</tspan> outreach tasks.</text>
+  </g>
+
+  <!-- Card 2: Faster Lead Assignment -->
+  <g id="outcomeCard2" filter="url(#cardShadow)">
+    <rect x="216" y="416" width="162" height="60" rx="8" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <g transform="translate(234, 436)" stroke="#10B981" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="0" cy="0" r="6"/>
+      <path d="M -2,0 L -0.5,1.5 L 2,-1.5"/>
+    </g>
+    <text x="248" y="437" font-family="'Poppins', sans-serif" font-weight="600" font-size="8.5" fill="#111827">Faster Lead Assignment</text>
+    <text x="248" y="450" font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#6B7280"><tspan font-weight="600" fill="#111827">Leads instantly routed</tspan> to interns.</text>
+  </g>
+
+  <!-- Card 3: Better Accountability -->
+  <g id="outcomeCard3" filter="url(#cardShadow)">
+    <rect x="391" y="416" width="162" height="60" rx="8" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <g transform="translate(409, 436)" stroke="#10B981" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="0" cy="0" r="6"/>
+      <path d="M -2,0 L -0.5,1.5 L 2,-1.5"/>
+    </g>
+    <text x="423" y="437" font-family="'Poppins', sans-serif" font-weight="600" font-size="8.5" fill="#111827">Better Accountability</text>
+    <text x="423" y="450" font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#6B7280"><tspan font-weight="600" fill="#111827">No duplicate calls</tspan> or leaks.</text>
+  </g>
+
+  <!-- Row 2 Outcomes -->
+  <!-- Card 4: Real-Time Visibility -->
+  <g id="outcomeCard4" filter="url(#cardShadow)">
+    <rect x="129" y="488" width="162" height="60" rx="8" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <g transform="translate(147, 508)" stroke="#10B981" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="0" cy="0" r="6"/>
+      <path d="M -2,0 L -0.5,1.5 L 2,-1.5"/>
+    </g>
+    <text x="161" y="509" font-family="'Poppins', sans-serif" font-weight="600" font-size="8.5" fill="#111827">Real-Time Visibility</text>
+    <text x="161" y="522" font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#6B7280"><tspan font-weight="600" fill="#111827">Live contact rates</tspan> visible.</text>
+  </g>
+
+  <!-- Card 5: Predictable Operations -->
+  <g id="outcomeCard5" filter="url(#cardShadow)">
+    <rect x="303" y="488" width="162" height="60" rx="8" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <g transform="translate(321, 508)" stroke="#10B981" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="0" cy="0" r="6"/>
+      <path d="M -2,0 L -0.5,1.5 L 2,-1.5"/>
+    </g>
+    <text x="335" y="509" font-family="'Poppins', sans-serif" font-weight="600" font-size="8.5" fill="#111827">Predictable Operations</text>
+    <text x="335" y="522" font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#6B7280"><tspan font-weight="600" fill="#111827">Standardized timelines</tspan> &amp; setups.</text>
+  </g>
+
+  <!-- Visual caption -->
+  <text x="297.5" y="576"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">LeadFlow replaces manual recruitment with one connected operational workflow.</text>
+
+  <!-- ================================================================ -->
+  <!-- KEY TAKEAWAY — Reused from Components Library (Moved upward)      -->
+  <!-- ================================================================ -->
+  <foreignObject x="42" y="640" width="511" height="64" id="takeawayComponent">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="
+      background: #FFFFFF;
+      border: 0.75px solid #E5E7EB;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      border-left: 3px solid #2563EB;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 64px;
+      box-sizing: border-box;
+      height: 100%;
+    ">
+      <div style="
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        font-size: 11px;
+        color: #111827;
+        text-align: center;
+        line-height: 1.4;
+        max-width: 85%;
+      ">
+        Transitioning to a centralized workflow replaces operational friction with clear visibility, ensuring a direct path to positive business return.
+      </div>
+    </div>
+  </foreignObject>
+
+  <!-- ================================================================ -->
+  <!-- FOOTER — Reused from Components Library                          -->
+  <!-- ================================================================ -->
+  <g id="proposalFooter">
+    <text x="297.5" y="822"
+          text-anchor="middle"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="7"
+          fill="#9CA3AF">Prepared exclusively for Suryavanshi Finserv. Confidential and proprietary.</text>
+    <text x="553" y="822"
+          text-anchor="end"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="7"
+          fill="#9CA3AF">13</text>
+  </g>
+
+</svg>

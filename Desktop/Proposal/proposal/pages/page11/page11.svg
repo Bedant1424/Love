@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 595 842"
+     width="210mm" height="297mm">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&amp;family=Inter:wght@400;500;600&amp;display=swap');
+    </style>
+
+    <!-- Card shadow — consistent with pages 01–10 -->
+    <filter id="cardShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
+      <feOffset in="blur" dx="0" dy="1.5" result="offsetBlur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.06" result="color"/>
+      <feComposite in="color" in2="offsetBlur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Takeaway card shadow — lighter -->
+    <filter id="takeawayShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
+      <feOffset in="blur" dx="0" dy="1" result="offsetBlur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.04" result="color"/>
+      <feComposite in="color" in2="offsetBlur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- ================================================================ -->
+  <!-- PAGE BACKGROUND — A4 Portrait, Slate 50                         -->
+  <!-- ================================================================ -->
+  <rect width="595" height="842" fill="#F8FAFC"/>
+
+  <!-- ================================================================ -->
+  <!-- PAGE HEADER — Reused from Components Library                     -->
+  <!-- ================================================================ -->
+  <g id="proposalHeader">
+    <text x="42" y="40"
+          font-family="'Poppins', sans-serif"
+          font-weight="600"
+          font-size="8"
+          fill="#2563EB">LeadFlow</text>
+    <text x="553" y="36"
+          text-anchor="end"
+          font-family="'Poppins', sans-serif"
+          font-weight="600"
+          font-size="7.5"
+          fill="#111827">Page 11</text>
+    <text x="553" y="46"
+          text-anchor="end"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="7"
+          fill="#9CA3AF">Implementation Journey</text>
+    <line x1="42" y1="52" x2="553" y2="52" stroke="#E5E7EB" stroke-width="0.75"/>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- SECTION HEADER — Reused from Components Library                  -->
+  <!-- ================================================================ -->
+  <g id="proposalSectionHeader">
+    <text x="42" y="84"
+          font-family="'Poppins', sans-serif"
+          font-weight="700"
+          font-size="24"
+          fill="#111827">Implementation Journey</text>
+    <text x="42" y="102"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="9.5"
+          fill="#6B7280">A clear and structured path to recruitment productivity.</text>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- INTRODUCTION TEXT                                                 -->
+  <!-- ================================================================ -->
+  <text x="42" y="130"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">LeadFlow follows a structured implementation process designed to minimize disruption while enabling</text>
+  <text x="42" y="144"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">teams to become productive quickly.</text>
+
+  <!-- ================================================================ -->
+  <!-- DOMINANT VISUAL: IMPLEMENTATION ROADMAP                         -->
+  <!-- ================================================================ -->
+  <g id="implementationRoadmap" filter="url(#cardShadow)">
+    <!-- Container Card -->
+    <rect x="42" y="170" width="511" height="190" rx="12"
+          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+
+    <!-- Connecting Timeline Line -->
+    <line x1="64" y1="236" x2="531" y2="236" stroke="#2563EB" stroke-width="1.2"/>
+
+    <!-- 1. Discovery -->
+    <g id="stage1">
+      <circle cx="64" cy="236" r="13" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.5"/>
+      <!-- Icon outline: Search / Discovery -->
+      <g transform="translate(64, 236)" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="-1" cy="-1" r="3"/>
+        <line x1="1.1" y1="1.1" x2="4.5" y2="4.5"/>
+      </g>
+      <!-- Label -->
+      <text x="64" y="266" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#111827">Business</text>
+      <text x="64" y="276" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#111827">Discovery</text>
+      <text x="64" y="292" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="400" font-size="6.5" fill="#6B7280">Audit current flow.</text>
+    </g>
+
+    <!-- 2. Workspace Config -->
+    <g id="stage2">
+      <circle cx="157.4" cy="236" r="13" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.5"/>
+      <!-- Icon outline: Configuration sliders -->
+      <g transform="translate(157.4, 236)" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="-3" y1="-6" x2="-3" y2="6"/>
+        <line x1="3" y1="-6" x2="3" y2="6"/>
+        <circle cx="-3" cy="2" r="1.5" fill="#2563EB"/>
+        <circle cx="3" cy="-2" r="1.5" fill="#2563EB"/>
+      </g>
+      <!-- Label -->
+      <text x="157.4" y="266" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#111827">Workspace</text>
+      <text x="157.4" y="276" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#111827">Config</text>
+      <text x="157.4" y="292" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="400" font-size="6.5" fill="#6B7280">Tailor system fields.</text>
+    </g>
+
+    <!-- 3. Lead Import -->
+    <g id="stage3">
+      <circle cx="250.8" cy="236" r="13" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.5"/>
+      <!-- Icon outline: Database / Upload -->
+      <g transform="translate(250.8, 236)" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M -4,2 L 0,-2 L 4,2 M 0,-2 L 0,5"/>
+      </g>
+      <!-- Label -->
+      <text x="250.8" y="266" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#111827">Lead</text>
+      <text x="250.8" y="276" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#111827">Import</text>
+      <text x="250.8" y="292" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="400" font-size="6.5" fill="#6B7280">Migrate Excel leads.</text>
+    </g>
+
+    <!-- 4. Team Training -->
+    <g id="stage4">
+      <circle cx="344.2" cy="236" r="13" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.5"/>
+      <!-- Icon outline: Users onboarding / training -->
+      <g transform="translate(344.2, 236)" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M -5,5 A 4,4 0 0,1 1,5 M -2,-2 A 2.2,2.2 0 1,1 -2,-2.1"/>
+        <path d="M 3,0 L 5.5,2.5 L 9.5,-1.5"/>
+      </g>
+      <!-- Label -->
+      <text x="344.2" y="266" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#111827">Team</text>
+      <text x="344.2" y="276" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#111827">Training</text>
+      <text x="344.2" y="292" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="400" font-size="6.5" fill="#6B7280">Onboard recruiters.</text>
+    </g>
+
+    <!-- 5. Go Live -->
+    <g id="stage5">
+      <circle cx="437.6" cy="236" r="13" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.5"/>
+      <!-- Icon: Play / Rocket -->
+      <g transform="translate(437.6, 236)" fill="#2563EB">
+        <polygon points="-3,-5 5,0 -3,5"/>
+      </g>
+      <!-- Label -->
+      <text x="437.6" y="271" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#111827">Go Live</text>
+      <text x="437.6" y="292" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="400" font-size="6.5" fill="#6B7280">Activate live sync.</text>
+    </g>
+
+    <!-- 6. Continuous Support -->
+    <g id="stage6">
+      <circle cx="531" cy="236" r="13" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.5"/>
+      <!-- Icon: Support Heart outline -->
+      <g transform="translate(531, 236)" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M 0,4.5 C -3,2.5 -5,0 -5,-2 C -5,-4.5 -2.5,-4.5 0,-2.5 C 2.5,-4.5 5,-4.5 5,-2 C 5,0 3,2.5 0,4.5 Z"/>
+      </g>
+      <!-- Label -->
+      <text x="531" y="266" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#111827">Continuous</text>
+      <text x="531" y="276" text-anchor="middle" font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#111827">Support</text>
+      <text x="531" y="292" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="400" font-size="6.5" fill="#6B7280">Dedicated helpdesk.</text>
+    </g>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- SUPPORTING SECTION: ROLLOUT PRINCIPLES (3 CARDS)                 -->
+  <!-- ================================================================ -->
+
+  <!-- Card 1: Rapid Deployment -->
+  <g id="principleCard1" filter="url(#cardShadow)">
+    <rect x="42" y="388" width="162" height="130" rx="12" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <!-- Icon outline: Clock -->
+    <g transform="translate(70, 416)" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="0" cy="0" r="8"/>
+      <path d="M 0,-5 L 0,0 L 3,0"/>
+    </g>
+    <!-- Content -->
+    <text x="60" y="452" font-family="'Poppins', sans-serif" font-weight="600" font-size="10" fill="#111827">Rapid Deployment</text>
+    <text x="60" y="472" font-family="'Inter', sans-serif" font-weight="400" font-size="8.5" fill="#6B7280">Configured within days,</text>
+    <text x="60" y="484" font-family="'Inter', sans-serif" font-weight="400" font-size="8.5" fill="#6B7280">not months.</text>
+  </g>
+
+  <!-- Card 2: Secure Migration -->
+  <g id="principleCard2" filter="url(#cardShadow)">
+    <rect x="216" y="388" width="162" height="130" rx="12" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <!-- Icon outline: Shield Check -->
+    <g transform="translate(244, 416)" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M -6,-6 L 0,-9 L 6,-6 L 6,0 C 6,4 0,7 0,7 C 0,7 -6,4 -6,0 Z"/>
+      <path d="M -2.5,0 L -0.5,2 L 3,-2"/>
+    </g>
+    <!-- Content -->
+    <text x="234" y="452" font-family="'Poppins', sans-serif" font-weight="600" font-size="10" fill="#111827">Secure Migration</text>
+    <text x="234" y="472" font-family="'Inter', sans-serif" font-weight="400" font-size="8.5" fill="#6B7280">Existing Excel sheets can</text>
+    <text x="234" y="484" font-family="'Inter', sans-serif" font-weight="400" font-size="8.5" fill="#6B7280">be imported safely.</text>
+  </g>
+
+  <!-- Card 3: Guided Adoption -->
+  <g id="principleCard3" filter="url(#cardShadow)">
+    <rect x="391" y="388" width="162" height="130" rx="12" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <!-- Icon outline: User Check -->
+    <g transform="translate(419, 416)" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M -5,5 A 4,4 0 0,1 1,5 M -2,-2 A 2.2,2.2 0 1,1 -2,-2.1"/>
+      <path d="M 3,0 L 5.5,2.5 L 9.5,-1.5"/>
+    </g>
+    <!-- Content -->
+    <text x="409" y="452" font-family="'Poppins', sans-serif" font-weight="600" font-size="10" fill="#111827">Guided Adoption</text>
+    <text x="409" y="472" font-family="'Inter', sans-serif" font-weight="400" font-size="8.5" fill="#6B7280">Structured onboarding for</text>
+    <text x="409" y="484" font-family="'Inter', sans-serif" font-weight="400" font-size="8.5" fill="#6B7280">managers and interns.</text>
+  </g>
+
+  <!-- Visual caption -->
+  <text x="297.5" y="546"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">A structured rollout ensures every stage of implementation is predictable, measurable, and supported.</text>
+
+  <!-- ================================================================ -->
+  <!-- KEY TAKEAWAY — Reused from Components Library (Flexible y=722)    -->
+  <!-- ================================================================ -->
+  <foreignObject x="42" y="722" width="511" height="64" id="takeawayComponent">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="
+      background: #FFFFFF;
+      border: 0.75px solid #E5E7EB;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      border-left: 3px solid #2563EB;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 64px;
+      box-sizing: border-box;
+      height: 100%;
+    ">
+      <div style="
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        font-size: 11px;
+        color: #111827;
+        text-align: center;
+        line-height: 1.4;
+        max-width: 85%;
+      ">
+        A clear implementation plan reduces operational risk and helps teams begin using LeadFlow with confidence.
+      </div>
+    </div>
+  </foreignObject>
+
+  <!-- ================================================================ -->
+  <!-- FOOTER — Reused from Components Library                          -->
+  <!-- ================================================================ -->
+  <g id="proposalFooter">
+    <text x="297.5" y="822"
+          text-anchor="middle"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="7"
+          fill="#9CA3AF">Prepared exclusively for Suryavanshi Finserv. Confidential and proprietary.</text>
+    <text x="553" y="822"
+          text-anchor="end"
+          font-family="'Inter', sans-serif"
+          font-weight="400"
+          font-size="7"
+          fill="#9CA3AF">11</text>
+  </g>
+
+</svg>

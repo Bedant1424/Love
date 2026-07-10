@@ -19,6 +19,18 @@
       </feMerge>
     </filter>
 
+    <!-- Smartphone custom shadow — lighter and larger blur radius -->
+    <filter id="phoneShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="blur"/>
+      <feOffset in="blur" dx="0" dy="2" result="offsetBlur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.04" result="color"/>
+      <feComposite in="color" in2="offsetBlur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
     <!-- Takeaway card shadow — lighter -->
     <filter id="takeawayShadow" x="-5%" y="-5%" width="110%" height="115%">
       <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
@@ -84,12 +96,17 @@
         font-family="'Inter', sans-serif"
         font-weight="400"
         font-size="10"
-        fill="#111827">LeadFlow is built as a Progressive Web App (PWA) that loads instantly in any mobile browser. It requires</text>
-  <text x="42" y="144"
+        fill="#111827">LeadFlow works on any modern smartphone without requiring an app download.</text>
+  <text x="42" y="148"
         font-family="'Inter', sans-serif"
         font-weight="400"
         font-size="10"
-        fill="#111827">no App Store download or manual installation, ensuring seamless onboarding for recruitment teams.</text>
+        fill="#111827">Built using Progressive Web App technology, it delivers a fast, responsive experience while remaining</text>
+  <text x="42" y="162"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">accessible directly from the browser.</text>
 
   <!-- ================================================================ -->
   <!-- SYSTEM VISUAL — MOBILE DEVICE FRAME & FEATURES                 -->
@@ -102,10 +119,10 @@
     <text x="50" y="226" font-family="'Poppins', sans-serif" font-weight="600" font-size="7.5" fill="#2563EB">Browser-Based Access</text>
     <text x="50" y="238" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#4B5563">Runs in Safari, Chrome, or</text>
     <text x="50" y="247" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#4B5563">any mobile browser directly.</text>
-    <!-- Connector -->
-    <line x1="178" y1="237" x2="196" y2="237" stroke="#2563EB" stroke-width="0.75" stroke-dasharray="2,2"/>
-    <circle cx="178" cy="237" r="1.5" fill="#2563EB"/>
-    <circle cx="196.5" cy="237" r="1.5" fill="#2563EB"/>
+    <!-- Connector (reduced weight/opacity) -->
+    <line x1="178" y1="237" x2="196" y2="237" stroke="#2563EB" stroke-width="0.5" stroke-opacity="0.6" stroke-dasharray="2,2"/>
+    <circle cx="178" cy="237" r="1.5" fill="#2563EB" fill-opacity="0.6"/>
+    <circle cx="196.5" cy="237" r="1.5" fill="#2563EB" fill-opacity="0.6"/>
   </g>
 
   <!-- Callout 2: Zero Installation -->
@@ -114,10 +131,10 @@
     <text x="50" y="361" font-family="'Poppins', sans-serif" font-weight="600" font-size="7.5" fill="#2563EB">Zero Installation</text>
     <text x="50" y="373" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#4B5563">No App Store download.</text>
     <text x="50" y="382" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#4B5563">Instant access via single URL.</text>
-    <!-- Connector -->
-    <line x1="178" y1="372" x2="196" y2="372" stroke="#2563EB" stroke-width="0.75" stroke-dasharray="2,2"/>
-    <circle cx="178" cy="372" r="1.5" fill="#2563EB"/>
-    <circle cx="196.5" cy="372" r="1.5" fill="#2563EB"/>
+    <!-- Connector (reduced weight/opacity) -->
+    <line x1="178" y1="372" x2="196" y2="372" stroke="#2563EB" stroke-width="0.5" stroke-opacity="0.6" stroke-dasharray="2,2"/>
+    <circle cx="178" cy="372" r="1.5" fill="#2563EB" fill-opacity="0.6"/>
+    <circle cx="196.5" cy="372" r="1.5" fill="#2563EB" fill-opacity="0.6"/>
   </g>
 
   <!-- Callout 3: Fast Performance -->
@@ -126,14 +143,15 @@
     <text x="50" y="496" font-family="'Poppins', sans-serif" font-weight="600" font-size="7.5" fill="#2563EB">Fast Performance</text>
     <text x="50" y="508" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#4B5563">Lightweight and optimized for</text>
     <text x="50" y="517" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#4B5563">swift loads on cellular data.</text>
-    <!-- Connector -->
-    <line x1="178" y1="507" x2="196" y2="507" stroke="#2563EB" stroke-width="0.75" stroke-dasharray="2,2"/>
-    <circle cx="178" cy="507" r="1.5" fill="#2563EB"/>
-    <circle cx="196.5" cy="507" r="1.5" fill="#2563EB"/>
+    <!-- Connector (reduced weight/opacity) -->
+    <line x1="178" y1="507" x2="196" y2="507" stroke="#2563EB" stroke-width="0.5" stroke-opacity="0.6" stroke-dasharray="2,2"/>
+    <circle cx="178" cy="507" r="1.5" fill="#2563EB" fill-opacity="0.6"/>
+    <circle cx="196.5" cy="507" r="1.5" fill="#2563EB" fill-opacity="0.6"/>
   </g>
 
   <!-- Center Column: Smartphone Mockup (Dominant Visual) -->
-  <g id="phoneMockup" filter="url(#cardShadow)">
+  <!-- Uses custom phoneShadow filter for a lighter floating look -->
+  <g id="phoneMockup" filter="url(#phoneShadow)">
     <!-- Phone Outer Body Frame -->
     <rect x="196.5" y="200" width="202" height="400" rx="24"
           fill="#0F172A" stroke="#1E293B" stroke-width="2"/>
@@ -167,9 +185,9 @@
     <!-- Header divider -->
     <line x1="201.5" y1="238" x2="393.5" y2="238" stroke="#E5E7EB" stroke-width="0.5"/>
 
-    <!-- Workspace Greeting -->
-    <text x="211.5" y="252" font-family="'Poppins', sans-serif" font-weight="600" font-size="8.5" fill="#111827">Hello, Rahul</text>
-    <text x="211.5" y="260" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#6B7280">Today's calling queue</text>
+    <!-- Workspace Greeting (Name-free, Good Morning / Today's Queue) -->
+    <text x="211.5" y="252" font-family="'Poppins', sans-serif" font-weight="600" font-size="8.5" fill="#111827">Good Morning</text>
+    <text x="211.5" y="260" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#6B7280">Today's Queue</text>
 
     <!-- Quick Action Shortcut Buttons -->
     <!-- Start Queue (Blue) -->
@@ -279,10 +297,10 @@
     <text x="425" y="266" font-family="'Poppins', sans-serif" font-weight="600" font-size="7.5" fill="#2563EB">App-Like Experience</text>
     <text x="425" y="278" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#4B5563">Smooth transitions, native-</text>
     <text x="425" y="287" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#4B5563">feeling touch interactions.</text>
-    <!-- Connector -->
-    <line x1="417" y1="277" x2="399" y2="277" stroke="#2563EB" stroke-width="0.75" stroke-dasharray="2,2"/>
-    <circle cx="417" cy="277" r="1.5" fill="#2563EB"/>
-    <circle cx="398.5" cy="277" r="1.5" fill="#2563EB"/>
+    <!-- Connector (reduced weight/opacity) -->
+    <line x1="417" y1="277" x2="399" y2="277" stroke="#2563EB" stroke-width="0.5" stroke-opacity="0.6" stroke-dasharray="2,2"/>
+    <circle cx="417" cy="277" r="1.5" fill="#2563EB" fill-opacity="0.6"/>
+    <circle cx="398.5" cy="277" r="1.5" fill="#2563EB" fill-opacity="0.6"/>
   </g>
 
   <!-- Callout 5: Responsive Layout -->
@@ -291,16 +309,16 @@
     <text x="425" y="426" font-family="'Poppins', sans-serif" font-weight="600" font-size="7.5" fill="#2563EB">Responsive Layout</text>
     <text x="425" y="438" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#4B5563">Automatically adapts views</text>
     <text x="425" y="447" font-family="'Inter', sans-serif" font-weight="400" font-size="6" fill="#4B5563">to fit any screen size cleanly.</text>
-    <!-- Connector -->
-    <line x1="417" y1="437" x2="399" y2="437" stroke="#2563EB" stroke-width="0.75" stroke-dasharray="2,2"/>
-    <circle cx="417" cy="437" r="1.5" fill="#2563EB"/>
-    <circle cx="398.5" cy="437" r="1.5" fill="#2563EB"/>
+    <!-- Connector (reduced weight/opacity) -->
+    <line x1="417" y1="437" x2="399" y2="437" stroke="#2563EB" stroke-width="0.5" stroke-opacity="0.6" stroke-dasharray="2,2"/>
+    <circle cx="417" cy="437" r="1.5" fill="#2563EB" fill-opacity="0.6"/>
+    <circle cx="398.5" cy="437" r="1.5" fill="#2563EB" fill-opacity="0.6"/>
   </g>
 
   <!-- Visual caption -->
   <text x="297.5" y="628"
         text-anchor="middle"
-        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">The mobile PWA dashboard delivers a fully responsive, installation-free experience in any mobile browser.</text>
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">LeadFlow delivers the complete recruitment workspace through any modern mobile browser.</text>
 
   <!-- ================================================================ -->
   <!-- KEY TAKEAWAY — Reused from Components Library (Flexible y=722)    -->
