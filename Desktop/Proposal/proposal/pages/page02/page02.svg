@@ -1,0 +1,439 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 595 842"
+     width="210mm" height="297mm">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&amp;family=Inter:wght@400;500&amp;display=swap');
+    </style>
+
+    <!-- Card shadow — consistent with page01 -->
+    <filter id="cardShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur"/>
+      <feOffset in="blur" dx="0" dy="1.5" result="offsetBlur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.06" result="color"/>
+      <feComposite in="color" in2="offsetBlur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Takeaway card shadow — lighter -->
+    <filter id="takeawayShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
+      <feOffset in="blur" dx="0" dy="1" result="offsetBlur"/>
+      <feFlood flood-color="#000000" flood-opacity="0.04" result="color"/>
+      <feComposite in="color" in2="offsetBlur" operator="in" result="shadow"/>
+      <feMerge>
+        <feMergeNode in="shadow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- ================================================================ -->
+  <!-- PAGE BACKGROUND — A4 Portrait, Slate 50                         -->
+  <!-- 595pt × 842pt (210mm × 297mm)                                   -->
+  <!-- ================================================================ -->
+  <rect width="595" height="842" fill="#F8FAFC"/>
+
+  <!-- ================================================================ -->
+  <!-- PAGE HEADER — Brand left, page identifier right                  -->
+  <!-- Refinement 6: Two-line page header top-right                     -->
+  <!-- ================================================================ -->
+  <text x="42" y="40"
+        font-family="'Poppins', sans-serif"
+        font-weight="600"
+        font-size="8"
+        fill="#2563EB">LeadFlow</text>
+
+  <!-- Top-right: Page number + section label -->
+  <text x="553" y="36"
+        text-anchor="end"
+        font-family="'Poppins', sans-serif"
+        font-weight="600"
+        font-size="7.5"
+        fill="#111827">Page 02</text>
+  <text x="553" y="46"
+        text-anchor="end"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="7"
+        fill="#9CA3AF">Executive Summary</text>
+
+  <line x1="42" y1="52" x2="553" y2="52" stroke="#E5E7EB" stroke-width="0.75"/>
+
+  <!-- ================================================================ -->
+  <!-- HERO SECTION                                                     -->
+  <!-- Poppins Bold 24pt title, Inter 9.5pt subtitle                    -->
+  <!-- Left-aligned at x=42                                             -->
+  <!-- ================================================================ -->
+  <text x="42" y="84"
+        font-family="'Poppins', sans-serif"
+        font-weight="700"
+        font-size="24"
+        fill="#111827">Executive Summary</text>
+
+  <text x="42" y="102"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="9.5"
+        fill="#6B7280">A complete overview of the recruitment challenge and the LeadFlow opportunity.</text>
+
+  <!-- ================================================================ -->
+  <!-- INTRODUCTION TEXT — Refinement 3: Generic problem statement       -->
+  <!-- No client name. Describes the universal recruitment challenge.    -->
+  <!-- Inter Regular 10pt, Slate 900, max ~70 chars/line                 -->
+  <!-- ================================================================ -->
+  <text x="42" y="130"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">Recruitment teams often rely on spreadsheets, manual calling,</text>
+  <text x="42" y="144"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">and WhatsApp — creating delays, fragmented communication,</text>
+  <text x="42" y="158"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">and limited visibility.</text>
+
+  <text x="42" y="178"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="10"
+        fill="#111827">LeadFlow centralizes these operations into one recruitment workspace.</text>
+
+  <!-- ================================================================ -->
+  <!-- WORKFLOW COMPARISON — Dominant Visual                             -->
+  <!-- Refinement 1: Container 380→400pt, step boxes 36→40pt            -->
+  <!-- White container card, 511pt wide (42→553)                        -->
+  <!-- Two parallel vertical flows with center transformation element   -->
+  <!-- ================================================================ -->
+
+  <!-- Container card — enlarged -->
+  <rect x="42" y="202" width="511" height="400" rx="12"
+        fill="#FFFFFF"
+        stroke="#E5E7EB"
+        stroke-width="0.75"
+        filter="url(#cardShadow)"/>
+
+  <!-- Section title -->
+  <text x="297.5" y="226"
+        text-anchor="middle"
+        font-family="'Poppins', sans-serif"
+        font-weight="600"
+        font-size="12"
+        fill="#111827">Workflow Comparison</text>
+
+  <!-- Column headers -->
+  <text x="162" y="248"
+        text-anchor="middle"
+        font-family="'Poppins', sans-serif"
+        font-weight="600"
+        font-size="9"
+        fill="#EF4444">Current Workflow</text>
+  <text x="162" y="260"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="7.5"
+        fill="#6B7280">Manual &amp; Disconnected</text>
+
+  <text x="435" y="248"
+        text-anchor="middle"
+        font-family="'Poppins', sans-serif"
+        font-weight="600"
+        font-size="9"
+        fill="#2563EB">LeadFlow Workflow</text>
+  <text x="435" y="260"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="7.5"
+        fill="#6B7280">Streamlined &amp; Centralized</text>
+
+  <!-- Vertical dashed separator -->
+  <line x1="297.5" y1="244" x2="297.5" y2="572"
+        stroke="#E5E7EB" stroke-width="0.75" stroke-dasharray="4 3"/>
+
+  <!-- ============================================================== -->
+  <!-- LEFT COLUMN — Current Workflow (Rose-tinted)                    -->
+  <!-- Step boxes: 180×40, #FEF2F2 fill, #FECACA border               -->
+  <!-- 18pt vertical spacing between steps                             -->
+  <!-- ============================================================== -->
+
+  <!-- Step 1: Excel Spreadsheets -->
+  <rect x="72" y="280" width="180" height="40" rx="8"
+        fill="#FEF2F2" stroke="#FECACA" stroke-width="0.75"/>
+  <text x="88" y="296"
+        font-family="'Inter', sans-serif" font-weight="500" font-size="7" fill="#EF4444">01</text>
+  <text x="106" y="306"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="9" fill="#111827">Excel Spreadsheets</text>
+
+  <!-- Arrow 1→2 -->
+  <line x1="162" y1="320" x2="162" y2="332" stroke="#FECACA" stroke-width="1"/>
+  <polygon points="158,332 162,338 166,332" fill="#FECACA"/>
+
+  <!-- Step 2: Copy Phone Numbers -->
+  <rect x="72" y="338" width="180" height="40" rx="8"
+        fill="#FEF2F2" stroke="#FECACA" stroke-width="0.75"/>
+  <text x="88" y="354"
+        font-family="'Inter', sans-serif" font-weight="500" font-size="7" fill="#EF4444">02</text>
+  <text x="106" y="364"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="9" fill="#111827">Copy Phone Numbers</text>
+
+  <!-- Arrow 2→3 -->
+  <line x1="162" y1="378" x2="162" y2="390" stroke="#FECACA" stroke-width="1"/>
+  <polygon points="158,390 162,396 166,390" fill="#FECACA"/>
+
+  <!-- Step 3: Manual Calling -->
+  <rect x="72" y="396" width="180" height="40" rx="8"
+        fill="#FEF2F2" stroke="#FECACA" stroke-width="0.75"/>
+  <text x="88" y="412"
+        font-family="'Inter', sans-serif" font-weight="500" font-size="7" fill="#EF4444">03</text>
+  <text x="106" y="422"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="9" fill="#111827">Manual Calling</text>
+
+  <!-- Arrow 3→4 -->
+  <line x1="162" y1="436" x2="162" y2="448" stroke="#FECACA" stroke-width="1"/>
+  <polygon points="158,448 162,454 166,448" fill="#FECACA"/>
+
+  <!-- Step 4: WhatsApp Updates -->
+  <rect x="72" y="454" width="180" height="40" rx="8"
+        fill="#FEF2F2" stroke="#FECACA" stroke-width="0.75"/>
+  <text x="88" y="470"
+        font-family="'Inter', sans-serif" font-weight="500" font-size="7" fill="#EF4444">04</text>
+  <text x="106" y="480"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="9" fill="#111827">WhatsApp Updates</text>
+
+  <!-- Arrow 4→5 -->
+  <line x1="162" y1="494" x2="162" y2="506" stroke="#FECACA" stroke-width="1"/>
+  <polygon points="158,506 162,512 166,506" fill="#FECACA"/>
+
+  <!-- Step 5: Manual Reporting -->
+  <rect x="72" y="512" width="180" height="40" rx="8"
+        fill="#FEF2F2" stroke="#FECACA" stroke-width="0.75"/>
+  <text x="88" y="528"
+        font-family="'Inter', sans-serif" font-weight="500" font-size="7" fill="#EF4444">05</text>
+  <text x="106" y="538"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="9" fill="#111827">Manual Reporting</text>
+
+  <!-- ============================================================== -->
+  <!-- CENTER — Transformation Element                                 -->
+  <!-- Refinement 2: Stronger visual with outer ring, double-chevron,  -->
+  <!-- and horizontal connector lines communicating movement            -->
+  <!-- ============================================================== -->
+
+  <!-- Outer glow ring — subtle radiance -->
+  <circle cx="297.5" cy="416" r="32"
+          fill="none" stroke="#2563EB" stroke-width="1.5" opacity="0.12"/>
+
+  <!-- Inner accent ring -->
+  <circle cx="297.5" cy="416" r="29"
+          fill="none" stroke="#2563EB" stroke-width="0.75" opacity="0.06"/>
+
+  <!-- Main transformation circle -->
+  <circle cx="297.5" cy="416" r="26" fill="#2563EB"/>
+
+  <!-- Double-chevron (>>) — bold forward motion -->
+  <polyline points="289,408 297,416 289,424"
+            fill="none" stroke="#FFFFFF" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round"/>
+  <polyline points="299,408 307,416 299,424"
+            fill="none" stroke="#FFFFFF" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Horizontal connector: left column → center circle -->
+  <line x1="254" y1="416" x2="264" y2="416"
+        stroke="#2563EB" stroke-width="1" opacity="0.3" stroke-dasharray="3 2"/>
+
+  <!-- Horizontal connector: center circle → right column -->
+  <line x1="325" y1="416" x2="343" y2="416"
+        stroke="#2563EB" stroke-width="1" opacity="0.3" stroke-dasharray="3 2"/>
+  <!-- Connector arrowhead -->
+  <polyline points="340,413 345,416 340,419"
+            fill="none" stroke="#2563EB" stroke-width="1" opacity="0.3"
+            stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- ============================================================== -->
+  <!-- RIGHT COLUMN — LeadFlow Workflow (Blue-tinted)                  -->
+  <!-- Step boxes: 180×40, #EFF6FF fill, #BFDBFE border               -->
+  <!-- 18pt vertical spacing between steps                             -->
+  <!-- ============================================================== -->
+
+  <!-- Step 1: Import Leads -->
+  <rect x="345" y="280" width="180" height="40" rx="8"
+        fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.75"/>
+  <text x="361" y="296"
+        font-family="'Inter', sans-serif" font-weight="500" font-size="7" fill="#2563EB">01</text>
+  <text x="379" y="306"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="9" fill="#111827">Import Leads</text>
+
+  <!-- Arrow 1→2 -->
+  <line x1="435" y1="320" x2="435" y2="332" stroke="#BFDBFE" stroke-width="1"/>
+  <polygon points="431,332 435,338 439,332" fill="#BFDBFE"/>
+
+  <!-- Step 2: Assign to Interns -->
+  <rect x="345" y="338" width="180" height="40" rx="8"
+        fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.75"/>
+  <text x="361" y="354"
+        font-family="'Inter', sans-serif" font-weight="500" font-size="7" fill="#2563EB">02</text>
+  <text x="379" y="364"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="9" fill="#111827">Assign to Interns</text>
+
+  <!-- Arrow 2→3 -->
+  <line x1="435" y1="378" x2="435" y2="390" stroke="#BFDBFE" stroke-width="1"/>
+  <polygon points="431,390 435,396 439,390" fill="#BFDBFE"/>
+
+  <!-- Step 3: Call & Update -->
+  <rect x="345" y="396" width="180" height="40" rx="8"
+        fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.75"/>
+  <text x="361" y="412"
+        font-family="'Inter', sans-serif" font-weight="500" font-size="7" fill="#2563EB">03</text>
+  <text x="379" y="422"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="9" fill="#111827">Call &amp; Update</text>
+
+  <!-- Arrow 3→4 -->
+  <line x1="435" y1="436" x2="435" y2="448" stroke="#BFDBFE" stroke-width="1"/>
+  <polygon points="431,448 435,454 439,448" fill="#BFDBFE"/>
+
+  <!-- Step 4: Real-Time Reports -->
+  <rect x="345" y="454" width="180" height="40" rx="8"
+        fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.75"/>
+  <text x="361" y="470"
+        font-family="'Inter', sans-serif" font-weight="500" font-size="7" fill="#2563EB">04</text>
+  <text x="379" y="480"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="9" fill="#111827">Real-Time Reports</text>
+
+  <!-- Arrow 4→5 -->
+  <line x1="435" y1="494" x2="435" y2="506" stroke="#BFDBFE" stroke-width="1"/>
+  <polygon points="431,506 435,512 439,506" fill="#BFDBFE"/>
+
+  <!-- Step 5: Analytics Dashboard -->
+  <rect x="345" y="512" width="180" height="40" rx="8"
+        fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.75"/>
+  <text x="361" y="528"
+        font-family="'Inter', sans-serif" font-weight="500" font-size="7" fill="#2563EB">05</text>
+  <text x="379" y="538"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="9" fill="#111827">Analytics Dashboard</text>
+
+  <!-- Comparison caption -->
+  <text x="297.5" y="582"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="8"
+        fill="#6B7280">LeadFlow replaces disconnected manual steps with one streamlined digital workflow.</text>
+
+  <!-- ================================================================ -->
+  <!-- EXPECTED BUSINESS IMPACT — 4 Horizontal Cards                    -->
+  <!-- Refinement 4: Lucide-style monochrome icons refined              -->
+  <!-- Each 118pt wide, blue titles, Slate 500 descriptions             -->
+  <!-- ================================================================ -->
+
+  <text x="42" y="620"
+        font-family="'Poppins', sans-serif"
+        font-weight="600"
+        font-size="11"
+        fill="#111827">Expected Business Impact</text>
+
+  <!-- Card 1: Faster Workflows -->
+  <rect x="42" y="636" width="118" height="64" rx="8"
+        fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"
+        filter="url(#cardShadow)"/>
+  <!-- Lucide Zap icon — lightning bolt -->
+  <path d="M60,647 L64,647 L62,652 L66,652 L59,661 L61,656 L57,656 Z"
+        fill="none" stroke="#2563EB" stroke-width="1.2"
+        stroke-linejoin="round" stroke-linecap="round"/>
+  <text x="52" y="674"
+        font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#2563EB">Faster Workflows</text>
+  <text x="52" y="688"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#6B7280">Less manual work</text>
+
+  <!-- Card 2: Team Visibility -->
+  <rect x="168" y="636" width="118" height="64" rx="8"
+        fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"
+        filter="url(#cardShadow)"/>
+  <!-- Lucide Eye icon — eye with pupil -->
+  <ellipse cx="186" cy="651" rx="9" ry="5.5"
+           fill="none" stroke="#2563EB" stroke-width="1.2"/>
+  <circle cx="186" cy="651" r="2.5"
+          fill="none" stroke="#2563EB" stroke-width="1.2"/>
+  <text x="178" y="674"
+        font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#2563EB">Team Visibility</text>
+  <text x="178" y="688"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#6B7280">Real-time tracking</text>
+
+  <!-- Card 3: Clear Ownership -->
+  <rect x="294" y="636" width="118" height="64" rx="8"
+        fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"
+        filter="url(#cardShadow)"/>
+  <!-- Lucide UserCheck icon — person with checkmark -->
+  <circle cx="310" cy="648" r="3.5"
+          fill="none" stroke="#2563EB" stroke-width="1.2"/>
+  <path d="M304,657 C304,653 307,651 310,651 C313,651 316,653 316,657"
+        fill="none" stroke="#2563EB" stroke-width="1.2" stroke-linecap="round"/>
+  <polyline points="318,649 320,651 324,647"
+            fill="none" stroke="#2563EB" stroke-width="1.2"
+            stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="304" y="674"
+        font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#2563EB">Clear Ownership</text>
+  <text x="304" y="688"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#6B7280">Every lead assigned</text>
+
+  <!-- Card 4: Instant Reports -->
+  <rect x="420" y="636" width="118" height="64" rx="8"
+        fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"
+        filter="url(#cardShadow)"/>
+  <!-- Lucide BarChart3 icon — three ascending bars -->
+  <rect x="434" y="654" width="3.5" height="8" rx="1" fill="#2563EB"/>
+  <rect x="440" y="650" width="3.5" height="12" rx="1" fill="#2563EB"/>
+  <rect x="446" y="646" width="3.5" height="16" rx="1" fill="#2563EB"/>
+  <text x="430" y="674"
+        font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#2563EB">Instant Reports</text>
+  <text x="430" y="688"
+        font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#6B7280">Automated summaries</text>
+
+  <!-- ================================================================ -->
+  <!-- KEY TAKEAWAY                                                     -->
+  <!-- Refinement 5: Increased padding — height 40→48pt                 -->
+  <!-- White card with blue accent bar, Inter Medium 11pt               -->
+  <!-- ================================================================ -->
+  <g filter="url(#takeawayShadow)">
+    <rect x="42" y="722" width="511" height="48" rx="8"
+          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <rect x="42" y="722" width="3" height="48" rx="1.5" fill="#2563EB"/>
+    <text x="297.5" y="750"
+          text-anchor="middle"
+          font-family="'Inter', sans-serif"
+          font-weight="500"
+          font-size="11"
+          fill="#111827">LeadFlow replaces manual recruitment coordination with one measurable, centralized platform.</text>
+  </g>
+
+  <!-- ================================================================ -->
+  <!-- FOOTER                                                           -->
+  <!-- Inter Regular 7pt, Slate 400                                     -->
+  <!-- Confidential notice center, page number right                    -->
+  <!-- Consistent with page01 footer style                              -->
+  <!-- ================================================================ -->
+  <text x="297.5" y="822"
+        text-anchor="middle"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="7"
+        fill="#9CA3AF">Prepared exclusively for Suryavanshi Finserv. Confidential and proprietary.</text>
+
+  <text x="553" y="822"
+        text-anchor="end"
+        font-family="'Inter', sans-serif"
+        font-weight="400"
+        font-size="7"
+        fill="#9CA3AF">02</text>
+
+</svg>
