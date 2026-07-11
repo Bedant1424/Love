@@ -323,34 +323,24 @@
   <!-- ================================================================ -->
   <!-- KEY TAKEAWAY — Reused from Components Library (Flexible y=722)    -->
   <!-- ================================================================ -->
-  <foreignObject x="42" y="722" width="511" height="64" id="takeawayComponent">
-    <div xmlns="http://www.w3.org/1999/xhtml" style="
-      background: #FFFFFF;
-      border: 0.75px solid #E5E7EB;
-      border-radius: 8px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-      border-left: 3px solid #2563EB;
-      padding: 16px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 64px;
-      box-sizing: border-box;
-      height: 100%;
-    ">
-      <div style="
-        font-family: 'Inter', sans-serif;
-        font-weight: 500;
-        font-size: 11px;
-        color: #111827;
-        text-align: center;
-        line-height: 1.4;
-        max-width: 85%;
-      ">
-        A responsive PWA architecture allows recruitment teams to stay productive from anywhere without the friction of app store installations.
-      </div>
-    </div>
-  </foreignObject>
+    <g id="takeawayComponent">
+    <!-- Card background -->
+    <rect x="42" y="722" width="511" height="64" rx="8"
+          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"
+          filter="url(#cardShadow)"/>
+    <!-- Blue left accent bar -->
+    <rect x="42" y="724" width="3" height="60" rx="0" fill="#2563EB"/>
+    <!-- Takeaway text -->
+    <text x="297.5" y="750.15"
+          text-anchor="middle"
+          font-family="'Inter', sans-serif"
+          font-weight="500"
+          font-size="11"
+          fill="#111827">
+    <tspan x="297.5" dy="0">A responsive PWA architecture allows recruitment teams to stay productive from</tspan>
+    <tspan x="297.5" dy="15.4">anywhere without the friction of app store installations.</tspan>
+    </text>
+  </g>
 
   <!-- ================================================================ -->
   <!-- FOOTER — Reused from Components Library                          -->

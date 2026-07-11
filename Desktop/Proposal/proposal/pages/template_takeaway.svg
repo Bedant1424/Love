@@ -1,55 +1,46 @@
-<!-- ========================================================================= -->
-<!-- LEADFLOW PROPOSAL SYSTEM — REUSABLE KEY TAKEAWAY MASTER COMPONENT         -->
-<!-- ========================================================================= -->
-<!-- 
-  This component is the standard takeaway implementation for the proposal pipeline.
-  It uses SVG <foreignObject> containing flexible HTML block elements to allow
-  browser-native text wrapping, centering, and dynamic height expansion.
-
-  LAYOUT STANDARDS:
-  - Width: 511 pt (aligned to L=42, R=553 margins)
-  - Minimum Height: 64 pt (for 1 to 2 lines of text)
-  - Vertical Padding: 16 pt top and bottom
-  - Horizontal Padding: 20 pt left and right
-  - Text Width Limit: max-width: 85% of content area (~400px width limit)
-  - Footer Safe Area: Minimum 32 pt spacing between the takeaway card bottom and
-    the page footer at y=822. (Maximum y-coordinate for the card bottom is y=790).
-
-  DYNAMIC HEIGHT CALCULATIONS & POSITIONING:
-  - For standard 1-2 line text:
-    - Use foreignObject height="64" at y="722" (Card bottom = 786, Footer gap = 36).
-  - For 3-line text (requires ~80px height):
-    - Use foreignObject height="80" at y="710" (Card bottom = 790, Footer gap = 32).
-  - For 4-line text (requires ~96px height):
-    - Use foreignObject height="96" at y="694" (Card bottom = 790, Footer gap = 32).
--->
-
-<foreignObject x="42" y="722" width="511" height="64" id="takeawayComponent">
-  <div xmlns="http://www.w3.org/1999/xhtml" style="
-    background: #FFFFFF;
-    border: 0.75px solid #E5E7EB;
-    border-radius: 8px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-    border-left: 3px solid #2563EB;
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 64px;
-    box-sizing: border-box;
-    height: 100%;
-  ">
-    <div style="
-      font-family: 'Inter', sans-serif;
-      font-weight: 500;
-      font-size: 11px;
-      color: #111827;
-      text-align: center;
-      line-height: 1.4;
-      max-width: 85%;
-    ">
-      <!-- INSERT TAKEAWAY TEXT HERE -->
-      Centralizing recruitment operations is the key to reducing administrative overhead and accelerating hiring cycles.
-    </div>
-  </div>
-</foreignObject>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 595 842">
+  <!--
+    TAKEAWAY TEMPLATE — NATIVE SVG VERSION (v1.1)
+    ==============================================
+    
+    This template defines the reusable Key Takeaway card component
+    using pure native SVG elements. No foreignObject, no HTML, no CSS.
+    
+    COMPONENT STRUCTURE:
+    - Background card: <rect> with rx=8, white fill, light border, card shadow
+    - Blue accent bar: <rect> 3px wide on the left edge
+    - Text content: <text> with <tspan> elements for line wrapping
+    
+    LAYOUT STANDARDS:
+    - Width: 511 pt (aligned to L=42, R=553)
+    - Height: 64 pt standard (can extend for longer text)
+    - Border radius: 8 pt (secondary radius)
+    - Left accent: 3px solid #2563EB
+    - Font: Inter Medium 11pt, #111827, center-aligned
+    
+    POSITIONING:
+    - Pages 02-11: y=722 (standard position)
+    - Pages 12-17: y=640 (shifted up for taller content above)
+    
+    COMPATIBILITY:
+    - Renders correctly in all SVG renderers
+    - No browser-specific HTML/CSS dependencies
+    - Compatible with Figma, Inkscape, Illustrator, Canva
+  -->
+  
+  <!-- Example at y=722 -->
+  <g id="takeawayComponent">
+    <rect x="42" y="722" width="511" height="64" rx="8"
+          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <rect x="42" y="724" width="3" height="60" rx="0" fill="#2563EB"/>
+    <text x="297.5" y="758"
+          text-anchor="middle"
+          font-family="'Inter', sans-serif"
+          font-weight="500"
+          font-size="11"
+          fill="#111827">
+      <tspan x="297.5" dy="0">Your takeaway message goes here. Keep it to one or two lines</tspan>
+      <tspan x="297.5" dy="15.4">for best visual balance and readability.</tspan>
+    </text>
+  </g>
+</svg>
