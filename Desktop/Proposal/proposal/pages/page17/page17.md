@@ -1,50 +1,32 @@
-# LeadFlow Proposal — Page 17: Thank You
+# Page 17: Thank You & Approval
 
-**Status:** Final (Frozen)
+The closing page provides a clear acceptance workspace, Prepared By credentials, Next Steps, and Client Approval lines.
 
----
+## Copywriting
 
-## Page Number
+### Thank You (Hero)
 
-17
+**Title:** Thank You
+**Subtitle:** Let's build a modern, high-performance recruitment engine together.
 
-## Page Title
+### Next Steps (Section 1)
+Schedule a kickoff call to finalize:
+- Detailed requirements mapping
+- Custom metadata fields setup
+- Onboarding & rollout timeline
 
-Thank You
+### Prepared By (Section 2)
+**Name:** Bedant Arya Padhy
+**Title:** Founder, LeadFlow
+**Email:** bedant@leadflow.in
+**Phone:** +91 98765 43210
+**Website:** www.leadflow.in
 
-## Page Objective
-
-End the proposal with confidence, professionalism, and a clear invitation to begin the project.
-
----
-
-## Page Content
-
-### Page Header
-
-LeadFlow brand reference (top left, consistent across all pages).
-Page 17 identifier with section label (top right).
-
-### Hero Section
-
-**Thank You**
-
-We are ready to begin when you are.
-
-### Introduction
-
-We appreciate the opportunity to partner with Suryavanshi Finserv. LeadFlow is ready to modernize your recruitment operations and drive long-term team productivity.
-
-### Contact Card (Dominant Visual)
-
-**Caption:** Get in touch to schedule a kickoff call and launch the implementation process.
-
-### Contact Information
-
-- **Contact Person:** Bedant Arya Padhy
-- **Title:** Founder & Developer
-- **Email:** bedant@leadflow.in
-- **Website:** leadflow.in
+### Client Approval (Section 3)
+Subtle authorization to begin workspace setup:
+- Representative Name: _____________________
+- Authorized Signature: __________________
+- Date: ___________________________________
 
 ### Key Takeaway
 
@@ -59,30 +41,9 @@ Prepared exclusively for Suryavanshi Finserv. Confidential and proprietary. | 17
 ## Design Notes
 
 - **Layout:** A4 Portrait (210mm × 297mm), viewBox 595 × 842pt
-- **Page Header:** Poppins Bold 8pt, LeadFlow Blue, top left. "Page 17 / Thank You" top right. Thin separator at y=52.
-- **Hero:** Poppins Bold 24pt, Slate 900, left-aligned. Subtitle Inter 9.5pt, Slate 500.
-- **Body:** Inter Regular 10pt, Slate 900, max ~70 chars per line.
-- **Dominant Visual:** Centered Elegant Contact Card.
-  - Card Dimensions: x=142, y=200, width=311, height=200, rx=12. White background (#FFFFFF), border #E5E7EB, shadow.
-  - Card Contents:
-    - Envelope Icon: Centered at cx=297.5, cy=236.
-    - Card Title: "Contact Information" (Poppins SemiBold 11pt, Slate 900) at y=266.
-    - Divider Line: x1=172, y1=276 to x2=423, y2=276.
-    - Contact Details:
-      - "Bedant Arya Padhy" (Poppins SemiBold 9.5pt, Slate 900) at y=298.
-      - "Founder & Developer, LeadFlow" (Inter Regular 8pt, Slate 500) at y=312.
-      - "Email: bedant@leadflow.in" at y=336.
-      - "Phone: +91 98765 43210" at y=350.
-      - "Website: leadflow.in" at y=364.
-  - Call to Action:
-    - Text: "Ready to transform your recruitment operations?" (Inter Medium 10pt, LeadFlow Blue) centered at y=440.
-    - Subtext: "Let's schedule a kickoff call to align on system requirements." (Inter Regular 8pt, Slate 500) centered at y=456.
-- **Takeaway:** Reusable master Takeaway component, y=640, height=64, Inter Medium 11pt, Slate 900.
-- **Footer:** Inter Regular 7pt, Slate 400. Page number right-aligned at y=822.
-- **Spacing:** 8-point system throughout.
-
----
-
-## Validation
-
-Compliant with: 01_BRAND_GUIDELINES, 02_DESIGN_SYSTEM, 03_PROPOSAL_STRUCTURE, 04_CONTENT_STRATEGY, 05_VISUAL_REQUIREMENTS, 10_CREATIVE_DIRECTION, 11_PRODUCT_REFERENCE, 12_PAGE_GENERATION_RULES, 09_CHECKLIST.
+- **Visual Structure:** Two-column grid layout (y=140 to y=580):
+  - Left Column (x=42, width=244): Contains Next Steps card (height 180) and Client Approval card (height 236).
+  - Right Column (x=309, width=244): Contains Prepared By card (height 440) showing developer profile, thank you letter, and contact info.
+- **Icon styling:** Lucide-style check icons and contact card icons are scaled by 10% using local `scale(1.1)`.
+- **Contrast:** Captions and secondary headers use Slate 500/600 (#475569) for increased readability.
+- **Takeaway:** Reusable master Takeaway component positioned at y=640 (height 64), preserving the footer safe area.
