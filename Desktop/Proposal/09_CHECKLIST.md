@@ -13,25 +13,25 @@ Before the proposal is generated or shared with a client, it must pass all verif
 
 # 1. Proposal Flow & Narrative
 
-Verify that the narrative progresses logically across the **17 proposal pages** in this exact order:
+Verify that the narrative progresses logically across the **17 proposal pages** in this exact approved order:
 
-- [ ] **Page 01 Cover:** Establishes client info, branding, and confidentiality notice.
-- [ ] **Page 02 Executive Summary:** Explains current problems vs. LeadFlow solution.
-- [ ] **Page 03 Recruitment Today:** Outlines pain points and current workflow problems.
-- [ ] **Page 04 Why Change?:** Illustrates value proposition and productivity outcomes.
-- [ ] **Page 05 Introducing LeadFlow:** Explains product positioning and PWA concept.
-- [ ] **Page 06 Manager Dashboard:** Details manager controls and oversight.
-- [ ] **Page 07 Intern Workspace:** Describes daily recruiter workspace.
-- [ ] **Page 08 Recruitment Workflow:** Explains step-by-step lead distribution and status updates.
-- [ ] **Page 09 Platform Features:** Outlines features, search, and communication tools.
-- [ ] **Page 10 Analytics & Reporting:** Details funnel charts and conversion metrics.
-- [ ] **Page 11 Security & User Roles:** Details role boundaries and data safety.
-- [ ] **Page 12 Technical Architecture:** Outlines tech stack (React, Supabase, Vercel).
-- [ ] **Page 13 Implementation & Onboarding:** Unified Planning-to-Support timeline.
-- [ ] **Page 14 Pricing:** Outlines commercial terms and support agreements.
-- [ ] **Page 15 Future Roadmap:** Identifies out-of-scope future phases.
-- [ ] **Page 16 Deliverables:** Final checklist of all project outputs.
-- [ ] **Page 17 Approval & Next Steps:** Professional sign-off section.
+- [ ] **Page 01 Cover:** Establishes client info, branding, and confidentiality.
+- [ ] **Page 02 Executive Summary:** Explains current problems vs. LeadFlow solution and workflow.
+- [ ] **Page 03 Current Challenges:** Outlines pain points in a 3x3 card grid.
+- [ ] **Page 04 Why Change?:** Illustrates value proposition and transformation.
+- [ ] **Page 05 Introducing LeadFlow:** Explains PWA concept and shows Login mockup.
+- [ ] **Page 06 Manager Dashboard:** Details manager controls and live dashboard mockup.
+- [ ] **Page 07 Intern Workspace:** Describes daily recruiter workspace mockup.
+- [ ] **Page 08 Lead Management:** Outlines lead database filtering and CSV import mockup.
+- [ ] **Page 09 Analytics Dashboard:** Details funnel charts, donut charts, and top list mockup.
+- [ ] **Page 10 Mobile PWA Experience:** Shows mobile dashboard and touch action callouts.
+- [ ] **Page 11 Implementation Journey:** Outlines the 6-stage roadmap timeline.
+- [ ] **Page 12 Pricing & Engagement:** Outlines fixed cost details and included/out-of-scope work.
+- [ ] **Page 13 Return on Investment:** Compares current workflow vs. LeadFlow.
+- [ ] **Page 14 Support & Long-Term Partnership:** Explains post-launch support and lifecycle timeline.
+- [ ] **Page 15 Why LeadFlow:** Summarizes operational improvements and value cards.
+- [ ] **Page 16 Next Steps:** Outlines rollout kickoff timeline.
+- [ ] **Page 17 Thank You:** Ends with elegant contact card.
 
 ---
 
@@ -41,13 +41,13 @@ Verify that the narrative progresses logically across the **17 proposal pages** 
 - [ ] **Colors:** LeadFlow Blue is the primary brand color. Status colors (Success Green, Warning Amber, Error Red) are only used for status indicators.
 - [ ] **Typography:** Poppins is used exclusively for page and section headings. Inter is used for body copy and numbers.
 - [ ] **Icons:** Only Lucide icons are used. All icons are monochrome.
-- [ ] **Cards:** All card elements have 16px corner radius, 1px light gray borders, and soft shadows.
+- [ ] **Cards:** All card elements have standard corner radius (12pt for primary panels rx="12", 8pt for secondary cards rx="8"), 1px light gray borders, and soft shadows.
 
 ---
 
 # 3. Spacing & Grid System
 
-- [ ] **Grid:** A 12-column desktop grid is respected with 64px left/right margins.
+- [ ] **Grid:** Standard margins are respected (42pt left and right, corresponding to L=42, R=553) with a total content width of 511pt.
 - [ ] **Whitespace:** Margins are maintained between elements to ensure a clean, uncluttered layout.
 - [ ] **Vertical Spacing:** Section and element gaps follow the 8-point system (8px, 16px, 24px, 32px, 48px, 64px).
 
@@ -71,10 +71,10 @@ Verify that only the **seven approved UI mockups** are referenced and formatted:
 - [ ] **1. Login Screen** (Page 5)
 - [ ] **2. Manager Dashboard** (Page 6)
 - [ ] **3. Intern Dashboard** (Page 7)
-- [ ] **4. Mobile PWA View** (Page 7)
+- [ ] **4. Mobile PWA View** (Page 10)
 - [ ] **5. Lead Management Table** (Page 8)
-- [ ] **6. Analytics Dashboard** (Page 10)
-- [ ] **7. Daily Report View** (Page 10)
+- [ ] **6. Analytics Dashboard** (Page 09)
+- [ ] **7. Daily Report View** (Page 09)
 - [ ] *Check:* All other mockups are removed.
 
 ---

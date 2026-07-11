@@ -226,235 +226,114 @@ Slate 900
 
 ### UI Mockup 01: Login Screen
 - **Used On:** Page 5 (Introducing LeadFlow)
-- **Purpose:** Help the client visualize secure entry.
-- **Description:** Center-aligned credentials input window with product branding.
+- **Purpose:** Visualize secure platform entry.
+- **Description:** Center-aligned credentials input window with product branding inside a browser-style container card.
 
 ### UI Mockup 02: Manager Dashboard
-- **Used On:** Page 6
-- **Purpose:** Executive overview dashboard.
-- **Description:** Desktop interface with KPI cards (leads, assigned, completed), charts, and navigation sidebar.
+- **Used On:** Page 6 (Manager Dashboard)
+- **Purpose:** Detail executive operational oversight.
+- **Description:** Desktop browser interface with KPI cards, weekly conversion funnel, and intern leaderboard.
 
 ### UI Mockup 03: Intern Dashboard
-- **Used On:** Page 7
-- **Purpose:** Daily recruiter workspace.
-- **Description:** Leads table, phone status, calling indicators, and daily personal stats.
+- **Used On:** Page 7 (Intern Dashboard)
+- **Purpose:** Detail daily recruiter task management.
+- **Description:** Desktop interface with daily targets, calling queue table, calling status badges, and action triggers.
 
 ### UI Mockup 04: Mobile PWA Dashboard
-- **Used On:** Page 7
-- **Purpose:** Mobile-first layout for phone-based operations.
-- **Description:** Clean mobile view displaying lead cards and quick call/WhatsApp (wa.me) options.
+- **Used On:** Page 10 (Mobile PWA Experience)
+- **Purpose:** Visualize mobile responsive adaptability.
+- **Description:** Smartphone mockup showing touch action triggers, quick calling/WhatsApp buttons, and lead card stack.
 
 ### UI Mockup 05: Lead Management Table
-- **Used On:** Page 8
-- **Purpose:** Detail view of the leads database.
-- **Description:** Standard table displaying checkboxes, names, phone numbers, call status, and action links.
+- **Used On:** Page 8 (Lead Management)
+- **Purpose:** Detail the central lead database view.
+- **Description:** Desktop browser window displaying search, filters, import actions, and lead rows.
 
 ### UI Mockup 06: Analytics Dashboard
-- **Used On:** Page 10
-- **Purpose:** Business intelligence overview.
-- **Description:** Clean conversion funnel charts, leaderboard, and call metrics.
+- **Used On:** Page 9 (Analytics Dashboard)
+- **Purpose:** Visualize business intelligence metrics.
+- **Description:** Desktop dashboard showing conversion funnels, donuts, top lists, and KPI summary blocks.
 
 ### UI Mockup 07: Daily Report
-- **Used On:** Page 10
-- **Purpose:** Formatted reporting summary.
-- **Description:** Export preview displaying daily summary cards (leads processed, conversion rates).
+- **Used On:** Page 9 (Analytics Dashboard - Inset component)
+- **Purpose:** Show aggregated summary reporting views.
+- **Description:** Clean top performing recruiter and funnel listings.
 
 ---
 
-## Illustrations & Diagrams
+## Illustrations & Diagrams (Visual Elements)
 
 ### Graphic 01: Cover Illustration
-- **Used On:** Page 1
-- **Description:** Abstract workflow illustration representing node routing.
+- **Used On:** Page 1 (Cover Page)
+- **Description:** Abstract SaaS dashboard silhouette rendered at 2% opacity in LeadFlow Blue.
 
 ### Graphic 02: Workflow Comparison
-- **Used On:** Page 2
-- **Description:** Side-by-side comparison of old manual processes vs. LeadFlow.
+- **Used On:** Page 2 (Executive Summary)
+- **Description:** Side-by-side comparison of current manual steps vs. LeadFlow digital workflow.
 
-### Graphic 03: Current Recruitment Workflow
-- **Used On:** Page 3
-- **Description:** Process diagram representing spreadsheet and WhatsApp coordination.
+### Graphic 03: Current Challenges Pain Point Grid
+- **Used On:** Page 3 (Current Challenges)
+- **Description:** 3x3 grid layout of cards with monochrome Lucide icons describing operational pain points.
 
 ### Graphic 04: Value Proposition Graphics
-- **Used On:** Page 4
-- **Description:** Clean layout of cards with Lucide icons highlighting core value.
+- **Used On:** Page 4 (Why Change?)
+- **Description:** Diagram displaying fragmented inputs on the left flowing into the LeadFlow Hub and outputs on the right.
 
-### Graphic 05: LeadFlow Overview
-- **Used On:** Page 5
-- **Description:** Connected ecosystem diagram representing the cloud infrastructure.
+### Graphic 05: Implementation Roadmap Timeline
+- **Used On:** Page 11 (Implementation Journey)
+- **Description:** Horizontal 6-stage roadmap (Discovery, Configuration, Import, Training, Launch, Support) with connecting lines.
 
-### Graphic 06: Feature Overview
-- **Used On:** Page 9
-- **Description:** Visual grid of feature cards.
+### Graphic 06: Pricing cards layout
+- **Used On:** Page 12 (Pricing & Engagement)
+- **Description:** Three-panel layout cards (What's Included, Investment, Business Value).
 
-### Graphic 07: User Roles Permission Matrix
-- **Used On:** Page 11
-- **Description:** Table comparing Manager and Intern access levels.
+### Graphic 07: ROI Comparison
+- **Used On:** Page 13 (Return on Investment)
+- **Description:** Two-column workflow comparison layout (Manual process vs. LeadFlow).
 
-### Graphic 08: Platform Architecture Diagram
-- **Used On:** Page 12
-- **Description:** Diagram representing browser, frontend PWA, and Supabase backend.
+### Graphic 08: Partnership Lifecycle timeline
+- **Used On:** Page 14 (Support & Long-Term Partnership)
+- **Description:** Horizontal 5-stage timeline showing launch, monitoring, and scaling.
 
-### Graphic 09: Implementation & Onboarding Timeline
-- **Used On:** Page 13
-- **Description:** Unified timeline covering Planning, Development, Testing, Deployment, Training, Go Live, and Support.
+### Graphic 09: Operations vs LeadFlow comparison
+- **Used On:** Page 15 (Why LeadFlow)
+- **Description:** Two-column comparison card (Current operations vs. LeadFlow platform).
 
-### Graphic 10: Pricing Cards
-- **Used On:** Page 14
-- **Description:** 3-column pricing card layout.
+### Graphic 10: Next Steps Timeline
+- **Used On:** Page 16 (Next Steps)
+- **Description:** 4-stage horizontal kickoff timeline (Approval, Kickoff, Development, Go Live).
 
-### Graphic 11: Roadmap Timeline
-- **Used On:** Page 15
-- **Description:** Horizontal roadmap timeline showing future development phases.
-
-### Graphic 12: Deliverables Checklist
-- **Used On:** Page 16
-- **Description:** Interactive-style checkbox layout showing app components.
-
-### Graphic 13: Approval Signature Block
-- **Used On:** Page 17
-- **Description:** Professional closing signature layout.
+### Graphic 11: Contact Card
+- **Used On:** Page 17 (Thank You)
+- **Description:** Centered elegant contact details layout card.
 
 ---
 
 # Diagrams Required
 
-The following diagrams should be created as editable SVGs.
-
-## Recruitment Workflow
-
-Import
-
-↓
-
-Assign
-
-↓
-
-Call
-
-↓
-
-Update
-
-↓
-
-Follow-up
-
-↓
-
-Complete
-
-↓
-
-Report
-
-↓
-
-Analytics
-
----
-
-## Lead Lifecycle
-
-Imported
-
-↓
-
-Assigned
-
-↓
-
-Contacted
-
-↓
-
-Interested
-
-↓
-
-Application In Progress
-
-↓
-
-Completed
-
----
-
-## Technical Architecture
-
-Browser
-
-↓
-
-Frontend
-
-↓
-
-Backend
-
-↓
-
-Database
-
-↓
-
-Realtime
-
-↓
-
-Authentication
-
----
-
-## User Roles
-
-Manager
-
-↓
-
-Assign Leads
-
-↓
-
-Intern
-
-↓
-
-Candidate
-
----
-
-## Client Journey
-
-Discovery
-
-↓
-
-Proposal
-
-↓
-
-Approval
-
-↓
-
-Development
-
-↓
-
-Deployment
-
-↓
-
-Support
+The following diagrams should be maintained as editable SVGs.
+
+## 1. Workflow Comparison Diagram
+- **Page Location:** Page 2, Page 13, and Page 15 (Outcome comparisons).
+- **Style:** Side-by-side vertical blocks (Red theme for manual, Blue theme for LeadFlow).
+
+## 2. 3x3 Pain Point Grid
+- **Page Location:** Page 3.
+- **Style:** 9 white cards with 1px border, shadow, and Poppins headers.
+
+## 3. Value Proposition Hub Diagram
+- **Page Location:** Page 4.
+- **Style:** Central blue database hub node connected via dashed lines to incoming files and outgoing reports.
+
+## 4. Implementation & Onboarding Timelines
+- **Page Location:** Page 11, Page 14, and Page 16.
+- **Style:** Horizontal timelines with monochrome outline icons in circles.
 
 ---
 
 # Charts
 
-Use only
-
+Use only:
 - KPI Cards
 - Line Charts
 - Bar Charts
@@ -462,13 +341,7 @@ Use only
 - Progress Rings
 - Leaderboards
 
-Avoid
-
-- 3D charts
-- Decorative graphics
-- Complex visualizations
-
-Charts should reinforce business insights.
+Charts should reinforce business insights and avoid decorative colors.
 
 ---
 
@@ -476,13 +349,11 @@ Charts should reinforce business insights.
 
 Tables should appear only when necessary.
 
-Rules
-
-- Rounded container
-- Sticky header (inside UI mockups)
-- Alternating rows
+Rules:
+- Rounded containers (`rx=8`)
+- Alternating row colors
 - Minimal borders
-- Plenty of spacing
+- Generous text padding
 
 ---
 
@@ -491,13 +362,11 @@ Rules
 If external imagery is required,
 
 Use
-
 - Dashboard renders
 - UI illustrations
 - Product-focused visuals
 
 Never use
-
 - Stock office photos
 - Smiling teams
 - Business handshakes
@@ -509,39 +378,22 @@ LeadFlow is the hero, not the people.
 
 # Visual Consistency Checklist
 
-Before approving any page, verify
-
-✓ One dominant visual
-
-✓ Visual supports the page objective
-
-✓ Correct icon style
-
-✓ Consistent spacing
-
-✓ Correct color palette
-
-✓ Rounded cards
-
-✓ Minimal layout
-
-✓ Professional SaaS appearance
-
-✓ No unnecessary decoration
-
-✓ Editable assets whenever possible
+Before approving any page SVG, verify:
+✓ One dominant visual is used
+✓ Margins follow L=42, R=553, width=511 layout
+✓ Spacing adheres to the 8-point system
+✓ Colors use Slate neutrals and LeadFlow Blue (#2563EB)
+✓ Border radii follow 12pt (primary panels) and 8pt (secondary elements)
+✓ Takeaway card aligns to y=722 (Pages 2-11) or y=640 (Pages 12-17)
 
 ---
 
 # Export Requirements
 
-Every visual should be exportable as:
-
-- SVG (preferred)
-- PNG (high resolution)
-- PDF (if required)
-
-Editable source files should always be retained for future modifications.
+Every visual should be maintained as:
+- SVG (production code)
+- PNG (reference preview)
+- PDF (print output)
 
 ---
 
@@ -551,6 +403,6 @@ Every visual should answer one question:
 
 **"Does this make the proposal easier to understand?"**
 
-If a visual exists only for decoration, remove it.
+If a visual exists only for decoration, it must be removed.
 
-The proposal should achieve clarity through purposeful design rather than visual complexity.
+The proposal should achieve clarity through purposeful design.

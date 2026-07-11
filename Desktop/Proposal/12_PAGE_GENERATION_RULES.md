@@ -154,7 +154,7 @@ Maintain:
 - Margins (42pt left, 553pt right)
 - Typography (Poppins for headings, Inter for body and labels)
 - White space (8pt spacing system)
-- Card styles (White, 8pt corner radius, Slate 200 border, soft shadow)
+- Card styles (White, 12pt corner radius for primary panels rx="12", 8pt corner radius for secondary cards rx="8", Slate 200 border, soft shadow)
 - Icon usage (Monochrome LeadFlow Blue Lucide-style SVG paths)
 - Color palette (LeadFlow Blue primary, neutral Slate backgrounds)
 - Visual hierarchy
@@ -174,11 +174,10 @@ Every future proposal page must reuse the master components defined in `proposal
 The Takeaway component height must be calculated dynamically based on the text layout to ensure it does not overflow or clip:
 - Formula: `cardHeight = max(minHeight, textHeight + topPadding + bottomPadding)`
 - Standards: `minHeight = 64pt`, `topPadding = 16pt`, `bottomPadding = 16pt`
-- Adjust the `y` coordinate of the component to preserve the minimum `32pt` footer safe area above the footer at `y=822`.
-- Typical positions:
-  - 1–2 lines (Height = 64): Use `y="722"`
-  - 3 lines (Height = 80): Use `y="710"`
-  - 4 lines (Height = 96): Use `y="694"`
+- Adjust the `y` coordinate of the component to preserve the minimum `32pt` footer safe area above the footer at `y=822` (maximum y-coordinate of the card bottom is `y=790`).
+- Layout Positions:
+  - Pages 02–11 (Standard): Use `y="722"` (for 64pt height) or adjust up (`y="710"` for 80pt, `y="694"` for 96pt) to protect the footer.
+  - Pages 12–17 (Extended content area): Takeaways are positioned at `y="640"` to accommodate taller visual content blocks above them.
 
 ---
 

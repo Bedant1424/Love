@@ -206,16 +206,25 @@
   </g>
 
   <!-- ================================================================ -->
-  <!-- TRUST INDICATOR BADGE (Subtle callout below the cards)           -->
+  <!-- PAYMENT MILESTONES SCHEDULE                                      -->
   <!-- ================================================================ -->
-  <g id="trustBadge">
-    <rect x="232.5" y="534" width="130" height="16" rx="8" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="0.5"/>
-    <text x="297.5" y="544.5" text-anchor="middle"
-          font-family="'Poppins', sans-serif" font-weight="600" font-size="6.5" fill="#2563EB">✓ Fixed Implementation Cost</text>
+  <g id="paymentMilestones">
+    <rect x="42" y="534" width="511" height="56" rx="8" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="0.75"/>
+    
+    <!-- Title -->
+    <text x="58" y="551" font-family="'Poppins', sans-serif" font-weight="600" font-size="8" fill="#111827">Payment Schedule &amp; Milestones</text>
+    
+    <!-- Milestone 1 -->
+    <text x="58" y="567" font-family="'Poppins', sans-serif" font-weight="600" font-size="7.5" fill="#2563EB">50% Upfront Commitment</text>
+    <text x="58" y="577" font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#111827">₹12,500 due upon project signing and kickoff</text>
+    
+    <!-- Milestone 2 -->
+    <text x="310" y="567" font-family="'Poppins', sans-serif" font-weight="600" font-size="7.5" fill="#2563EB">50% Upon UAT &amp; Go-Live</text>
+    <text x="310" y="577" font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#111827">₹12,500 due upon deployment and intern onboarding</text>
   </g>
 
-  <!-- Visual caption (Moved upward to improve vertical balance) -->
-  <text x="297.5" y="570"
+  <!-- Visual caption -->
+  <text x="297.5" y="608"
         text-anchor="middle"
         font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">One transparent investment with no per-user licensing fees.</text>
 

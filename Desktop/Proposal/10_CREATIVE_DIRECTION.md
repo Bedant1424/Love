@@ -106,55 +106,31 @@ Never interrupt it.
 
 # Storytelling Rhythm
 
-The proposal should alternate between explanation and demonstration.
+The proposal follows this streamlined, outcome-focused storytelling sequence representing the actual approved document structure:
 
-Recommended rhythm:
-
-Problem
-
+Current Problems / Challenges
 ↓
-
-Insight
-
+Need for Change / Why Change?
 ↓
-
-Solution
-
+Meet LeadFlow (Core Experience)
 ↓
-
-Platform
-
+Manager & Intern Interfaces
 ↓
-
-Workflow
-
+Lead & Analytics Dashboards
 ↓
-
-Screens
-
+Mobile PWA Adaptability
 ↓
-
-Business Value
-
+Implementation Roadmap
 ↓
-
-Implementation
-
+Pricing & Commercial Value
 ↓
-
-Investment
-
+Return on Investment & Support
 ↓
-
-Future Vision
-
+Why LeadFlow Summary
 ↓
+Next Steps & Contact
 
-Approval
-
-Avoid placing multiple information-heavy pages consecutively.
-
-Create breathing room between detailed sections.
+Avoid placing multiple information-heavy pages consecutively. Create breathing room between detailed mockup pages and timeline sections.
 
 ---
 
@@ -343,43 +319,43 @@ Technology should support these benefits, not dominate them.
 
 Alternate page types throughout the proposal.
 
-Suggested sequence:
+Actual sequence:
 
-Problem Page
-
+Cover Page
 ↓
-
-Comparison Page
-
+Executive Summary (Workflow comparison)
 ↓
-
-Product Page
-
+Current Challenges (3x3 grid)
 ↓
-
-Dashboard Page
-
+Why Change (Value cards)
 ↓
-
-Workflow Page
-
+Introducing LeadFlow (PWA Login screen mockup)
 ↓
-
-Feature Page
-
+Manager Dashboard (Desktop browser mockup)
 ↓
-
-Analytics Page
-
+Intern Dashboard (Queue table mockup)
 ↓
-
-Commercial Page
-
+Lead Management (Table controls mockup)
 ↓
+Analytics Dashboard (Funnels & leaderboards mockup)
+↓
+Mobile PWA (Phone mockup with callouts)
+↓
+Implementation Journey (Roadmap timeline)
+↓
+Pricing & Engagement (Commercial value cards)
+↓
+Return on Investment (Workflow comparison)
+↓
+Support & Partnership (Lifecycle timeline)
+↓
+Why LeadFlow (Comparative list)
+↓
+Next Steps (Kickoff timeline)
+↓
+Thank You (Centered contact card)
 
-Roadmap Page
-
-Avoid placing similar page types next to each other.
+Avoid placing similar page layout types next to each other.
 
 ---
 

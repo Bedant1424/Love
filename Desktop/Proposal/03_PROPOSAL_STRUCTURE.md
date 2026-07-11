@@ -268,317 +268,244 @@ Mobile PWA mockup
 ---
 
 # Page 08
-## Recruitment Workflow
+## Lead Management
 
 ### Objective
 
-Show the complete operational workflow.
+Demonstrate how LeadFlow replaces scattered spreadsheets with a secure, centralized lead management database.
 
-### Covers
+### Includes
 
-Import
-
-↓
-
-Assign
-
-↓
-
-Call
-
-↓
-
-Update
-
-↓
-
-Follow-up
-
-↓
-
-Complete
-
-↓
-
-Report
-
-↓
-
-Analytics
+- Secure cloud database
+- CSV lead import
+- Lead distribution & assignment
+- Real-time status filters
+- Search & sorting controls
 
 ### Visual
 
-Full-width workflow diagram.
+Lead Management UI mockup in a desktop browser frame (Mockup 05).
 
 ---
 
 # Page 09
-## Platform Features
+## Analytics Dashboard
 
 ### Objective
 
-Provide a structured overview of everything included.
+Demonstrate how LeadFlow transforms recruitment data into actionable business insights, enabling managers to monitor performance, identify trends, and make informed decisions without manual reporting.
 
-### Categories
+### Includes
 
-Lead Management
-
-Communication (Calling & one-click wa.me WhatsApp, no API)
-
-Batch Management
-
-Reporting
-
-Analytics
-
-Administration
-
-Search
-
-Bulk Actions
-
-PWA
-
-Offline Support
+- Key Performance Indicators (KPIs)
+- Lead conversion rates
+- Lead sources donut chart
+- Recruiter productivity leaderboard
+- Recruitment funnel chart
 
 ### Visual
 
-Feature cards.
+Executive Analytics Dashboard UI mockup in a desktop browser frame (Mockup 06).
 
 ---
 
 # Page 10
-## Analytics & Reporting
+## Mobile PWA Experience
 
 ### Objective
 
-Demonstrate business intelligence.
+Demonstrate that LeadFlow is fully usable on mobile devices with a fast, app-like experience, allowing interns and managers to work from anywhere.
 
 ### Includes
 
-- KPI cards
-- Charts
-- Leaderboards
-- Reports
-- Daily summaries
-- Weekly summaries
+- Browser-based mobile access
+- Zero-installation Progressive Web App
+- Touch targets optimized layout
+- Direct dialing and WhatsApp (wa.me) triggers
 
 ### Visual
 
-Analytics dashboard mockup.
+Premium Smartphone Mockup (Mockup 04) with 5 callout cards pointing to core mobile features.
 
 ---
 
 # Page 11
-## Security & User Roles
+## Implementation Journey
 
 ### Objective
 
-Build confidence.
+Demonstrate that adopting LeadFlow is simple, structured, and low-risk. The client should understand the complete onboarding journey within five seconds.
 
-### Covers
+### Includes
 
-Authentication
-
-Permissions
-
-Manager
-
-Intern
-
-Cloud Database
-
-Audit Logs
-
-Realtime
+- Phased implementation roadmap
+- discovery, configuration, import, training, launch, and support stages
+- Secure migration & rapid deployment principles
 
 ### Visual
 
-Permission matrix.
+Horizontal Implementation Roadmap Timeline (6 Connected Stages).
 
 ---
 
 # Page 12
-## Technical Architecture
+## Pricing & Engagement
 
 ### Objective
 
-Explain the technology without unnecessary complexity.
+Present the commercial proposal in a transparent, premium, and confidence-building manner.
 
-### Covers
+### Includes
 
-Frontend
-
-Backend
-
-Database
-
-Authentication
-
-Hosting
-
-Deployment
-
-Realtime
-
-PWA
+- Fixed initial investment cost
+- ₹20,000 Software Development & ₹5,000 Setup & Deployment
+- ₹2,000/month post-launch support & maintenance
+- Business outcome-focused ROI summaries
 
 ### Visual
 
-Architecture diagram.
+Three-panel layout cards (What's Included, Investment, Business Value) and trust indicator badge.
 
 ---
 
 # Page 13
-## Implementation & Onboarding
+## Return on Investment
 
 ### Objective
 
-Explain project delivery and client rollout.
+Demonstrate the operational value of LeadFlow by comparing current recruitment workflows with the improved future state.
 
-### Covers
+### Includes
 
-A single unified timeline covering:
-- Planning
-- Development
-- Testing
-- Deployment
-- Training
-- Go Live
-- Support
+- Side-by-side comparison of manual process vs. automated LeadFlow workflow
+- Business outcomes checklist (reduced manual work, accountability, visibility)
 
 ### Visual
 
-Unified implementation and onboarding timeline.
+Two-Column Workflow Comparison Layout (Manual Process vs. LeadFlow).
 
 ---
 
 # Page 14
-## Pricing
+## Support & Long-Term Partnership
 
 ### Objective
 
-Present commercial terms clearly.
+Reassure the client that LeadFlow includes structured post-launch support and can evolve alongside their business.
 
 ### Includes
 
-Development, Deployment, Support, Maintenance, Payment summary, Scope, Out-of-scope work.
+- Partnership lifecycle (Launch → Onboarding → Monitoring → Support → Growth)
+- Included 2-month maintenance scope
+- Future WhatsApp Business API & email automation roadmap indicators
 
 ### Visual
 
-Pricing cards.
+Partnership Lifecycle Timeline (5 Connected Stages) and dedicated support cards.
 
 ---
 
 # Page 15
-## Future Roadmap
+## Why LeadFlow
 
 ### Objective
 
-Show long-term potential.
+Reinforce the strongest reasons to adopt LeadFlow by summarizing the operational improvements demonstrated throughout the proposal. Prepare the client emotionally for the proposal conclusion.
 
-### Phases
+### Includes
 
-Phase 2:
-- AI
-- Automation
-- Notifications
-
-Phase 3:
-- WhatsApp Business API
-- Email
-- Advanced Analytics
-
-Phase 4:
-- Multi-company
-- Mobile App
-- Integrations
+- Side-by-side current operations vs. LeadFlow platform comparison
+- Key value propositions grid (purpose-built, simple implementation, transparent pricing, support)
 
 ### Visual
 
-Roadmap timeline.
+Two-Column Comparison Card (Current Operations vs. LeadFlow).
 
 ---
 
 # Page 16
-## Deliverables
+## Next Steps
 
 ### Objective
 
-Summarize everything included.
+Clearly explain the process from proposal approval through successful deployment.
 
 ### Includes
 
-Application, Dashboards, Authentication, Database, Deployment, Training, Documentation, Support.
+- Launch framework (Communication, Project Timeline, Launch Support)
+- Dedicated channels, engineer access, training sessions, priority assistance
 
 ### Visual
 
-Deliverables checklist.
+4-Stage Horizontal Implementation Timeline (Approval, Kickoff, Development, Go Live).
 
 ---
 
 # Page 17
-## Approval & Next Steps
+## Thank You
 
 ### Objective
 
-Close the proposal.
+End the proposal with confidence, professionalism, and a clear invitation to begin the project.
 
 ### Includes
 
-Thank You, Approval section, Signature, Date, Contact information, Next steps.
+- Custom software kickoff invitation
+- Founder & developer contact information (email, phone, website)
 
 ### Visual
 
-Minimal. Professional.
+Centered elegant contact card with branding details.
 
 ---
 
 # Proposal Narrative
 
-The proposal should always follow this storytelling structure:
+The proposal follows this streamlined, outcome-focused storytelling structure:
 
 ```
-We understand your problems.
-
+Current Problems / Challenges
 ↓
-
-These problems affect your business.
-
+Need for Change / Why Change?
 ↓
-
-There is a better way.
-
+Meet LeadFlow (Core Experience)
 ↓
-
-Meet LeadFlow.
-
+Manager & Intern Interfaces
 ↓
-
-Here's how it works.
-
+Lead & Analytics Dashboards
 ↓
-
-Here's what you get.
-
+Mobile PWA Adaptability
 ↓
-
-Here's how we'll build it.
-
+Implementation Roadmap
 ↓
-
-Here's the investment.
-
+Pricing & Commercial Value
 ↓
-
-Here's the future.
-
+Return on Investment & Support
 ↓
-
-Let's get started.
+Why LeadFlow Summary
+↓
+Next Steps & Contact
 ```
 
-This narrative should never be broken.
+This narrative rhythm maintains momentum and leads naturally to the closing call to action.
+
+---
+
+# Proposal Narrative Arc
+
+The storytelling is structured as a classic three-act narrative:
+
+### Act I: Problem (Pages 01–04)
+* **Goal:** Understand the business context, catalog current operational pain points, and build urgency for a digital transformation.
+* **Focus:** Establish Suryavanshi Finserv's profile, compare the old manual Excel/WhatsApp workflow with modern cloud platform capabilities, list the 9 primary challenges, and present the core value proposition of change.
+
+### Act II: Solution (Pages 05–10)
+* **Goal:** Show the LeadFlow platform, demonstrate functional capabilities, and reduce operational/technical uncertainty.
+* **Focus:** Introduce the web PWA architecture, detail the Manager Dashboard experience, outline the Intern calling workspace, demonstrate database lead management, explain daily analytics and summaries, and prove mobile responsive adaptability.
+
+### Act III: Decision (Pages 11–17)
+* **Goal:** Guide the client through commercial pricing terms, implementation onboarding phases, and concrete kickoff next steps.
+* **Focus:** Present the 6-stage rollout journey, define fixed development and support pricing, show the clear ROI workflow comparison, establish the support timeline and future WhatsApp/API roadmaps, summarize the comparative benefits, map kickoff milestones, and provide direct developer contact details.
 
 ---
 
@@ -586,23 +513,23 @@ This narrative should never be broken.
 
 | Page | Visual / Mockup |
 |-------|--------|
-| 1 | Brand Illustration (Abstract workflow) |
+| 1 | Brand Illustration (Abstract workflow silhouette) |
 | 2 | Workflow Comparison |
-| 3 | Workflow Diagram |
-| 4 | Value Proposition Graphics |
+| 3 | Challenge Grid (3x3 pain point grid) |
+| 4 | Value Proposition Graphics (Scattered vs Centralized) |
 | 5 | Login Screen Mockup |
 | 6 | Manager Dashboard Mockup |
-| 7 | Intern Dashboard Desktop + Mobile PWA Mockup |
-| 8 | Lead Management UI Mockup |
-| 9 | Feature Cards |
-| 10 | Analytics Dashboard + Daily Report Mockup |
-| 11 | User Role Matrix |
-| 12 | Architecture Diagram |
-| 13 | Unified Implementation & Onboarding Timeline |
-| 14 | Pricing Cards |
-| 15 | Roadmap Timeline |
-| 16 | Deliverables Checklist |
-| 17 | Contact & Approval |
+| 7 | Intern Dashboard Mockup |
+| 8 | Lead Management Table Mockup |
+| 9 | Executive Analytics Dashboard Mockup |
+| 10 | Smartphone Mockup with Callouts (Mobile PWA) |
+| 11 | Implementation Roadmap Timeline (6 Connected Stages) |
+| 12 | Three-panel Pricing & Engagement Layout |
+| 13 | Two-Column Workflow Comparison Layout |
+| 14 | Partnership Lifecycle Timeline (5 Connected Stages) |
+| 15 | Two-Column Comparison Card (Operations vs LeadFlow) |
+| 16 | 4-Stage Horizontal Implementation Timeline |
+| 17 | Centered Elegant Contact Card |
 
 ---
 
@@ -612,10 +539,10 @@ Every page should:
 
 - Have one primary objective.
 - Open with a strong headline.
-- Use concise supporting text.
+- Use concise supporting text (maximum 3 lines per paragraph).
 - Prefer cards over long paragraphs.
 - Include one dominant visual.
-- End with a clear takeaway.
+- End with a clear takeaway positioned in a standardized takeaway component.
 
 Readers should understand the purpose of a page within **15 seconds**.
 
@@ -623,6 +550,4 @@ Readers should understand the purpose of a page within **15 seconds**.
 
 # Final Goal
 
-The completed proposal should feel comparable to a product presentation from a modern SaaS company.
-
-It should communicate professionalism, clarity, and confidence while making it easy for the client to understand the value of LeadFlow and approve the project.
+The completed proposal is a premium SaaS product presentation. It communicates professionalism, clarity, and confidence while making it easy for the client to understand the value of LeadFlow and approve the project.

@@ -60,6 +60,10 @@ Grouped by:
 - **Operational Efficiency:** Interns focus entirely on calls instead of spreadsheet updates.
 - **Predictable Budgeting:** Fixed-cost rollout with zero per-user monthly licensing fees.
 
+#### Payment Schedule & Milestones
+- **50% Upfront Commitment:** ₹12,500 due upon project signing and workspace kickoff.
+- **50% Upon UAT & Go-Live:** ₹12,500 due upon deployment and intern onboarding kickoff.
+
 ### Key Takeaway
 
 By eliminating per-seat licensing and deployment complexity, LeadFlow delivers immediate operational value and a rapid path to positive return on investment.
@@ -81,9 +85,9 @@ Prepared exclusively for Suryavanshi Finserv. Confidential and proprietary. | 12
     - Card 1: What's Included (x=42). Items grouped under Platform, Setup, and Training.
     - Card 2: Investment (x=216). Cost breakdown leading with 2 Months Free Support benefit.
     - Card 3: Business Value (x=391). Outcome-focused business value descriptions.
-  - Trust Indicator Badge: Centered at y=534, light blue pill badge showing "✓ Fixed Implementation Cost".
-  - Caption: Moved upward to y=570.
-  - Takeaway: Reusable master Takeaway component moved upward to y=640 (height 64), preserving the footer safe area.
+  - **Payment Milestones Schedule Panel:** Centered at y=534, dimensions 511 × 56, rx=8. Contains Upfront (50% / ₹12,500) and Go-Live (50% / ₹12,500) schedules.
+  - Caption: Centered at y=608.
+  - Takeaway: Reusable master Takeaway component positioned at y=640 (height 64), preserving the footer safe area.
 - **Footer:** Inter Regular 7pt, Slate 400. Page number right-aligned at y=822.
 - **Spacing:** 8-point system throughout.
 

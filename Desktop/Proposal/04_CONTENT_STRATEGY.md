@@ -40,17 +40,25 @@ The LeadFlow tone must always remain:
 
 # Proposal Narrative
 
-The proposal must follow a single, unbroken storytelling sequence. No pages should be placed out of this order:
+The proposal follows this streamlined storytelling sequence representing the actual approved document structure:
 
-1. **Problem:** Show that we understand the client's current workflow struggles (spreadsheets, WhatsApp, manual reporting).
-2. **Business Impact:** Explain why these struggles limit team productivity and reporting speed.
-3. **Opportunity for Change:** Introduce the value of centralizing recruitment operations.
-4. **The Solution (LeadFlow):** Introduce the platform, its user roles, and core experiences.
-5. **Operational Flow:** Step-by-step journey of a lead from import to completion.
-6. **Key Capabilities:** Details on features, analytics, and role security.
-7. **Implementation & Onboarding:** Practical timeline for delivery and launch.
-8. **Commercials:** Transparent pricing, support, and long-term vision.
-9. **Approval:** A clear, simple call-to-action to begin.
+1. **Cover Page:** Introduce LeadFlow, branding, client and metadata.
+2. **Executive Summary:** Highlight current problems, the LeadFlow solution, and the workflow transformation.
+3. **Current Challenges:** Detail pain points (Manual Excel, WhatsApp Reporting, duplicate leads, etc.) in a 3x3 grid.
+4. **Why Change?:** Present the value proposition of centralizing operations.
+5. **Introducing LeadFlow:** Introduce the PWA platform concept and security with the Login mockup.
+6. **Manager Experience:** Present the desktop Manager Dashboard mockup for live recruitment oversight.
+7. **Intern Experience:** Present the Intern Dashboard workspace mockup showing daily target checking and queue tables.
+8. **Lead Database:** Present the Lead Management Table mockup showing filtering, CSV import, and distribution actions.
+9. **Executive Analytics:** Present the Analytics Dashboard mockup showing conversion funnels, donuts, and top performing lists.
+10. **Mobile Adaptability:** Present the Smartphone Mockup with features callouts.
+11. **Implementation Roadmap:** Present the 6-stage rollout timeline (Discovery to Support).
+12. **Commercial Model:** Present pricing, setups, and outcome-focused value.
+13. **Return on Investment:** Present a side-by-side workflow comparison and checklist.
+14. **Long-Term Support:** Present the partnership lifecycle timeline and support plans.
+15. **Why LeadFlow Summary:** Present the comparative summary (current operations vs. LeadFlow).
+16. **Launch Timeline:** Present the next steps 4-stage rollout kickoff timeline.
+17. **Contact Close:** Present the founder/developer contact card close.
 
 ---
 
@@ -86,9 +94,9 @@ Explain technology through the lens of business benefits.
 
 ### Terminology Lock-In
 Always use the following terms consistently:
-- **Lead:** Never use "Prospect", "Contact", or "Candidate" interchangeably for lead records.
-- **Intern:** Never use "Agent" or "User" when describing recruiters.
-- **Manager:** Never use "Administrator" or "Admin".
+- **Lead:** Relates directly to database records. Do not use "Prospect" or "Contact" interchangeably. Note that "Candidate" is permitted when describing the end-person being called in communication or queue mockups (e.g., "Call Candidate").
+- **Intern:** Relates directly to recruiters/interns. Never use "Agent" or "User" in descriptions.
+- **Manager:** Relates directly to managers. Never use "Administrator" or "Admin" in descriptions.
 - **Batch:** Always refers to imported groups of leads.
 
 ### Benefit-First Writing

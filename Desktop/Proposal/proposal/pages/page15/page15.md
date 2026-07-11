@@ -35,23 +35,15 @@ The logical next step for your recruitment operations.
 
 LeadFlow combines modern recruitment workflows with simple implementation, transparent pricing, and ongoing support to create a dependable long-term solution.
 
-### Operational Comparison (Dominant Visual)
+### Confidence Pillars (Dominant Visual)
 
-**Caption:** Everything your recruitment team needs in one connected platform.
+**Caption:** The dependable foundation for Suryavanshi Finserv's recruitment operations.
 
-### Supporting Section: Confidence Cards
-
-#### Purpose-Built for Recruitment
-Designed specifically for recruitment operations.
-
-#### Simple Implementation
-Structured onboarding process and rapid deployment.
-
-#### Transparent Pricing
-Fixed-cost implementation model with no hidden fees.
-
-#### Long-Term Partnership
-Reinforce continued support and future enhancements.
+### Supporting Details: Four Pillars
+- **Purpose-Built:** Replaces generic spreadsheet and chat tools with workflows optimized specifically for intern calling, lead allocation, and live manager oversight.
+- **Simple Rollout:** Our structured 6-stage roadmap takes you from database configuration and lead data migration to live recruiter calling in weeks, without technical overhead.
+- **Transparent Price:** Predictable fixed implementation pricing with zero monthly per-user license fees. Scale your calling team without expanding licensing costs.
+- **Partner Ecosystem:** Includes two months of post-launch support, regular maintenance, and a structured roadmap for future WhatsApp API and automated updates.
 
 ### Key Takeaway
 
@@ -69,16 +61,13 @@ Prepared exclusively for Suryavanshi Finserv. Confidential and proprietary. | 15
 - **Page Header:** Poppins Bold 8pt, LeadFlow Blue, top left. "Page 15 / Why LeadFlow" top right. Thin separator at y=52.
 - **Hero:** Poppins Bold 24pt, Slate 900, left-aligned. Subtitle Inter 9.5pt, Slate 500.
 - **Body:** Inter Regular 10pt, Slate 900, max ~70 chars per line.
-- **Dominant Visual:** Two-Column Comparison Card (Height 220pt).
-  - Container Card: x=42, y=180, width=511, height=220, rx=12. White background (#FFFFFF), border #E5E7EB, shadow.
-    - Left Column (Current Operations): Red heading, 5 pain points with red monochrome outline icons (Spreadsheet, WhatsApp, Clock, Duplicate, Warning).
-    - Right Column (LeadFlow): Blue heading, 5 solutions with LeadFlow Blue outline icons (Database, Eye, User, Analytics, Workflow).
-    - Center Transition: Subtle blue arrow at cx=297.5, cy=290 connecting the processes (strengthened with larger circle r=18, stroke-width 1.5, and larger arrow).
-- **Supporting Section Cards (4):** Configured in a 2x2 grid below the comparison card.
-  - Row 1 (y=416, height=56, rx=8): Purpose-Built for Recruitment (x=42, width=249.5), Simple Implementation (x=303.5, width=249.5).
-  - Row 2 (y=484, height=56, rx=8): Transparent Pricing (x=42, width=249.5), Long-Term Partnership (x=303.5, width=249.5).
-  - Each card contains a monochrome outline icon, short Poppins SemiBold 8.5pt title, and one Inter Regular 7pt supporting sentence.
-- **Takeaway:** Reusable master Takeaway component, y=640, height=64, Inter Medium 11pt, Slate 900.
+- **Dominant Visual:** 2x2 Grid of Confidence Pillar Cards (y=180 to 508).
+  - Card 1: Purpose-Built (x=42, y=180, width=244, height=152, rx=12). Target icon.
+  - Card 2: Simple Rollout (x=309, y=180, width=244, height=152, rx=12). Lightning icon.
+  - Card 3: Transparent Price (x=42, y=356, width=244, height=152, rx=12). Price Tag icon.
+  - Card 4: Partner Ecosystem (x=309, y=356, width=244, height=152, rx=12). Handshake icon.
+- **Caption:** Centered at y=568.
+- **Takeaway:** Reusable master Takeaway component positioned at y=640 (height 64), preserving the footer safe area.
 - **Footer:** Inter Regular 7pt, Slate 400. Page number right-aligned at y=822.
 - **Spacing:** 8-point system throughout.
 

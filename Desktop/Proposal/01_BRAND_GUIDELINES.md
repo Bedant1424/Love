@@ -82,7 +82,7 @@ The platform should continue to feel organized whether it is used by five intern
 
 > **Manage recruitment. Empower teams. Track progress.**
 
-This tagline should appear consistently across proposal documents, presentations, and marketing materials.
+This tagline serves as the core positioning message. While not mandatory on every single proposal page to prevent visual clutter, it should be integrated into core sections (such as the cover page or executive overview) where appropriate.
 
 ---
 
@@ -411,15 +411,15 @@ Use for:
 
 Use an 8-point spacing system throughout.
 
-Allowed spacing:
+Allowed spacing (measured in points/pixels):
 
-- 8px
-- 16px
-- 24px
-- 32px
-- 48px
-- 64px
-- 80px
+- 8pt / px
+- 16pt / px
+- 24pt / px
+- 32pt / px
+- 48pt / px
+- 64pt / px
+- 80pt / px
 
 Avoid arbitrary spacing values.
 
@@ -427,21 +427,25 @@ Avoid arbitrary spacing values.
 
 # Border Radius
 
-Cards
+Primary Layout Cards
 
-16px
+12pt (rx="12" in production SVGs)
+
+Secondary / Outcome Cards
+
+8pt (rx="8" in production SVGs)
 
 Buttons
 
-12px
+12pt / 6pt (A4 document scale)
 
 Inputs
 
-10px
+10pt / 6pt (A4 document scale)
 
 Badges
 
-999px
+999pt / px
 
 ---
 

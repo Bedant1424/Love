@@ -20,7 +20,7 @@ These mockups demonstrate how recruitment workflows are centralized, simplified,
 
 # Core UI Mockups (7 Screens)
 
-## Mockup 01: Login Screen
+## Mockup 01: Login Screen (Page 05)
 
 ### Business Objective
 Introduce a secure and professional landing interface that reinforces brand trust and security.
@@ -42,7 +42,7 @@ Center-aligned login card on a minimal light/dark background.
 
 ---
 
-## Mockup 02: Manager Dashboard
+## Mockup 02: Manager Dashboard (Page 06)
 
 ### Business Objective
 Provide managers with immediate visibility into daily recruitment operations, team activity, and overall performance.
@@ -64,7 +64,7 @@ Desktop left-sidebar navigation layout. The main workspace displays high-level m
 
 ---
 
-## Mockup 03: Intern Dashboard (Recruiter Workspace)
+## Mockup 03: Intern Dashboard (Page 07 - Recruiter Workspace)
 
 ### Business Objective
 Empower recruiters to manage their assigned candidates, contact leads, and update records from a single page.
@@ -86,13 +86,13 @@ Desktop layout containing a focused task dashboard. Features key daily actions a
 
 ---
 
-## Mockup 04: Mobile PWA Dashboard
+## Mockup 04: Mobile PWA Dashboard (Page 10)
 
 ### Business Objective
 Ensure recruitment teams can work on the go with a mobile-first, responsive workflow dashboard.
 
 ### Layout
-Compact, single-column vertical layout optimized for touch targets (minimum 44px) and thumb navigation.
+Compact, single-column vertical layout optimized for touch targets (minimum 44pt / px) and thumb navigation.
 
 ### Primary Components
 - Header with greeting and network sync status.
@@ -107,7 +107,7 @@ Compact, single-column vertical layout optimized for touch targets (minimum 44px
 
 ---
 
-## Mockup 05: Lead Management Table
+## Mockup 05: Lead Management Table (Page 08)
 
 ### Business Objective
 Give managers a comprehensive database view to import, filter, allocate, and monitor leads.
@@ -128,7 +128,7 @@ Full-width desktop table layout with utility search bars and bulk action buttons
 
 ---
 
-## Mockup 06: Analytics Dashboard
+## Mockup 06: Analytics Dashboard (Page 09)
 
 ### Business Objective
 Provide decision-makers with a visual breakdown of recruitment conversion funnels and productivity patterns.
@@ -149,7 +149,7 @@ Multi-panel desktop layout containing clean data visualizations and minimal repo
 
 ---
 
-## Mockup 07: Daily Report
+## Mockup 07: Daily Report (Page 09)
 
 ### Business Objective
 Generate daily summary summaries that managers can copy, print, or share to keep teams aligned.

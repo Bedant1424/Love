@@ -64,25 +64,25 @@ Readers should understand the page in under 15 seconds.
 
 # Grid System
 
-Use a 12-column layout.
-
-Margins:
+Use a standard column layout. For the A4 Portrait SVG layout, margins are defined as:
 
 Left:
-64px
+42pt
 
 Right:
-64px
+42pt (x2 = 553pt coordinate)
 
 Top:
-72px
+72pt
 
 Bottom:
-64px
+64pt
+
+Page Dimensions:
+595pt × 842pt (A4 Portrait scale)
 
 Maximum content width:
-
-1200px
+511pt (aligned to L=42, R=553 margins)
 
 ---
 
@@ -268,15 +268,15 @@ White
 
 Radius
 
-16px
+12pt (rx="12" for primary layout cards) or 8pt (rx="8" for secondary/outcome cards)
 
 Padding
 
-24px
+24pt / px
 
 Border
 
-1px
+1px / pt
 
 Slate 200
 
@@ -332,19 +332,19 @@ Do not place visuals before the hero.
 
 Hero → Content
 
-48px
+48pt / px
 
 Content → Visual
 
-64px
+64pt / px
 
 Visual → Takeaway
 
-64px
+64pt / px (or dynamic spacing to match y=722 layout)
 
 Between cards
 
-24px
+24pt / px
 
 ---
 
@@ -504,15 +504,15 @@ Use Lucide icons only.
 
 Preferred size
 
-24px
+24pt / px
 
 Cards
 
-28px
+28pt / px
 
 Hero
 
-48px
+48pt / px
 
 Icons should always be monochrome.
 

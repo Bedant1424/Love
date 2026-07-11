@@ -92,184 +92,89 @@
         fill="#111827">and ongoing support to create a dependable long-term solution.</text>
 
   <!-- ================================================================ -->
-  <!-- DOMINANT VISUAL: OPERATIONAL COMPARISON (Height 220)              -->
-  <!-- ================================================================ -->
-  <g id="operationalComparison" filter="url(#cardShadow)">
-    <!-- Container Card (y=180 to 400, height 220) -->
-    <rect x="42" y="180" width="511" height="220" rx="12"
-          fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
-
-    <!-- Comparison Header Title -->
-    <text x="297.5" y="202"
-          text-anchor="middle"
-          font-family="'Poppins', sans-serif" font-weight="600" font-size="11" fill="#111827">Operational Comparison</text>
-
-    <!-- Left Column (Current Recruitment Operations) -->
-    <g id="currentOperations">
-      <text x="64" y="224"
-            font-family="'Poppins', sans-serif" font-weight="600" font-size="9.5" fill="#EF4444">Current Recruitment Operations</text>
-      
-      <!-- Bullet 1: Spreadsheet Icon -->
-      <g transform="translate(64, 249)">
-        <rect x="-4" y="-5" width="8" height="10" rx="1" stroke="#EF4444" stroke-width="1.1" fill="none"/>
-        <line x1="-4" y1="-1" x2="4" y2="-1" stroke="#EF4444" stroke-width="1"/>
-        <line x1="-1" y1="-5" x2="-1" y2="5" stroke="#EF4444" stroke-width="1"/>
-      </g>
-      <text x="78" y="252" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#4B5563">Excel spreadsheets</text>
-      
-      <!-- Bullet 2: WhatsApp Chat Icon -->
-      <g transform="translate(64, 269)">
-        <rect x="-5" y="-4" width="10" height="8" rx="1" stroke="#EF4444" stroke-width="1.1" fill="none"/>
-        <path d="M -3,4 L -5,7 L -1,4" stroke="#EF4444" stroke-width="1.1" fill="none"/>
-      </g>
-      <text x="78" y="272" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#4B5563">WhatsApp coordination</text>
-      
-      <!-- Bullet 3: Clock Icon -->
-      <g transform="translate(64, 289)">
-        <circle cx="0" cy="0" r="5" stroke="#EF4444" stroke-width="1.1" fill="none"/>
-        <polyline points="0,-3 0,0 2,0" stroke="#EF4444" stroke-width="1.1" fill="none"/>
-      </g>
-      <text x="78" y="292" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#4B5563">Manual reporting</text>
-      
-      <!-- Bullet 4: Duplicate Icon -->
-      <g transform="translate(64, 309)">
-        <rect x="-4" y="-4" width="6" height="6" rx="0.5" stroke="#EF4444" stroke-width="1.1" fill="none"/>
-        <rect x="-1" y="-1" width="6" height="6" rx="0.5" stroke="#EF4444" stroke-width="1.1" fill="none"/>
-      </g>
-      <text x="78" y="312" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#4B5563">Duplicate work</text>
-      
-      <!-- Bullet 5: Warning Icon -->
-      <g transform="translate(64, 329)">
-        <polygon points="0,-5 -5,4 5,4" stroke="#EF4444" stroke-width="1.1" fill="none" stroke-linejoin="round"/>
-        <line x1="0" y1="-2" x2="0" y2="1" stroke="#EF4444" stroke-width="1.1"/>
-        <circle cx="0" cy="3" r="0.5" fill="#EF4444"/>
-      </g>
-      <text x="78" y="332" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#4B5563">Limited visibility</text>
-    </g>
-
-    <!-- Right Column (LeadFlow Workflow) -->
-    <g id="leadflowOperations">
-      <text x="316" y="224"
-            font-family="'Poppins', sans-serif" font-weight="600" font-size="9.5" fill="#2563EB">LeadFlow Solution</text>
-      
-      <!-- Bullet 1: Database Icon -->
-      <g transform="translate(316, 249)">
-        <ellipse cx="0" cy="-3" rx="5" ry="2" stroke="#2563EB" stroke-width="1.1" fill="none"/>
-        <path d="M -5,-3 L -5,1 A 5,2 0 0,0 5,1 L 5,-3" stroke="#2563EB" stroke-width="1.1" fill="none"/>
-        <path d="M -5,1 L -5,5 A 5,2 0 0,0 5,5 L 5,1" stroke="#2563EB" stroke-width="1.1" fill="none"/>
-      </g>
-      <text x="330" y="252" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#4B5563">Centralized workspace</text>
-      
-      <!-- Bullet 2: Eye Icon -->
-      <g transform="translate(316, 269)">
-        <circle cx="0" cy="0" r="5" stroke="#2563EB" stroke-width="1.1" fill="none"/>
-        <circle cx="0" cy="0" r="1.8" fill="#2563EB"/>
-      </g>
-      <text x="330" y="272" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#4B5563">Real-time visibility</text>
-      
-      <!-- Bullet 3: User/Check Icon -->
-      <g transform="translate(316, 289)">
-        <path d="M -4,4 A 3,3 0 0,1 2,4 M -1,-1 A 1.8,1.8 0 1,1 -1,-1.1" stroke="#2563EB" stroke-width="1.1" fill="none"/>
-        <path d="M 3,-1 L 5,1 L 8,-2" stroke="#2563EB" stroke-width="1.1" fill="none"/>
-      </g>
-      <text x="330" y="292" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#4B5563">Clear ownership</text>
-      
-      <!-- Bullet 4: Report/Analytics Icon -->
-      <g transform="translate(316, 309)">
-        <rect x="-5" y="-5" width="10" height="10" rx="1.5" stroke="#2563EB" stroke-width="1.1" fill="none"/>
-        <line x1="-5" y1="0" x2="5" y2="0" stroke="#2563EB" stroke-width="1.1"/>
-        <line x1="0" y1="0" x2="0" y2="5" stroke="#2563EB" stroke-width="1.1"/>
-      </g>
-      <text x="330" y="312" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#4B5563">Automated reporting</text>
-      
-      <!-- Bullet 5: Workflow Icon -->
-      <g transform="translate(316, 329)">
-        <circle cx="-3" cy="3" r="2" stroke="#2563EB" stroke-width="1.1" fill="none"/>
-        <circle cx="3" cy="3" r="2" stroke="#2563EB" stroke-width="1.1" fill="none"/>
-        <circle cx="0" cy="-3" r="2" stroke="#2563EB" stroke-width="1.1" fill="none"/>
-        <path d="M 0,-1 L -3,1 M 0,-1 L 3,1" stroke="#2563EB" stroke-width="1.1"/>
-      </g>
-      <text x="330" y="332" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#4B5563">Structured workflows</text>
-    </g>
-
-    <!-- Vertical dashed divider -->
-    <line x1="297.5" y1="218" x2="297.5" y2="380"
-          stroke="#E5E7EB" stroke-width="0.75" stroke-dasharray="4 3"/>
-
-    <!-- Central Transition Element (Strengthened & larger) -->
-    <g opacity="0.85">
-      <!-- Glow rings -->
-      <circle cx="297.5" cy="290" r="24" fill="none" stroke="#2563EB" stroke-width="2" opacity="0.18"/>
-      <circle cx="297.5" cy="290" r="21" fill="none" stroke="#2563EB" stroke-width="1" opacity="0.1"/>
-      <!-- Main circle -->
-      <circle cx="297.5" cy="290" r="18" fill="#EFF6FF" stroke="#2563EB" stroke-width="1.5"/>
-      <!-- Strong arrow -->
-      <g stroke="#2563EB" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M 290,290 L 305,290"/>
-        <path d="M 299,284 L 305,290 L 299,296"/>
-      </g>
-    </g>
-  </g>
-
-  <!-- ================================================================ -->
-  <!-- SUPPORTING SECTION: CONFIDENCE CARDS (2x2 GRID)                  -->
+  <!-- DOMINANT VISUAL: CONFIDENCE PILLARS (2x2 GRID OF DETAILED CARDS) -->
   <!-- ================================================================ -->
 
-  <!-- Row 1: y=416 to 472 (height 56) -->
-  <!-- Card 1: Purpose-Built for Recruitment (x=42, width=249.5) -->
-  <g id="confidenceCard1" filter="url(#cardShadow)">
-    <rect x="42" y="416" width="249.5" height="56" rx="8" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
-    <!-- Icon: Target outline -->
-    <g transform="translate(60, 444)" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="0" cy="0" r="7"/>
-      <circle cx="0" cy="0" r="2" fill="#2563EB"/>
+  <!-- Card 1: Purpose-Built for Recruitment (x=42, y=180, width=244, height=152) -->
+  <g id="pillarCard1" filter="url(#cardShadow)">
+    <rect x="42" y="180" width="244" height="152" rx="12" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <!-- Icon: Target -->
+    <g transform="translate(68, 212)" stroke="#2563EB" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="0" cy="0" r="9"/>
+      <circle cx="0" cy="0" r="4"/>
+      <circle cx="0" cy="0" r="1.2" fill="#2563EB"/>
     </g>
-    <text x="78" y="439" font-family="'Poppins', sans-serif" font-weight="600" font-size="8.5" fill="#111827">Purpose-Built for Recruitment</text>
-    <text x="78" y="451" font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#6B7280">Designed specifically for recruitment operations.</text>
+    <!-- Titles -->
+    <text x="86" y="210" font-family="'Poppins', sans-serif" font-weight="600" font-size="10.5" fill="#111827">Purpose-Built</text>
+    <text x="86" y="222" font-family="'Inter', sans-serif" font-weight="500" font-size="7.5" fill="#2563EB">FOR RECRUITMENT OPERATIONS</text>
+    <line x1="60" y1="234" x2="228" y2="234" stroke="#E5E7EB" stroke-width="0.5"/>
+    <!-- Description -->
+    <text x="60" y="254" font-family="'Inter', sans-serif" font-weight="400" font-size="8.5" fill="#4B5563">Replaces generic tools with</text>
+    <text x="60" y="268" font-family="'Inter', sans-serif" font-weight="400" font-size="8.5" fill="#4B5563">workflows optimized specifically for</text>
+    <text x="60" y="282" font-family="'Inter', sans-serif" font-weight="400" font-size="8.5" fill="#4B5563">intern calling, lead allocation,</text>
+    <text x="60" y="296" font-family="'Inter', sans-serif" font-weight="400" font-size="8.5" fill="#4B5563">and live manager oversight.</text>
   </g>
 
-  <!-- Card 2: Simple Implementation (x=303.5, width=249.5) -->
-  <g id="confidenceCard2" filter="url(#cardShadow)">
-    <rect x="303.5" y="416" width="249.5" height="56" rx="8" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
-    <!-- Icon: Calendar/Clock -->
-    <g transform="translate(321.5, 444)" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="-6" y="-6" width="12" height="12" rx="1.5"/>
-      <line x1="-3" y1="-6" x2="-3" y2="-3"/>
-      <line x1="3" y1="-6" x2="3" y2="-3"/>
+  <!-- Card 2: Simple Implementation (x=309, y=180, width=244, height=152) -->
+  <g id="pillarCard2" filter="url(#cardShadow)">
+    <rect x="309" y="180" width="244" height="152" rx="12" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <!-- Icon: Lightning -->
+    <g transform="translate(335, 212)" stroke="#2563EB" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M -2,-8 L 3,-2 L -1.5,-1 L 2,8 L -3,2 L 0.5,1 Z" fill="#EFF6FF"/>
     </g>
-    <text x="339.5" y="439" font-family="'Poppins', sans-serif" font-weight="600" font-size="8.5" fill="#111827">Simple Implementation</text>
-    <text x="339.5" y="451" font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#6B7280">Structured onboarding process and rapid deployment.</text>
+    <!-- Titles -->
+    <text x="353" y="210" font-family="'Poppins', sans-serif" font-weight="600" font-size="10.5" fill="#111827">Simple Rollout</text>
+    <text x="353" y="222" font-family="'Inter', sans-serif" font-weight="500" font-size="7.5" fill="#2563EB">NO TECHNICAL OVERHEAD</text>
+    <line x1="327" y1="234" x2="495" y2="234" stroke="#E5E7EB" stroke-width="0.5"/>
+    <!-- Description -->
+    <text x="327" y="254" font-family="'Inter', sans-serif" font-weight="400" font-size="8.5" fill="#4B5563">Our structured 6-stage roadmap</text>
+    <text x="327" y="268" font-family="'Inter', sans-serif" font-weight="400" font-size="8.5" fill="#4B5563">takes you from database config</text>
+    <text x="327" y="282" font-family="'Inter', sans-serif" font-weight="400" font-size="8.5" fill="#4B5563">and lead data migration to live</text>
+    <text x="327" y="296" font-family="'Inter', sans-serif" font-weight="400" font-size="8.5" fill="#4B5563">recruiter calling in weeks.</text>
   </g>
 
-  <!-- Row 2: y=484 to 540 (height 56) -->
-  <!-- Card 3: Transparent Pricing (x=42, width=249.5) -->
-  <g id="confidenceCard3" filter="url(#cardShadow)">
-    <rect x="42" y="484" width="249.5" height="56" rx="8" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
-    <!-- Icon: Tag -->
-    <g transform="translate(60, 512)" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="-7" y="-5" width="14" height="10" rx="1"/>
-      <line x1="-7" y1="-1" x2="7" y2="-1"/>
+  <!-- Card 3: Transparent Pricing (x=42, y=356, width=244, height=152) -->
+  <g id="pillarCard3" filter="url(#cardShadow)">
+    <rect x="42" y="356" width="244" height="152" rx="12" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <!-- Icon: Price Tag -->
+    <g transform="translate(68, 388)" stroke="#2563EB" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M -6,0 L -2,-5 L 5,-5 L 5,3 L -2,3 Z" fill="#EFF6FF"/>
+      <circle cx="-1" cy="-2" r="1" fill="#2563EB"/>
     </g>
-    <text x="78" y="507" font-family="'Poppins', sans-serif" font-weight="600" font-size="8.5" fill="#111827">Transparent Pricing</text>
-    <text x="78" y="519" font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#6B7280">Fixed-cost implementation model with no hidden fees.</text>
+    <!-- Titles -->
+    <text x="86" y="386" font-family="'Poppins', sans-serif" font-weight="600" font-size="10.5" fill="#111827">Transparent Price</text>
+    <text x="86" y="398" font-family="'Inter', sans-serif" font-weight="500" font-size="7.5" fill="#2563EB">ZERO PER-USER FEES</text>
+    <line x1="60" y1="410" x2="228" y2="410" stroke="#E5E7EB" stroke-width="0.5"/>
+    <!-- Description -->
+    <text x="60" y="430" font-family="'Inter', sans-serif" font-weight="400" font-size="8.5" fill="#4B5563">Predictable fixed implementation</text>
+    <text x="60" y="444" font-family="'Inter', sans-serif" font-weight="400" font-size="8.5" fill="#4B5563">pricing with no monthly per-user</text>
+    <text x="60" y="458" font-family="'Inter', sans-serif" font-weight="400" font-size="8.5" fill="#4B5563">license fees. Scale your calling</text>
+    <text x="60" y="472" font-family="'Inter', sans-serif" font-weight="400" font-size="8.5" fill="#4B5563">team without expanding licensing costs.</text>
   </g>
 
-  <!-- Card 4: Long-Term Partnership (x=303.5, width=249.5) -->
-  <g id="confidenceCard4" filter="url(#cardShadow)">
-    <rect x="303.5" y="484" width="249.5" height="56" rx="8" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
-    <!-- Icon: Handshake/Users -->
-    <g transform="translate(321.5, 512)" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M -5,5 A 4,4 0 0,1 1,5 M -2,-2 A 2.2,2.2 0 1,1 -2,-2.1"/>
-      <path d="M 3,0 L 5.5,2.5 L 9.5,-1.5"/>
+  <!-- Card 4: Long-Term Partnership (x=309, y=356, width=244, height=152) -->
+  <g id="pillarCard4" filter="url(#cardShadow)">
+    <rect x="309" y="356" width="244" height="152" rx="12" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="0.75"/>
+    <!-- Icon: Handshake/Link -->
+    <g transform="translate(335, 388)" stroke="#2563EB" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="-3.5" cy="0" r="4.5" fill="#EFF6FF"/>
+      <circle cx="3.5" cy="0" r="4.5"/>
     </g>
-    <text x="339.5" y="507" font-family="'Poppins', sans-serif" font-weight="600" font-size="8.5" fill="#111827">Long-Term Partnership</text>
-    <text x="339.5" y="519" font-family="'Inter', sans-serif" font-weight="400" font-size="7" fill="#6B7280">Reinforce continued support and future enhancements.</text>
+    <!-- Titles -->
+    <text x="353" y="386" font-family="'Poppins', sans-serif" font-weight="600" font-size="10.5" fill="#111827">Partner Ecosystem</text>
+    <text x="353" y="398" font-family="'Inter', sans-serif" font-weight="500" font-size="7.5" fill="#2563EB">BUILT FOR FUTURE GROWTH</text>
+    <line x1="327" y1="410" x2="495" y2="410" stroke="#E5E7EB" stroke-width="0.5"/>
+    <!-- Description -->
+    <text x="327" y="430" font-family="'Inter', sans-serif" font-weight="400" font-size="8.5" fill="#4B5563">Includes 2 months of post-launch</text>
+    <text x="327" y="444" font-family="'Inter', sans-serif" font-weight="400" font-size="8.5" fill="#4B5563">support, regular maintenance,</text>
+    <text x="327" y="458" font-family="'Inter', sans-serif" font-weight="400" font-size="8.5" fill="#4B5563">and a structured roadmap for</text>
+    <text x="327" y="472" font-family="'Inter', sans-serif" font-weight="400" font-size="8.5" fill="#4B5563">WhatsApp API and automated updates.</text>
   </g>
 
-  <!-- Visual caption -->
-  <text x="297.5" y="566"
+  <!-- Caption -->
+  <text x="297.5" y="568"
         text-anchor="middle"
-        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">Everything your recruitment team needs in one connected platform.</text>
+        font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#6B7280">The dependable foundation for Suryavanshi Finserv's recruitment operations.</text>
 
   <!-- ================================================================ -->
   <!-- KEY TAKEAWAY — Reused from Components Library (Moved upward)      -->
