@@ -70,7 +70,7 @@ Prepared exclusively for Suryavanshi Finserv. Confidential and proprietary. | 07
       - Card 3: Remaining Today (15 Leads)
     - Active Calling Queue Table: Card x=126, y=320, width=404, height=210.
       - Table Header: Name, Phone, Status, Actions.
-      - Lead Row 1: Amit Sharma, +91 98765 43210, Status badge "Call Back" (amber fill #FEF3C7, text #D97706), Action buttons "Call" and "WhatsApp".
+      - Lead Row 1: Amit Sharma, 8895513563, Status badge "Call Back" (amber fill #FEF3C7, text #D97706), Action buttons "Call" and "WhatsApp".
       - Lead Row 2: Vikram Singh, +91 98234 56789, Status badge "Assigned" (blue fill #EFF6FF, text #2563EB), Action buttons "Call" and "WhatsApp".
       - Lead Row 3: Neha Patel, +91 98123 45678, Status badge "No Answer" (red fill #FEE2E2, text #EF4444), Action buttons "Call" and "WhatsApp".
       - Lead Row 4: Karan Johar, +91 97123 45678, Status badge "Interested" (green fill #D1FAE5, text #065F46), Action buttons "Call" and "WhatsApp".

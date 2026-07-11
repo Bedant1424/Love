@@ -136,22 +136,23 @@
       <rect x="-6" y="-4.5" width="12" height="9" rx="1"/>
       <path d="M -6,-4.5 L 0,0.5 L 6,-4.5"/>
     </g>
-    <text x="356" y="422" font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#334155">bedant@leadflow.in</text>
+    <text x="356" y="422" font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#334155">bedantarya0342@gmail.com</text>
 
     <!-- Phone -->
     <g transform="translate(341, 447) scale(1.1)" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <path d="M -4.5,-2 C -4,-3.5 -2.5,-4 -1,-4 C 0.5,-4 1.5,-3 2.5,-1.5 C 2,-0.5 1,0.5 -1,0.5 C -3.5,0.5 -4.5,-0.5 -4.5,-2 Z"/>
       <path d="M -2,1 L -3,3 C -1,4.5 1,4.5 3,3 L 2,1"/>
     </g>
-    <text x="356" y="450" font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#334155">+91 98765 43210</text>
+    <text x="356" y="450" font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#334155">8895513563</text>
 
-    <!-- Web -->
+    <!-- LinkedIn -->
     <g transform="translate(341, 475) scale(1.1)" stroke="#2563EB" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="0" cy="0" r="5"/>
-      <line x1="-5" y1="0" x2="5" y2="0"/>
-      <path d="M -2.5,0 A 5,5 0 0,1 2.5,0"/>
+      <rect x="-5.5" y="-5.5" width="11" height="11" rx="1.5"/>
+      <line x1="-2.5" y1="-1" x2="-2.5" y2="3"/>
+      <circle cx="-2.5" cy="-3.5" r="0.5" fill="#2563EB"/>
+      <path d="M 0.5,3 L 0.5,0 C 0.5,-1 2.5,-1 2.5,0 L 2.5,3"/>
     </g>
-    <text x="356" y="478" font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#334155">www.leadflow.in</text>
+    <text x="356" y="478" font-family="'Inter', sans-serif" font-weight="400" font-size="8" fill="#334155">linkedin.com/in/bedant-arya-padhy</text>
   </g>
 
   <!-- ================================================================ -->

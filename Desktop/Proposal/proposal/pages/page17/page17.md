@@ -18,9 +18,9 @@ Schedule a kickoff call to finalize:
 ### Prepared By (Section 2)
 **Name:** Bedant Arya Padhy
 **Title:** Founder, LeadFlow
-**Email:** bedant@leadflow.in
-**Phone:** +91 98765 43210
-**Website:** www.leadflow.in
+**Email:** bedantarya0342@gmail.com
+**Phone:** 8895513563
+**LinkedIn:** https://www.linkedin.com/in/bedant-arya-padhy/
 
 ### Client Approval (Section 3)
 Subtle authorization to begin workspace setup:

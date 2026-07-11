@@ -204,7 +204,7 @@
 
     <!-- Row 1: Amit Sharma -->
     <text x="138" y="380" font-family="'Inter', sans-serif" font-weight="500" font-size="7.5" fill="#111827">Amit Sharma</text>
-    <text x="220" y="380" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">+91 98765 43210</text>
+    <text x="220" y="380" font-family="'Inter', sans-serif" font-weight="400" font-size="7.5" fill="#6B7280">8895513563</text>
     <!-- Call Back Badge -->
     <rect x="314" y="371" width="46" height="11" rx="2.5" fill="#FEF3C7"/>
     <text x="337" y="379" text-anchor="middle" font-family="'Inter', sans-serif" font-weight="500" font-size="6" fill="#D97706">Call Back</text>
