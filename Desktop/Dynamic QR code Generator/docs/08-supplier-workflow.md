@@ -1,6 +1,6 @@
 # 08 — Supplier Workflow & Zero-Knowledge Manufacturing
 
-> **Status:** Reconciled at Final Design Review (Gate 1.5). Implementation has NOT started.  
+> **Status:** Batch Provisioning Engine & Manifest Generation Implemented & Verified in Milestone 4. Physical SVG asset pipeline scheduled for Milestone 5. See `docs/ADMIN_OPERATIONS.md`.  
 > **Manufacturing Rule:** Zero-Knowledge Privacy. Suppliers never receive business identities or review destinations.
 
 ---

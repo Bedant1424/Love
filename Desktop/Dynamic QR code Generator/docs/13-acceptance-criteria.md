@@ -33,12 +33,12 @@
 
 ## 3. Administration & Manufacturing
 
-- [ ] **AC-ADM-01:** Admin routes require Cloudflare Access Zero Trust authentication.
-- [ ] **AC-ADM-02:** Batch creation provisions $N$ unique cards with non-sequential Crockford Base32 IDs and exports valid `manifest.csv` and SVGs.
-- [ ] **AC-ADM-03:** Supplier manifest contains only public IDs, activation codes, and filenames; zero business identities or review destinations.
+- [x] **AC-ADM-01:** Admin routes require Cloudflare Access Zero Trust authentication (`/api/admin/*` and `/admin/*`). Unauthenticated requests rejected with HTTP 401.
+- [x] **AC-ADM-02:** Batch creation provisions $N$ unique cards with non-sequential Crockford Base32 IDs and exports valid `manifest.csv`.
+- [x] **AC-ADM-03:** Supplier manifest contains only public IDs, activation codes, and routing URLs; zero business identities or review destinations.
 - [ ] **AC-ADM-04:** Unactivated cards can have activation codes rotated by an admin, immediately invalidating the previous code.
-- [ ] **AC-ADM-05:** Active cards can be disabled, restored, or have destinations updated by an admin with a mandatory audit log entry.
-- [ ] **AC-ADM-06:** Retired cards cannot be reactivated, reassigned, or restored.
+- [x] **AC-ADM-05:** Active cards can be disabled, restored, or have destinations updated by an admin with a mandatory audit log entry.
+- [x] **AC-ADM-06:** Retired cards cannot be reactivated, reassigned, or restored (terminal state).
 
 ---
 

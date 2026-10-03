@@ -62,3 +62,26 @@ flowchart TD
 2. **Confidentiality:** Subsequent visitors scanning or attempting activation receive generic status responses and are **never** shown the existing business name, Google destination, or activation code.
 3. **No Reassignment:** A card cannot be claimed or overwritten by another business through public flows.
 4. **Zero Log Leaks:** Activation codes and secrets are scrubbed and never appear in error traces, console output, or audit logs.
+
+---
+
+## 4. Administrative Security Boundary (Cloudflare Access Zero Trust)
+
+### 4.1 Boundary Enforcement
+- All routes under `/admin/*` and `/api/admin/*` sit strictly behind Cloudflare Access (Zero Trust free tier, up to 50 seats).
+- Cloudflare Access injects verified identity headers (`cf-access-authenticated-user-email`). The application verifies the presence and valid syntax of the operator's email address.
+- Unauthenticated requests fail closed with `HTTP 401 Unauthorized` without executing downstream handler logic.
+
+### 4.2 One-Time Secret Ephemerality in Batch Provisioning
+- When batches are provisioned via `POST /api/admin/batches`, raw Crockford Base32 activation codes are generated in-memory and returned **exactly once** in the response for physical print/NFC encoding manifest generation.
+- D1 stores only HMAC-SHA256 hex digests derived using `ACTIVATION_SECRET`.
+- Even with direct read access to the database or admin inspection APIs, plaintext activation codes cannot be retrieved or dumped.
+
+### 4.3 Mandatory Audit Logging
+Every administrative mutation (`CARD_DISABLED`, `CARD_RESTORED`, `CARD_RETIRED`, `DESTINATION_CHANGED`, `CARD_CREATED`) generates an immutable record in `audit_logs` capturing:
+- `card_id`
+- `action`
+- `actor_type = 'ADMIN'`
+- `actor_identifier` (authenticated admin email)
+- State before and after mutation
+- ISO 8601 edge timestamp

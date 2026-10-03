@@ -1,6 +1,6 @@
 # 05 — Comprehensive OWASP Threat Model
 
-> **Status:** Reconciled at Final Design Review (Gate 1.5). Threat mitigations for Public Redirect and Activation Pipelines (TH-01, TH-02, TH-03, TH-06, TH-08, TH-11, TH-21, TH-23) Implemented & Verified in Milestones 2 & 3.  
+> **Status:** Reconciled at Final Design Review (Gate 1.5). Threat mitigations for Public Redirect, Activation, and Admin/Provisioning Pipelines (TH-01, TH-02, TH-03, TH-05, TH-06, TH-08, TH-11, TH-12, TH-13, TH-21, TH-22, TH-23) Implemented & Verified in Milestones 2, 3 & 4. See `docs/ADMIN_OPERATIONS.md`.  
 > **Standards:** Grounded in OWASP Top 10 (2021) and OWASP API Security Top 10 (2023).
 
 ---

@@ -1,6 +1,6 @@
 # 02 — Data Model & SQLite Architecture
 
-> **Status:** Reconciled at Final Design Review (Gate 1.5). Implementation has NOT started.  
+> **Status:** Reconciled & Implemented (Milestones 1–4). Cloudflare D1 schema `migrations/0001_initial_schema.sql` verified with full relational integrity, foreign key constraints, and index coverage. See `docs/ADMIN_OPERATIONS.md`.  
 > **Engine:** Cloudflare D1 (SQLite at the edge).  
 > **Critical Engine Characteristic:** D1 is single-threaded per database instance. High-throughput performance relies entirely on zero-table-scan indexed point lookups.
 

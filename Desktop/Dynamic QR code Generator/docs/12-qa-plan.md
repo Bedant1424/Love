@@ -50,3 +50,12 @@ flowchart TD
 - [x] Public status checks on activated cards never leak business names, activation secrets, or target destinations.
 - [x] Constant-time comparison preventing side-channel timing leaks.
 - [x] E2E browser activation journey with subsequent immediate 302 redirect verification.
+
+### Suite 4: Admin Operations, Card Lifecycle & Batch Provisioning (`tests/integration/admin.test.ts` & `tests/e2e/admin.spec.ts`) — [VERIFIED M4]
+- [x] Rejection of unauthenticated requests to `/api/admin/*` and `/admin/*` with HTTP 401 Unauthorized.
+- [x] Bounded card inventory listing and filtering without leaking activation code hashes.
+- [x] Card inspection modal with detailed metadata and audit timeline history.
+- [x] Lifecycle state transitions (`ACTIVE -> DISABLED`, `DISABLED -> ACTIVE`, `* -> RETIRED` terminal) executed atomically.
+- [x] Destination URL modifications on `ACTIVE` cards validated against Google URL allowlist and logged with `DESTINATION_CHANGED`.
+- [x] Batch provisioning generates collision-free 10-char Crockford Base32 IDs and returns raw one-time activation codes without storing plaintext in D1.
+- [x] Full Playwright browser E2E test verifying operator lifecycle actions and instant reflection in public `/c/:publicId` redirects.

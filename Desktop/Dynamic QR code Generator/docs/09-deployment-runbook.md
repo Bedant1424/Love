@@ -1,6 +1,6 @@
 # 09 — Deployment Runbook & Infrastructure Guide
 
-> **Status:** Reconciled at Final Design Review (Gate 1.5). Implementation has NOT started.  
+> **Status:** Reconciled & Verified through Milestones 1–4. Runtime foundation, D1 migrations, client assets, and local dev server verified. See `docs/ADMIN_OPERATIONS.md`.  
 > **Tooling:** Wrangler v3+ / GitHub Actions / `@cloudflare/vitest-plugin`
 
 ---

@@ -189,17 +189,60 @@ export function validateGoogleReviewUrl(inputUrl: string): ValidationResult {
 
 ## 4. Admin API Endpoints (`/api/admin/*`)
 
-*All admin endpoints are protected by Cloudflare Access Zero Trust.*
+> **Status:** Implemented & Verified (Milestone 4). See [`docs/ADMIN_OPERATIONS.md`](file:///c:/Users/17042/Desktop/Dynamic%20QR%20code%20Generator/docs/ADMIN_OPERATIONS.md).  
+> **Security:** Protected by Cloudflare Access Zero Trust identity headers (`cf-access-authenticated-user-email`). Rejects unauthenticated requests with `401 Unauthorized`.
 
-- `GET /api/admin/dashboard`: Overview statistics (cards by status, total batches).
-- `GET /api/admin/cards`: Paginated card inventory with status filtering.
-- `GET /api/admin/cards/:id`: Card detail view with audit timeline.
-- `POST /api/admin/batches`: Provisions new batch of cards with generated public IDs and codes.
-- `POST /api/admin/cards/:id/rotate-code`: Rotates activation code for an `UNACTIVATED` card.
-- `POST /api/admin/cards/:id/change-destination`: Updates target URL on an `ACTIVE` card. Logs `DESTINATION_CHANGED`.
-- `POST /api/admin/cards/:id/disable`: Transitions `ACTIVE` $\rightarrow$ `DISABLED`. Logs `CARD_DISABLED`.
-- `POST /api/admin/cards/:id/restore`: Transitions `DISABLED` $\rightarrow$ `ACTIVE`. Logs `CARD_RESTORED`.
-- `POST /api/admin/cards/:id/retire`: Transitions to `RETIRED` (terminal). Logs `CARD_RETIRED`.
+### 4.1 GET `/api/admin/dashboard`
+- **Description:** Returns aggregate KPI operational statistics.
+- **Response `200 OK`:**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "totalCards": 100,
+      "activeCards": 60,
+      "unactivatedCards": 30,
+      "disabledCards": 8,
+      "retiredCards": 2,
+      "cardsByStatus": {
+        "UNACTIVATED": 30,
+        "ACTIVE": 60,
+        "DISABLED": 8,
+        "RETIRED": 2
+      },
+      "totalBatches": 5
+    }
+  }
+  ```
+
+### 4.2 GET `/api/admin/cards`
+- **Query Parameters:** `page` (default 1), `limit` (default 20, max 100), `status` (`ALL|ACTIVE|UNACTIVATED|DISABLED|RETIRED`), `search` or `q` (substring match on `public_id` or `business_name`).
+- **Response `200 OK`:** Paginated result array of `AdminCardSummary` objects including `batchName`, omitting raw activation hashes.
+
+### 4.3 GET `/api/admin/cards/:id`
+- **Path Parameter:** `id` (Card UUID or Crockford `publicId`).
+- **Response `200 OK`:** `AdminCardDetail` object including card metadata and audit log history array.
+
+### 4.4 POST `/api/admin/batches`
+- **Request Body:** `{ "name": "Batch Name", "cardCount": 10, "notes": "Optional notes" }`
+- **Behavior:** Generates $N$ cards with Crockford Base32 public IDs and activation codes atomically in D1. Returns raw activation codes once in response for supplier manifest export. Raw codes are **never** stored in D1.
+
+### 4.5 POST `/api/admin/cards/:id/disable`
+- **Behavior:** Transitions an `ACTIVE` card to `DISABLED`. Records `CARD_DISABLED` audit log.
+
+### 4.6 POST `/api/admin/cards/:id/restore`
+- **Behavior:** Transitions a `DISABLED` card back to `ACTIVE`. Records `CARD_RESTORED` audit log.
+
+### 4.7 POST `/api/admin/cards/:id/retire`
+- **Behavior:** Permanently transitions any non-retired card to `RETIRED` (terminal). Records `CARD_RETIRED` audit log. Subsequent restoration attempts return `400 Bad Request`.
+
+### 4.8 POST `/api/admin/cards/:id/change-destination` (Alias: `/destination`)
+- **Request Body:** `{ "destinationUrl": "https://search.google.com/local/writereview?placeid=..." }`
+- **Behavior:** Validates destination via `validateGoogleReviewUrl`. Updates destination on `ACTIVE` card and records `DESTINATION_CHANGED` audit log.
+
+### 4.9 GET `/api/admin/audit` (Alias: `/audit-logs`)
+- **Query Parameters:** `page`, `limit`, `cardId`, `action`.
+- **Response `200 OK`:** Paginated platform audit trail with joined card public IDs.
 
 ---
 
