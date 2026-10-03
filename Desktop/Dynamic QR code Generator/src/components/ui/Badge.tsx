@@ -3,7 +3,7 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: 'active' | 'unactivated' | 'disabled' | 'neutral';
+  variant?: 'active' | 'unactivated' | 'disabled' | 'neutral' | 'retired';
 }
 
 export const Badge: React.FC<BadgeProps> = ({
@@ -16,6 +16,7 @@ export const Badge: React.FC<BadgeProps> = ({
     active: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     unactivated: 'bg-amber-50 text-amber-700 border-amber-200',
     disabled: 'bg-red-50 text-red-700 border-red-200',
+    retired: 'bg-zinc-200 text-zinc-800 border-zinc-300',
     neutral: 'bg-zinc-100 text-zinc-700 border-zinc-200',
   };
 

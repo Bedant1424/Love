@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { ActivationPage } from './ActivationPage';
+import { AdminPage } from './AdminPage';
 import type { HealthResponse } from '../shared/types';
 
 export const App: React.FC = () => {
@@ -45,6 +46,11 @@ export const App: React.FC = () => {
       fetchHealth();
     }
   }, [currentPath]);
+
+  // Route to Admin Page if on /admin
+  if (currentPath.startsWith('/admin')) {
+    return <AdminPage />;
+  }
 
   // Route to Activation Page if on /activate or /activate/:publicId
   if (currentPath.startsWith('/activate')) {
@@ -112,7 +118,7 @@ export const App: React.FC = () => {
               Re-check Edge Liveness
             </Button>
 
-            <div className="pt-2 border-t border-zinc-200">
+            <div className="pt-2 border-t border-zinc-200 space-y-2">
               <a
                 href="/activate"
                 onClick={(e) => {
@@ -123,6 +129,17 @@ export const App: React.FC = () => {
                 className="block text-center text-sm font-medium text-zinc-700 hover:text-zinc-950 transition-colors"
               >
                 Go to Card Activation &rarr;
+              </a>
+              <a
+                href="/admin"
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.history.pushState({}, '', '/admin');
+                  setCurrentPath('/admin');
+                }}
+                className="block text-center text-xs font-medium text-zinc-500 hover:text-zinc-800 transition-colors"
+              >
+                Operator Admin Console &rarr;
               </a>
             </div>
           </CardContent>
