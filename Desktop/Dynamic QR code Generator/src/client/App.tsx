@@ -3,12 +3,25 @@ import { PageContainer } from '../components/ui/PageContainer';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
+import { ActivationPage } from './ActivationPage';
 import type { HealthResponse } from '../shared/types';
 
 export const App: React.FC = () => {
+  const [currentPath, setCurrentPath] = useState<string>(
+    typeof window !== 'undefined' ? window.location.pathname : '/'
+  );
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Listen to popstate for client navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const fetchHealth = async () => {
     setLoading(true);
@@ -28,9 +41,19 @@ export const App: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchHealth();
-  }, []);
+    if (currentPath === '/') {
+      fetchHealth();
+    }
+  }, [currentPath]);
 
+  // Route to Activation Page if on /activate or /activate/:publicId
+  if (currentPath.startsWith('/activate')) {
+    const segments = currentPath.split('/').filter(Boolean);
+    const initialId = segments.length > 1 ? segments[1] : '';
+    return <ActivationPage initialPublicId={initialId} />;
+  }
+
+  // Foundation Shell View on root /
   return (
     <main className="min-h-screen bg-zinc-50 flex flex-col justify-center">
       <PageContainer size="narrow">
@@ -88,6 +111,20 @@ export const App: React.FC = () => {
             >
               Re-check Edge Liveness
             </Button>
+
+            <div className="pt-2 border-t border-zinc-200">
+              <a
+                href="/activate"
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.history.pushState({}, '', '/activate');
+                  setCurrentPath('/activate');
+                }}
+                className="block text-center text-sm font-medium text-zinc-700 hover:text-zinc-950 transition-colors"
+              >
+                Go to Card Activation &rarr;
+              </a>
+            </div>
           </CardContent>
         </Card>
 
