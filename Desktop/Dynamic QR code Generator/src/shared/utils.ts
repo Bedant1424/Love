@@ -70,3 +70,48 @@ export function createErrorResponse(
 export function sanitizeString(val: string): string {
   return val.trim().replace(/[<>]/g, '');
 }
+
+/**
+ * Standard Crockford Base32 alphabet (32 symbols, excluding I, L, O, U).
+ */
+export const CROCKFORD_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+
+/**
+ * Generates a cryptographically secure, collision-resistant Crockford Base32 identifier.
+ * Uses modulo 32 across 256 byte range (zero modulo bias because 256 = 8 * 32).
+ */
+export function generateCrockfordPublicId(length = 10): string {
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  let id = '';
+  for (let i = 0; i < length; i++) {
+    id += CROCKFORD_ALPHABET[(bytes[i] ?? 0) % 32];
+  }
+  return id;
+}
+
+/**
+ * Parses and bounds pagination parameters to prevent resource exhaustion.
+ */
+export function parsePagination(
+  rawPage?: string | null,
+  rawLimit?: string | null,
+  defaultLimit = 20,
+  maxLimit = 100
+): { page: number; limit: number; offset: number } {
+  let page = rawPage ? parseInt(rawPage, 10) : 1;
+  let limit = rawLimit ? parseInt(rawLimit, 10) : defaultLimit;
+
+  if (isNaN(page) || page < 1) {
+    page = 1;
+  }
+  if (isNaN(limit) || limit < 1) {
+    limit = defaultLimit;
+  }
+  if (limit > maxLimit) {
+    limit = maxLimit;
+  }
+
+  const offset = (page - 1) * limit;
+  return { page, limit, offset };
+}

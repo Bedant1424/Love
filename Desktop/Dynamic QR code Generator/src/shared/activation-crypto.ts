@@ -154,3 +154,18 @@ export async function verifyActivationCode(
     return false;
   }
 }
+
+/**
+ * Generates a cryptographically secure 12-character Crockford Base32 activation code
+ * formatted as XXXX-XXXX-XXXX.
+ */
+export function generateActivationCode(): string {
+  const CROCKFORD_CHARS = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+  const bytes = new Uint8Array(12);
+  crypto.getRandomValues(bytes);
+  let code = '';
+  for (let i = 0; i < 12; i++) {
+    code += CROCKFORD_CHARS[(bytes[i] ?? 0) % 32];
+  }
+  return formatActivationCode(code);
+}
