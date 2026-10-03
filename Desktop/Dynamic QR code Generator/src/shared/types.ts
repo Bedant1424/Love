@@ -224,3 +224,7 @@ export interface CreateBatchResponse {
 export interface ChangeDestinationRequest {
   destinationUrl: string;
 }
+
+export type { CardEnvironment, CardUrlOptions } from './url';
+export type { NfcPayloadInfo } from './nfc';
+export type { SupplierSubstrate, ManifestOptions, BatchPackageOptions } from './fulfillment';
