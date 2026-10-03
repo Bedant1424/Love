@@ -1,0 +1,40 @@
+@import 'tailwindcss';
+
+@layer base {
+  :root {
+    --bg-app: #fafafa;
+    --bg-surface: #ffffff;
+    --border-subtle: #e4e4e7;
+    --border-strong: #a1a1aa;
+
+    --text-primary: #09090b;
+    --text-secondary: #52525b;
+    --text-muted: #71717a;
+
+    --accent-emerald: #059669;
+    --accent-emerald-bg: #ecfdf5;
+    --accent-amber: #d97706;
+    --accent-amber-bg: #fffbeb;
+    --accent-red: #dc2626;
+    --accent-red-bg: #fef2f2;
+
+    --ring-focus: #09090b;
+  }
+
+  body {
+    background-color: var(--bg-app);
+    color: var(--text-primary);
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+  }
+}
+
+/* Tabular numbers for all monospace/codes */
+.font-mono-tabular {
+  font-family: 'Geist Mono', 'SF Mono', Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+}
