@@ -1,6 +1,6 @@
 # 07 — QR Code & NFC Print Production Specification
 
-> **Status:** Reconciled at Final Design Review (Gate 1.5). Implementation has NOT started.  
+> **Status:** Implemented & Verified in Milestone 5. See `docs/ASSET_PIPELINE.md`.  
 > **Physical Reliability Standard:** ISO/IEC 18004 Error Correction Level H (~30% recovery) + NFC Forum RTD Type U.
 
 ---

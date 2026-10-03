@@ -1,6 +1,6 @@
 # 08 — Supplier Workflow & Zero-Knowledge Manufacturing
 
-> **Status:** Batch Provisioning Engine & Manifest Generation Implemented & Verified in Milestone 4. Physical SVG asset pipeline scheduled for Milestone 5. See `docs/ADMIN_OPERATIONS.md`.  
+> **Status:** Batch Provisioning Engine, Zero-Knowledge Manifest, Vector SVG Pipeline, and ZIP Packaging Implemented & Verified in Milestone 5. See `docs/ASSET_PIPELINE.md`.  
 > **Manufacturing Rule:** Zero-Knowledge Privacy. Suppliers never receive business identities or review destinations.
 
 ---

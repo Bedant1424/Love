@@ -1,6 +1,6 @@
 # 13 — Formal Acceptance Criteria (Gate 1.5 Reconciled)
 
-> **Status:** Reconciled at Final Design Review (Gate 1.5). Sections 1 (Public Redirect Pipeline) & 2 (Card Activation Pipeline) Verified in Milestone 2 & 3.
+> **Status:** Reconciled at Final Design Review (Gate 1.5). Sections 1 (Redirect), 2 (Activation), and 3 (Admin, Lifecycle & Physical Asset Pipeline) Implemented and Verified in Milestones 2, 3, 4, and 5.
 
 ---
 
@@ -39,6 +39,9 @@
 - [ ] **AC-ADM-04:** Unactivated cards can have activation codes rotated by an admin, immediately invalidating the previous code.
 - [x] **AC-ADM-05:** Active cards can be disabled, restored, or have destinations updated by an admin with a mandatory audit log entry.
 - [x] **AC-ADM-06:** Retired cards cannot be reactivated, reassigned, or restored (terminal state).
+- [x] **AC-ADM-07:** Offline physical QR asset pipeline generates ISO/IEC 18004 Level H vector SVG artwork and raster previews without leaking Google destinations.
+- [x] **AC-ADM-08:** Zero-knowledge batch export packages manifest.csv, README.txt, SVGs, and PNGs into an in-memory ZIP package with CSV formula injection defense.
+- [x] **AC-ADM-09:** NFC NTAG213 payload generation conforms to NFC Forum Type 2 RTD URI Type U, calculating byte capacity (< 50 bytes) and permanent read-only locking directive.
 
 ---
 

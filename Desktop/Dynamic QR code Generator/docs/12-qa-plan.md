@@ -59,3 +59,13 @@ flowchart TD
 - [x] Destination URL modifications on `ACTIVE` cards validated against Google URL allowlist and logged with `DESTINATION_CHANGED`.
 - [x] Batch provisioning generates collision-free 10-char Crockford Base32 IDs and returns raw one-time activation codes without storing plaintext in D1.
 - [x] Full Playwright browser E2E test verifying operator lifecycle actions and instant reflection in public `/c/:publicId` redirects.
+
+### Suite 5: QR Code & Physical Asset Pipeline (`tests/unit/qr-generator.test.ts`, `tests/unit/fulfillment.test.ts`, `tests/e2e/assets.spec.ts`) — [VERIFIED M5]
+- [x] Vector SVG generator outputs valid XML with ISO/IEC 18004 Level H error correction, 4-module quiet zone, and zero hostile tokens (<script>, onload).
+- [x] Pure TypeScript zero-dependency PNG encoder builds valid 8-bit grayscale PNGs decoding cleanly to canonical URLs using jsQR.
+- [x] Canonical URL builder enforces physical invariant: encodes strictly `https://<HOST>/c/<publicId>` and never Google destination URLs.
+- [x] NDEF URI Type U payload generator validates NXP NTAG213 user memory limits (< 45 of 144 bytes used) and permanent read-only lock directive.
+- [x] Supplier manifest CSV adheres to RFC 4180 with CSV formula injection mitigation (`='`, `+'`, `-'`, `@'`).
+- [x] Zero-knowledge privacy verification confirms zero business identities, review URLs, or database UUIDs in manifests or packages.
+- [x] Full batch packaging builds in-memory ZIP archives with manifest.csv, README.txt, SVGs, and PNGs.
+- [x] Playwright E2E browser test validates CR-80 card preview, face flipping, custom domain live validation, substrate switching, and manifest downloads.
