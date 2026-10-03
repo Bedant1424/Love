@@ -1,11 +1,24 @@
 import { Hono } from 'hono';
-import type { Env } from './types';
+import type { Env, AppVariables } from './types';
 import type { HealthResponse } from '../shared/types';
 import { createErrorResponse } from '../shared/utils';
 import { handleRedirectRequest } from './redirect';
 import { handleActivationRequest, handleCardStatusRequest } from './activation';
+import { adminAuthMiddleware } from './admin-auth';
+import {
+  handleAdminDashboard,
+  handleAdminListCards,
+  handleAdminGetCard,
+  handleAdminCreateBatch,
+  handleAdminListBatches,
+  handleAdminDisableCard,
+  handleAdminRestoreCard,
+  handleAdminRetireCard,
+  handleAdminChangeDestination,
+  handleAdminListAuditLogs,
+} from './admin';
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
 
 /**
  * Global Security Headers Middleware
@@ -106,6 +119,24 @@ app.all('/api/public/activate', (c) => {
     405
   );
 });
+
+/**
+ * Admin API Security Boundary
+ * Protected by Cloudflare Access Zero Trust authentication
+ */
+app.use('/api/admin/*', adminAuthMiddleware);
+
+app.get('/api/admin/dashboard', handleAdminDashboard);
+app.get('/api/admin/cards', handleAdminListCards);
+app.get('/api/admin/cards/:id', handleAdminGetCard);
+app.post('/api/admin/cards/:id/disable', handleAdminDisableCard);
+app.post('/api/admin/cards/:id/restore', handleAdminRestoreCard);
+app.post('/api/admin/cards/:id/retire', handleAdminRetireCard);
+app.post('/api/admin/cards/:id/change-destination', handleAdminChangeDestination);
+app.post('/api/admin/cards/:id/destination', handleAdminChangeDestination);
+app.get('/api/admin/batches', handleAdminListBatches);
+app.post('/api/admin/batches', handleAdminCreateBatch);
+app.get('/api/admin/audit', handleAdminListAuditLogs);
 
 /**
  * Fallback to Workers Static Assets for frontend routes

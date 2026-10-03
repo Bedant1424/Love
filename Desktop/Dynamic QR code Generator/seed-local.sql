@@ -54,3 +54,27 @@ VALUES (
     'Local Test Auto',
     'https://search.google.com/local/writereview?placeid=ChIJ_TEST_RETIRED_003'
 );
+
+INSERT OR REPLACE INTO cards (id, public_id, batch_id, status, activation_code_hash, business_name, destination_url, activated_at)
+VALUES (
+    'card_local_admin_actv',
+    'ADMN123456',
+    'batch_local_001',
+    'ACTIVE',
+    'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+    'Admin Test Boutique',
+    'https://search.google.com/local/writereview?placeid=ChIJ_TEST_ADMIN_ACTIVE',
+    '2026-10-01T00:00:00.000Z'
+);
+
+INSERT OR REPLACE INTO cards (id, public_id, batch_id, status, activation_code_hash, business_name, destination_url)
+VALUES (
+    'card_local_admin_disa',
+    'ADMD123456',
+    'batch_local_001',
+    'DISABLED',
+    'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+    'Admin Test Bistro',
+    'https://search.google.com/local/writereview?placeid=ChIJ_TEST_ADMIN_DISABLED'
+);
+

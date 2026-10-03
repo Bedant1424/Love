@@ -1,5 +1,5 @@
 import type { Context } from 'hono';
-import type { Env } from './types';
+import type { Env, AppVariables } from './types';
 import type {
   ActivationRequest,
   ActivationResponseData,
@@ -75,7 +75,9 @@ function sanitizeBusinessName(name: string): string {
  * Public, privacy-preserving endpoint to check card activation readiness.
  * Never leaks business name, destination URL, or activation secrets.
  */
-export async function handleCardStatusRequest(c: Context<{ Bindings: Env }>) {
+export async function handleCardStatusRequest(
+  c: Context<{ Bindings: Env; Variables: AppVariables }>
+) {
   const rawId = c.req.param('publicId');
   const validation = validatePublicId(rawId);
 
@@ -108,7 +110,9 @@ export async function handleCardStatusRequest(c: Context<{ Bindings: Env }>) {
  * POST /api/public/activate
  * Atomic, cryptographic card activation endpoint.
  */
-export async function handleActivationRequest(c: Context<{ Bindings: Env }>) {
+export async function handleActivationRequest(
+  c: Context<{ Bindings: Env; Variables: AppVariables }>
+) {
   // 1. Ensure body is JSON
   let body: Partial<ActivationRequest>;
   try {

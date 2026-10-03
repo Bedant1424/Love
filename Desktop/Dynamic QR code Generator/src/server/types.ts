@@ -15,6 +15,15 @@ export interface Env {
   TURNSTILE_SECRET_KEY?: string;
   /** Environment indicator */
   ENVIRONMENT?: 'development' | 'staging' | 'production';
+  /** Optional allowed admin emails list */
+  ADMIN_ALLOWED_EMAILS?: string;
+}
+
+/**
+ * Request-scoped Context Variables
+ */
+export interface AppVariables {
+  adminEmail?: string;
 }
 
 /**

@@ -1,11 +1,11 @@
 import type { Context } from 'hono';
-import type { Env, RedirectCardRecord, RedirectResolution } from './types';
+import type { Env, AppVariables, RedirectCardRecord, RedirectResolution } from './types';
 import { validatePublicId, createErrorResponse } from '../shared/utils';
 
 /**
  * Common security & privacy headers applied to all redirect engine responses.
  */
-export function applyRedirectHeaders(c: Context<{ Bindings: Env }>): void {
+export function applyRedirectHeaders(c: Context<{ Bindings: Env; Variables: AppVariables }>): void {
   c.header('Cache-Control', 'private, no-cache, no-store, must-revalidate');
   c.header('Referrer-Policy', 'no-referrer');
 }
@@ -163,7 +163,7 @@ export function renderStatusHtml(options: {
  * Handles incoming GET /c/:publicId redirect request.
  */
 export async function handleRedirectRequest(
-  c: Context<{ Bindings: Env }>,
+  c: Context<{ Bindings: Env; Variables: AppVariables }>,
   isHeadRequest: boolean = false
 ): Promise<Response> {
   applyRedirectHeaders(c);
