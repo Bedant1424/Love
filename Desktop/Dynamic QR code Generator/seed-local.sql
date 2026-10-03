@@ -1,5 +1,7 @@
+DELETE FROM audit_logs;
+
 INSERT OR IGNORE INTO batches (id, name, card_count, notes)
-VALUES ('batch_local_001', 'Local Verification Fleet', 4, 'Test dataset for Milestone 2 local verification');
+VALUES ('batch_local_001', 'Local Verification Fleet', 5, 'Test dataset for Milestone 2 and 3 local verification');
 
 INSERT OR REPLACE INTO cards (id, public_id, batch_id, status, activation_code_hash, business_name, destination_url, activated_at)
 VALUES (
@@ -19,7 +21,16 @@ VALUES (
     'PEND123456',
     'batch_local_001',
     'UNACTIVATED',
-    'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
+    'c9c25e6fdf8a013039bf7993472ca8cc2daee082eb136f5ba7d6a1d978ec31b3'
+);
+
+INSERT OR REPLACE INTO cards (id, public_id, batch_id, status, activation_code_hash)
+VALUES (
+    'card_local_unac_actv',
+    'PEND654321',
+    'batch_local_001',
+    'UNACTIVATED',
+    'c9c25e6fdf8a013039bf7993472ca8cc2daee082eb136f5ba7d6a1d978ec31b3'
 );
 
 INSERT OR REPLACE INTO cards (id, public_id, batch_id, status, activation_code_hash, business_name, destination_url)

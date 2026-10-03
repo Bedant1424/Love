@@ -3,6 +3,7 @@ import type { Env } from './types';
 import type { HealthResponse } from '../shared/types';
 import { createErrorResponse } from '../shared/utils';
 import { handleRedirectRequest } from './redirect';
+import { handleActivationRequest, handleCardStatusRequest } from './activation';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -79,6 +80,30 @@ app.all('/c', (c) => {
       'Card not found. Please verify that you scanned an official review card.'
     ),
     404
+  );
+});
+
+/**
+ * Public Card Status API Endpoint
+ * GET /api/public/card/:publicId/status
+ */
+app.get('/api/public/card/:publicId/status', async (c) => {
+  return handleCardStatusRequest(c);
+});
+
+/**
+ * Public Card Activation API Endpoint
+ * POST /api/public/activate
+ */
+app.post('/api/public/activate', async (c) => {
+  return handleActivationRequest(c);
+});
+
+app.all('/api/public/activate', (c) => {
+  c.header('Allow', 'POST');
+  return c.json(
+    createErrorResponse('METHOD_NOT_ALLOWED', 'Method not allowed on activation endpoint'),
+    405
   );
 });
 

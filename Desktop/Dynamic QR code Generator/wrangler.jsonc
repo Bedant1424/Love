@@ -18,6 +18,10 @@
       "migrations_dir": "migrations",
     },
   ],
+  "vars": {
+    "ENVIRONMENT": "development",
+    "ACTIVATION_SECRET": "local_dev_activation_secret_not_for_production_32b",
+  },
   "observability": {
     "enabled": true,
   },
