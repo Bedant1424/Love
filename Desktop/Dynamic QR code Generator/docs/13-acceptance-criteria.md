@@ -1,20 +1,20 @@
 # 13 — Formal Acceptance Criteria (Gate 1.5 Reconciled)
 
-> **Status:** Reconciled at Final Design Review (Gate 1.5). Implementation has NOT started.
+> **Status:** Reconciled at Final Design Review (Gate 1.5). Section 1 (Public Redirect Pipeline) Verified in Milestone 2.
 
 ---
 
 ## 1. Public Redirect Pipeline (`GET /c/:publicId`)
 
-- [ ] **AC-RED-01:** When a valid `ACTIVE` card is requested, server returns HTTP 302 Found directing to the stored Google Review URL.
-- [ ] **AC-RED-02:** Response includes `Cache-Control: private, no-cache, no-store, must-revalidate` and `Referrer-Policy: no-referrer`.
-- [ ] **AC-RED-03:** When an `UNACTIVATED` card is requested, server returns HTTP 302 Found directing to `/activate/:publicId`.
-- [ ] **AC-RED-04:** When a `DISABLED` card is requested, server returns HTTP 200 with clean maintenance notice without redirecting.
-- [ ] **AC-RED-05:** When a `RETIRED` card is requested, server returns HTTP 200 with retired card notice without redirecting.
-- [ ] **AC-RED-06:** Unknown card IDs return generic HTTP 404 with zero database syntax leakage.
-- [ ] **AC-RED-07:** Normal redirect path executes **exactly one indexed D1 lookup** and zero D1 write transactions.
-- [ ] **AC-RED-08:** Total edge CPU compute time is $< 10$ ms.
-- [ ] **AC-RED-09:** **Non-Critical Resilience:** Complete outage of Admin UI, Analytics, Turnstile, Backups, or UptimeRobot does not degrade or halt ACTIVE card redirects.
+- [x] **AC-RED-01:** When a valid `ACTIVE` card is requested, server returns HTTP 302 Found directing to the stored Google Review URL.
+- [x] **AC-RED-02:** Response includes `Cache-Control: private, no-cache, no-store, must-revalidate` and `Referrer-Policy: no-referrer`.
+- [x] **AC-RED-03:** When an `UNACTIVATED` card is requested, server returns HTTP 302 Found directing to `/activate/:publicId`.
+- [x] **AC-RED-04:** When a `DISABLED` card is requested, server returns HTTP 200 with clean maintenance notice without redirecting.
+- [x] **AC-RED-05:** When a `RETIRED` card is requested, server returns HTTP 200 with retired card notice without redirecting.
+- [x] **AC-RED-06:** Unknown card IDs return generic HTTP 404 with zero database syntax leakage.
+- [x] **AC-RED-07:** Normal redirect path executes **exactly one indexed D1 lookup** and zero D1 write transactions.
+- [x] **AC-RED-08:** Total edge CPU compute time is $< 10$ ms.
+- [x] **AC-RED-09:** **Non-Critical Resilience:** Complete outage of Admin UI, Analytics, Turnstile, Backups, or UptimeRobot does not degrade or halt ACTIVE card redirects.
 
 ---
 

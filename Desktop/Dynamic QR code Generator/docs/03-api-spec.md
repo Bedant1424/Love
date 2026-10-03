@@ -1,7 +1,6 @@
 # 03 — API Specification
 
-> **Status:** Reconciled at Final Design Review (Gate 1.5). Implementation has NOT started.  
-> **Framework:** Hono on Cloudflare Workers (TypeScript)
+> **Status:** Core Redirect Engine (Section 2.1) Implemented & Verified (Milestone 2). Framework: Hono on Cloudflare Workers (TypeScript). See `docs/REDIRECT_ENGINE.md`.
 
 ---
 
@@ -19,31 +18,35 @@
    }
    ```
    *Invariant:* D1 SQLite syntax errors, table names, file paths, and stack traces must **never** be exposed in public responses.
-3. **Public Redirect SLA:** `GET /c/:publicId` edge processing time $< 25$ ms.
+3. **Public Redirect SLA:** `GET /c/:publicId` edge processing time $< 25$ ms (target compute $< 10$ ms).
 
 ---
 
 ## 2. Public Endpoints
 
 ### 2.1 GET `/c/:publicId` (The Critical Redirect Path)
-- **Method:** `GET`
+- **Method:** `GET`, `HEAD`, `OPTIONS`
+- **Disallowed Methods:** `POST`, `PUT`, `PATCH`, `DELETE` return `405 Method Not Allowed` with `Allow: GET, HEAD, OPTIONS`.
 - **Authentication:** None (Public)
-- **Path Parameter:** `publicId`: `^[A-HJ-NP-Z2-9]{10}$` (Crockford Base32)
+- **Path Parameter:** `publicId`: `^[0-9A-HJKMNP-TV-Z]{10}$` (Crockford Base32: 10 chars, excluding ambiguous `I`, `L`, `O`, `U`)
 - **Critical Execution Logic:**
-  1. Uppercase & normalize `publicId`.
+  1. Uppercase & normalize `publicId` in memory. Reject obviously malformed inputs without querying D1.
   2. Execute **exactly one indexed D1 point query**:
      ```sql
      SELECT status, destination_url FROM cards WHERE public_id = ?;
      ```
   3. Dispatch based on status:
-     - Record not found $\rightarrow$ `404 Not Found` (Generic static page)
+     - Malformed / Not found $\rightarrow$ `404 Not Found` (Generic Swiss Design status page or JSON envelope)
      - `ACTIVE` $\rightarrow$ `302 Found` with `Location: ${destination_url}`
      - `UNACTIVATED` $\rightarrow$ `302 Found` with `Location: /activate/${publicId}`
-     - `DISABLED` $\rightarrow$ `200 OK` (Static maintenance message)
-     - `RETIRED` $\rightarrow$ `200 OK` (Static retired card message)
+     - `DISABLED` $\rightarrow$ `200 OK` (Clean maintenance message, no destination leak)
+     - `RETIRED` $\rightarrow$ `200 OK` (Retired card message, no destination leak)
 - **Strict Headers Emitted:**
   - `Cache-Control: private, no-cache, no-store, must-revalidate`
   - `Referrer-Policy: no-referrer`
+  - `X-Content-Type-Options: nosniff`
+  - `X-Frame-Options: DENY`
+  - `Permissions-Policy: accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()`
 - **Zero-Dependency Guarantee:** No Turnstile, no external fetch, no scan writes, no analytics blocking this response.
 
 ---

@@ -35,10 +35,15 @@ flowchart TD
 - [ ] Rejects URLs containing userinfo credentials (`https://admin:pass@search.google.com/...`).
 - [ ] Rejects non-HTTPS schemes (`http://`, `javascript:`, `data:`).
 
-### Suite 2: Public Redirect Resilience (`test/integration/redirect.test.ts` via `@cloudflare/vitest-plugin`)
-- [ ] Normal ACTIVE card resolves in exactly ONE indexed D1 point query ($< 15$ ms).
-- [ ] Response headers contain strict `Cache-Control: private, no-cache, no-store, must-revalidate` and `Referrer-Policy: no-referrer`.
-- [ ] **Non-Critical Outage Test:** Simulate total failure or disconnection of Admin UI, Turnstile API, Analytics, and UptimeRobot. Assert that an already-`ACTIVE` card continues redirecting with zero degradation.
+### Suite 2: Public Redirect Resilience (`tests/integration/redirect.test.ts` via `@cloudflare/vitest-plugin`) — [VERIFIED M2]
+- [x] Normal ACTIVE card resolves in exactly ONE indexed D1 point query ($< 15$ ms).
+- [x] Response headers contain strict `Cache-Control: private, no-cache, no-store, must-revalidate` and `Referrer-Policy: no-referrer`.
+- [x] Security headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Permissions-Policy`) enforced.
+- [x] State-aware routing verified for `ACTIVE` (302 to destination), `UNACTIVATED` (302 to `/activate/:publicId`), `DISABLED` (200 maintenance notice), `RETIRED` (200 retired notice), `UNKNOWN` (404), and malformed IDs (404).
+- [x] D1 write-prevention verified: Zero writes or mutations during customer scan redirects.
+- [x] Outbound fetch spy confirms zero server-side fetch requests (Zero SSRF).
+- [x] Playwright E2E suite (`tests/e2e/redirect.spec.ts`) validates end-to-end edge redirects and browser status pages.
+- [x] **Non-Critical Outage Invariant:** An outage or absence of Admin UI, Turnstile API, Analytics, and UptimeRobot causes zero degradation to `ACTIVE` card redirects.
 
 ### Suite 3: Activation Atomicity & Race Prevention (`test/integration/activate.test.ts`)
 - [ ] 10 concurrent requests submitting the same valid activation code $\rightarrow$ Exactly 1 returns HTTP 200; 9 return HTTP 400/409.

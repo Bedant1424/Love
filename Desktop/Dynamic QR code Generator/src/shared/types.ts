@@ -3,6 +3,20 @@
  */
 
 /**
+ * Canonical lifecycle state of a physical review card.
+ */
+export type CardStatus = 'UNACTIVATED' | 'ACTIVE' | 'DISABLED' | 'RETIRED';
+
+/**
+ * Public ID validation result.
+ */
+export interface PublicIdValidation {
+  isValid: boolean;
+  normalizedId?: string;
+  error?: string;
+}
+
+/**
  * Standard API Success Envelope
  */
 export interface ApiSuccessResponse<T> {

@@ -1,4 +1,5 @@
 import type { D1Database, Fetcher } from '@cloudflare/workers-types/2023-07-01';
+import type { CardStatus } from '../shared/types';
 
 /**
  * Cloudflare Worker Environment Bindings
@@ -15,3 +16,24 @@ export interface Env {
   /** Environment indicator */
   ENVIRONMENT?: 'development' | 'staging' | 'production';
 }
+
+/**
+ * Minimal D1 database row returned by the redirect indexed lookup.
+ * Selects strictly (status, destination_url).
+ */
+export interface RedirectCardRecord {
+  status: CardStatus;
+  destination_url: string | null;
+}
+
+/**
+ * Resolved outcome of the redirect state machine.
+ */
+export type RedirectResolution =
+  | { type: 'ACTIVE'; destinationUrl: string }
+  | { type: 'UNACTIVATED'; publicId: string }
+  | { type: 'DISABLED' }
+  | { type: 'RETIRED' }
+  | { type: 'NOT_FOUND' }
+  | { type: 'INVALID_ID' }
+  | { type: 'SERVER_ERROR' };

@@ -50,3 +50,31 @@ npm run d1:migrate:local
 ```bash
 npx wrangler d1 execute qroute_local --local --command="SELECT name FROM sqlite_master WHERE type='table';"
 ```
+
+### Seed Local Test Fleet:
+```bash
+npx wrangler d1 execute qroute_local --local --file=seed-local.sql
+```
+
+---
+
+## 4. Testing Redirects Locally
+
+With `npm run dev:worker` active on port 8787:
+
+```bash
+# ACTIVE card redirect (HTTP 302 to Google Review URL)
+curl -i http://localhost:8787/c/ACTV123456
+
+# UNACTIVATED card redirect (HTTP 302 to /activate/PEND123456)
+curl -i http://localhost:8787/c/PEND123456
+
+# DISABLED card maintenance notice (HTTP 200)
+curl -i http://localhost:8787/c/DACT123456
+
+# RETIRED card notice (HTTP 200)
+curl -i http://localhost:8787/c/RETR123456
+
+# Non-existent card notice (HTTP 404)
+curl -i http://localhost:8787/c/DOESNOTEXIST
+```
