@@ -17,8 +17,10 @@ import type {
   ApiResponse,
   CardStatus,
 } from '../shared/types';
+import { AssetPipelineView } from './AssetPipelineView';
+import { generateManifestCsv } from '../shared/fulfillment';
 
-type ActiveTab = 'inventory' | 'provisioning' | 'audit';
+type ActiveTab = 'inventory' | 'provisioning' | 'assets' | 'audit';
 
 export const AdminPage: React.FC = () => {
   // Navigation & Tabs
@@ -337,29 +339,28 @@ export const AdminPage: React.FC = () => {
 
   // Download Manifest CSV
   const handleDownloadManifest = (cards: ProvisionedCard[], batchName: string) => {
-    const origin = window.location.origin;
-    const headers = ['public_id', 'activation_code', 'qr_url', 'nfc_url', 'batch_name'];
-    const rows = cards.map((c) => [
-      c.publicId,
-      c.activationCode,
-      `${origin}/c/${c.publicId}`,
-      `${origin}/c/${c.publicId}`,
-      `"${batchName.replace(/"/g, '""')}"`,
-    ]);
-
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\r\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute(
-      'download',
-      `qroute-manifest-${batchName.toLowerCase().replace(/[^a-z0-9]/g, '-')}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    try {
+      const csvContent = generateManifestCsv(cards, {
+        urlOptions: {
+          environment: 'pilot',
+          devHost: window.location.host,
+        },
+      });
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute(
+        'download',
+        `qroute-manifest-${batchName.toLowerCase().replace(/[^a-z0-9]/g, '-')}.csv`
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download manifest CSV:', err);
+    }
   };
 
   // Badge helper
@@ -590,6 +591,17 @@ export const AdminPage: React.FC = () => {
                 }`}
               >
                 Batch Provisioning
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('assets')}
+                className={`border-b-2 pb-3 text-sm font-medium transition-colors ${
+                  activeTab === 'assets'
+                    ? 'border-zinc-950 text-zinc-950 font-semibold'
+                    : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700'
+                }`}
+              >
+                Asset Pipeline & Print
               </button>
               <button
                 type="button"
@@ -874,15 +886,23 @@ export const AdminPage: React.FC = () => {
                           database. Download the supplier manifest immediately.
                         </p>
                       </div>
-                      <Button
-                        variant="primary"
-                        size="md"
-                        onClick={() =>
-                          handleDownloadManifest(provisionResult.cards, provisionResult.batch.name)
-                        }
-                      >
-                        Download Manifest CSV
-                      </Button>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button variant="primary" size="md" onClick={() => setActiveTab('assets')}>
+                          Open Asset Pipeline (ZIP & Print)
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="md"
+                          onClick={() =>
+                            handleDownloadManifest(
+                              provisionResult.cards,
+                              provisionResult.batch.name
+                            )
+                          }
+                        >
+                          Download Manifest CSV
+                        </Button>
+                      </div>
                     </div>
                   </div>
 
@@ -917,7 +937,15 @@ export const AdminPage: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 3: PLATFORM AUDIT TRAIL */}
+          {/* TAB 3: ASSET PIPELINE & PRINT FULFILLMENT */}
+          {activeTab === 'assets' && (
+            <AssetPipelineView
+              batchName={provisionResult?.batch.name || 'Current Production Batch'}
+              cards={provisionResult?.cards || []}
+            />
+          )}
+
+          {/* TAB 4: PLATFORM AUDIT TRAIL */}
           {activeTab === 'audit' && (
             <div className="space-y-4">
               <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-xs">
