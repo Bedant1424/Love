@@ -1,6 +1,6 @@
 # 13 — Formal Acceptance Criteria (Gate 1.5 Reconciled)
 
-> **Status:** Reconciled at Final Design Review (Gate 1.5). Section 1 (Public Redirect Pipeline) Verified in Milestone 2.
+> **Status:** Reconciled at Final Design Review (Gate 1.5). Sections 1 (Public Redirect Pipeline) & 2 (Card Activation Pipeline) Verified in Milestone 2 & 3.
 
 ---
 
@@ -20,14 +20,14 @@
 
 ## 2. Card Activation Pipeline (`POST /api/public/activate`)
 
-- [ ] **AC-ACT-01:** Activation accepts `publicId`, `businessName`, `reviewUrl`, `activationCode`, and `turnstileToken`.
-- [ ] **AC-ACT-02:** Turnstile failure rejects immediately with HTTP 403 Forbidden without querying the database.
-- [ ] **AC-ACT-03:** Review URL is validated via the Centralized Google URL Validator; invalid hostnames or schemes reject with HTTP 400.
-- [ ] **AC-ACT-04:** Activation codes are case-insensitive, hyphen-tolerant, and verified against stored HMAC-SHA256 digests in constant time.
-- [ ] **AC-ACT-05:** State transition `UNACTIVATED -> ACTIVE` is atomic (`changes === 1`); concurrent requests permit exactly one winner.
-- [ ] **AC-ACT-06:** Activated cards permanently reject subsequent activation attempts with generic error messages.
-- [ ] **AC-ACT-07:** Activated card details (business name, destination URL) are never exposed to arbitrary public callers.
-- [ ] **AC-ACT-08:** Every successful activation writes an immutable record to `audit_logs` (`CARD_ACTIVATED`).
+- [x] **AC-ACT-01:** Activation accepts `publicId`, `businessName`, `reviewUrl`, `activationCode`, and `turnstileToken`.
+- [x] **AC-ACT-02:** Turnstile failure rejects immediately with HTTP 403 Forbidden without querying the database.
+- [x] **AC-ACT-03:** Review URL is validated via the Centralized Google URL Validator; invalid hostnames or schemes reject with HTTP 400.
+- [x] **AC-ACT-04:** Activation codes are case-insensitive, hyphen-tolerant, and verified against stored HMAC-SHA256 digests in constant time.
+- [x] **AC-ACT-05:** State transition `UNACTIVATED -> ACTIVE` is atomic (`changes === 1`); concurrent requests permit exactly one winner.
+- [x] **AC-ACT-06:** Activated cards permanently reject subsequent activation attempts with generic error messages.
+- [x] **AC-ACT-07:** Activated card details (business name, destination URL) are never exposed to arbitrary public callers.
+- [x] **AC-ACT-08:** Every successful activation writes an immutable record to `audit_logs` (`CARD_ACTIVATED`).
 
 ---
 

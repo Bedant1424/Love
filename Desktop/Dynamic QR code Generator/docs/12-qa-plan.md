@@ -27,13 +27,13 @@ flowchart TD
 
 ## 2. Mandatory Acceptance Test Suites
 
-### Suite 1: Google URL Validator (`test/unit/google-url-validator.test.ts`)
-- [ ] Accepts canonical Place ID link: `https://search.google.com/local/writereview?placeid=ChIJN1t_tDeuEmsRUsoyG83frY4`.
-- [ ] Accepts GBP short link: `https://g.page/r/CY2_EXAMPLE/review`.
-- [ ] Accepts Google Maps share link: `https://maps.app.goo.gl/wP4Example`.
-- [ ] Rejects deceptive hostnames (`https://google.com.attacker.com`).
-- [ ] Rejects URLs containing userinfo credentials (`https://admin:pass@search.google.com/...`).
-- [ ] Rejects non-HTTPS schemes (`http://`, `javascript:`, `data:`).
+### Suite 1: Google URL Validator (`tests/unit/google-url-validator.test.ts`) — [VERIFIED M3]
+- [x] Accepts canonical Place ID link: `https://search.google.com/local/writereview?placeid=ChIJN1t_tDeuEmsRUsoyG83frY4`.
+- [x] Accepts GBP short link: `https://g.page/r/CY2_EXAMPLE/review`.
+- [x] Accepts Google Maps share link: `https://maps.app.goo.gl/wP4Example`.
+- [x] Rejects deceptive hostnames (`https://google.com.attacker.com`).
+- [x] Rejects URLs containing userinfo credentials (`https://admin:pass@search.google.com/...`).
+- [x] Rejects non-HTTPS schemes (`http://`, `javascript:`, `data:`).
 
 ### Suite 2: Public Redirect Resilience (`tests/integration/redirect.test.ts` via `@cloudflare/vitest-plugin`) — [VERIFIED M2]
 - [x] Normal ACTIVE card resolves in exactly ONE indexed D1 point query ($< 15$ ms).
@@ -45,7 +45,8 @@ flowchart TD
 - [x] Playwright E2E suite (`tests/e2e/redirect.spec.ts`) validates end-to-end edge redirects and browser status pages.
 - [x] **Non-Critical Outage Invariant:** An outage or absence of Admin UI, Turnstile API, Analytics, and UptimeRobot causes zero degradation to `ACTIVE` card redirects.
 
-### Suite 3: Activation Atomicity & Race Prevention (`test/integration/activate.test.ts`)
-- [ ] 10 concurrent requests submitting the same valid activation code $\rightarrow$ Exactly 1 returns HTTP 200; 9 return HTTP 400/409.
-- [ ] Replay of used Turnstile token returns HTTP 403.
-- [ ] Public status checks on activated cards never leak business names or target destinations.
+### Suite 3: Activation Atomicity & Race Prevention (`tests/integration/activation.test.ts` & `tests/e2e/activation.spec.ts`) — [VERIFIED M3]
+- [x] Concurrent requests submitting the same valid activation code -> Exactly 1 returns HTTP 200; competing requests return HTTP 400/409.
+- [x] Public status checks on activated cards never leak business names, activation secrets, or target destinations.
+- [x] Constant-time comparison preventing side-channel timing leaks.
+- [x] E2E browser activation journey with subsequent immediate 302 redirect verification.

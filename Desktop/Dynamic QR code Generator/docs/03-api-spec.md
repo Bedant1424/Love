@@ -1,6 +1,6 @@
 # 03 — API Specification
 
-> **Status:** Core Redirect Engine (Section 2.1) Implemented & Verified (Milestone 2). Framework: Hono on Cloudflare Workers (TypeScript). See `docs/REDIRECT_ENGINE.md`.
+> **Status:** Core Redirect Engine (Section 2.1) & Public Activation Engine (Sections 2.2–2.4, 3) Implemented & Verified (Milestones 2 & 3). Framework: Hono on Cloudflare Workers (TypeScript). See `docs/REDIRECT_ENGINE.md` and `docs/ACTIVATION_ENGINE.md`.
 
 ---
 

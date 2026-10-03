@@ -1,6 +1,6 @@
 # 04 — Security Model & Cryptographic Architecture
 
-> **Status:** Reconciled at Final Design Review (Gate 1.5). Implementation has NOT started.  
+> **Status:** Reconciled at Final Design Review (Gate 1.5). Core Redirect and Activation Cryptographic Pipeline Implemented & Verified in Milestones 2 & 3. See `docs/ACTIVATION_ENGINE.md`.  
 > **Guiding Principle:** Defense-in-depth at \$0 cost with zero secret leakage.
 
 ---
