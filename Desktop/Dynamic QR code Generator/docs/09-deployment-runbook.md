@@ -37,8 +37,7 @@ The production configuration separates local development defaults from the produ
   ],
 
   "vars": {
-    "ENVIRONMENT": "development",
-    "ACTIVATION_SECRET": "local_dev_activation_secret_not_for_production_32b"
+    "ENVIRONMENT": "development"
   },
 
   "observability": {
