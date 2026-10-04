@@ -407,10 +407,10 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({
                       id="publicId"
                       name="publicId"
                       type="text"
-                      placeholder="e.g. A7K92P4X8Q"
+                      placeholder="e.g. TRNS7K2M9Q4X8P6V"
                       value={publicId}
                       onChange={(e) => setPublicId(e.target.value.toUpperCase().trim())}
-                      maxLength={10}
+                      maxLength={16}
                       autoCapitalize="characters"
                       required
                     />

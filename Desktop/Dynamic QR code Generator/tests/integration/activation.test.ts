@@ -10,12 +10,12 @@ describe('Card Activation Engine & Public Status API', () => {
   const VALID_REVIEW_URL =
     'https://search.google.com/local/writereview?placeid=ChIJN1t_tDeuEmsRUsoyG83frY4';
 
-  const CARD_UNAC_1 = 'PEND000001';
-  const CARD_UNAC_2 = 'PEND000002';
-  const CARD_UNAC_RACE = 'PEND000003';
-  const CARD_ACTIVE = 'ACTV000001';
-  const CARD_DISABLED = 'DACT000001';
-  const CARD_RETIRED = 'RETR000001';
+  const CARD_UNAC_1 = 'PEND7K2M9Q4X8P6V';
+  const CARD_UNAC_2 = 'PEND5C8R2W7K9M4Q';
+  const CARD_UNAC_RACE = 'PEND3T6A8N2X5V7K';
+  const CARD_ACTIVE = 'ACTV7K2M9Q4X8P6V';
+  const CARD_DISABLED = 'DACT7K2M9Q4X8P6V';
+  const CARD_RETIRED = 'RETR7K2M9Q4X8P6V';
 
   beforeAll(async () => {
     // 1. Configure environment secret
@@ -162,7 +162,7 @@ describe('Card Activation Engine & Public Status API', () => {
     });
 
     it('returns 404 for unknown card ID', async () => {
-      const res = await app.request('/api/public/card/NKP9999999/status', {}, env);
+      const res = await app.request('/api/public/card/NKP97K2M9Q4X8P6V/status', {}, env);
       expect(res.status).toBe(404);
 
       const json = await res.json<{ success: boolean; error: { code: string } }>();
@@ -362,7 +362,7 @@ describe('Card Activation Engine & Public Status API', () => {
 
     it('6. Rejects unknown card ID with generic error to prevent enumeration', async () => {
       const payload = {
-        publicId: 'NKP9999999',
+        publicId: 'NKP97K2M9Q4X8P6V',
         businessName: 'Test Business',
         reviewUrl: VALID_REVIEW_URL,
         activationCode: VALID_CODE,

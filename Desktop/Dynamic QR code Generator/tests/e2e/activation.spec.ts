@@ -2,12 +2,12 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('QRoute Merchant Activation Flow E2E', () => {
-  const ACTIVE_ID = 'ACTV123456';
-  const DISABLED_ID = 'DACT123456';
-  const RETIRED_ID = 'RETR123456';
-  const UNACTIVATED_ID = 'PEND654321';
-  const UNACTIVATED_TURNSTILE_ID = 'TRNS123456';
-  const UNACTIVATED_RESET_ID = 'TRNS654321';
+  const ACTIVE_ID = 'ACTV7K2M9Q4X8P6V';
+  const DISABLED_ID = 'DACT7K2M9Q4X8P6V';
+  const RETIRED_ID = 'RETR7K2M9Q4X8P6V';
+  const UNACTIVATED_ID = 'PEND5C8R2W7K9M4Q';
+  const UNACTIVATED_TURNSTILE_ID = 'TRNS7K2M9Q4X8P6V';
+  const UNACTIVATED_RESET_ID = 'TRNS5C8R2W7K9M4Q';
   const VALID_CODE = 'K7XM-92PR-V8Q2';
   const VALID_REVIEW_URL =
     'https://search.google.com/local/writereview?placeid=ChIJN1t_tDeuEmsRUsoyG83frY4';

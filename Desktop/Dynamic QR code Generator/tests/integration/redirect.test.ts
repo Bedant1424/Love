@@ -4,13 +4,13 @@ import type { Env } from '../../src/server/types';
 import app from '../../src/server/index';
 
 describe('Public Card Redirect Engine (GET /c/:publicId)', () => {
-  const ACTIVE_ID = 'ACTV999999';
+  const ACTIVE_ID = 'ACTV7K2M9Q4X8P6V';
   const ACTIVE_DESTINATION =
     'https://search.google.com/local/writereview?placeid=ChIJN1t_tDeuEmsRUsoyG83frY4';
 
-  const UNACTIVATED_ID = 'PEND999999';
-  const DISABLED_ID = 'DACT999999';
-  const RETIRED_ID = 'RETR999999';
+  const UNACTIVATED_ID = 'PEND7K2M9Q4X8P6V';
+  const DISABLED_ID = 'DACT7K2M9Q4X8P6V';
+  const RETIRED_ID = 'RETR7K2M9Q4X8P6V';
 
   beforeAll(async () => {
     // 1. Initialize schema
@@ -152,7 +152,7 @@ describe('Public Card Redirect Engine (GET /c/:publicId)', () => {
   });
 
   it('5. UNKNOWN card returns generic 404 Not Found', async () => {
-    const req = new Request('http://localhost/c/ZZZZ999999', {
+    const req = new Request('http://localhost/c/ZZZZ7K2M9Q4X8P6V', {
       method: 'GET',
       headers: { Accept: 'text/html' },
     });

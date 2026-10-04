@@ -9,11 +9,11 @@ describe('Admin Operations, Lifecycle & Provisioning Engine (/api/admin/*)', () 
   const ADMIN_EMAIL = 'superadmin@qroute.internal';
 
   const ACTIVE_CARD_ID = 'ACTV_ADMIN_01';
-  const ACTIVE_PUBLIC_ID = 'ACTV888888';
+  const ACTIVE_PUBLIC_ID = 'ACTV7K2M9Q4X8P6V';
   const UNACTIVATED_CARD_ID = 'PEND_ADMIN_01';
-  const UNACTIVATED_PUBLIC_ID = 'PEND888888';
+  const UNACTIVATED_PUBLIC_ID = 'PEND7K2M9Q4X8P6V';
   const DISABLED_CARD_ID = 'DACT_ADMIN_01';
-  const DISABLED_PUBLIC_ID = 'DACT888888';
+  const DISABLED_PUBLIC_ID = 'DACT7K2M9Q4X8P6V';
 
   const INITIAL_GOOGLE_URL =
     'https://search.google.com/local/writereview?placeid=ChIJN1t_tDeuEmsRUsoyG83frY4';
@@ -289,7 +289,7 @@ describe('Admin Operations, Lifecycle & Provisioning Engine (/api/admin/*)', () 
 
       // Verify each generated card has valid format
       for (const card of json.data.cards) {
-        expect(card.publicId).toHaveLength(10);
+        expect(card.publicId).toHaveLength(16);
         expect(card.activationCode).toMatch(
           /^[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/
         );
@@ -465,7 +465,7 @@ describe('Admin Operations, Lifecycle & Provisioning Engine (/api/admin/*)', () 
   describe('6. Public Redirect Invariant Regression Test', () => {
     it('customer scan redirect GET /c/:publicId remains unauthenticated, does zero writes and zero fetches', async () => {
       // 1. Seed brand new active card
-      const regressionPublicId = 'REGR999999';
+      const regressionPublicId = 'REGR7K2M9Q4X8P6V';
       const regressionDest =
         'https://search.google.com/local/writereview?placeid=ChIJ_REGRESSION_ACTIVE';
       const dummyHash = '0000000000000000000000000000000000000000000000000000000000000000';

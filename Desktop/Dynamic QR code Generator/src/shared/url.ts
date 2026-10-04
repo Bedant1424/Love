@@ -1,4 +1,4 @@
-import { validatePublicId } from './utils';
+import { validatePublicId, PUBLIC_ID_LENGTH } from './utils';
 
 export type CardEnvironment = 'pilot' | 'production' | 'development';
 
@@ -146,14 +146,14 @@ export function parseCardPublicIdFromUrl(input: string): string | null {
 
   const trimmed = input.trim();
 
-  // If already a 10-char string, validate directly
-  if (trimmed.length === 10) {
+  // If already a 16-char string, validate directly
+  if (trimmed.length === PUBLIC_ID_LENGTH) {
     const val = validatePublicId(trimmed);
     return val.isValid ? val.normalizedId! : null;
   }
 
   // Look for /c/:publicId pattern
-  const match = trimmed.match(/\/c\/([0-9a-zA-Z]{10})(?:[/?#]|$)/);
+  const match = trimmed.match(/\/c\/([0-9a-zA-Z]{16})(?:[/?#]|$)/);
   if (match && match[1]) {
     const val = validatePublicId(match[1]);
     return val.isValid ? val.normalizedId! : null;

@@ -13,7 +13,7 @@ import {
 import { DEFAULT_PILOT_HOST } from '../../src/shared/url';
 
 describe('QR Code Generation Engine (ISO/IEC 18004 Standard)', () => {
-  const TEST_PUBLIC_ID = '8T2K9M4W1X';
+  const TEST_PUBLIC_ID = '8T2K9M4W1X7P3N5Q';
   const EXPECTED_PILOT_URL = `https://${DEFAULT_PILOT_HOST}/c/${TEST_PUBLIC_ID}`;
 
   describe('Master Print Specification Options', () => {
@@ -86,8 +86,8 @@ describe('QR Code Generation Engine (ISO/IEC 18004 Standard)', () => {
     });
 
     it('fails closed when given an invalid public ID', async () => {
-      await expect(generateCardQrSvg('SHORT')).rejects.toThrow(/Invalid identifier length/);
-      await expect(generateCardQrSvg('123456789I')).rejects.toThrow(
+      await expect(generateCardQrSvg('SHORT')).rejects.toThrow(/too short/);
+      await expect(generateCardQrSvg('123456789I123456')).rejects.toThrow(
         /Public ID contains invalid characters/
       );
     });

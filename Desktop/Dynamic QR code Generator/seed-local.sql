@@ -6,7 +6,7 @@ VALUES ('batch_local_001', 'Local Verification Fleet', 5, 'Test dataset for Mile
 INSERT OR REPLACE INTO cards (id, public_id, batch_id, status, activation_code_hash, business_name, destination_url, activated_at)
 VALUES (
     'card_local_actv',
-    'ACTV123456',
+    'ACTV7K2M9Q4X8P6V',
     'batch_local_001',
     'ACTIVE',
     'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
@@ -18,7 +18,7 @@ VALUES (
 INSERT OR REPLACE INTO cards (id, public_id, batch_id, status, activation_code_hash)
 VALUES (
     'card_local_unac',
-    'PEND123456',
+    'PEND7K2M9Q4X8P6V',
     'batch_local_001',
     'UNACTIVATED',
     'c9c25e6fdf8a013039bf7993472ca8cc2daee082eb136f5ba7d6a1d978ec31b3'
@@ -27,7 +27,7 @@ VALUES (
 INSERT OR REPLACE INTO cards (id, public_id, batch_id, status, activation_code_hash)
 VALUES (
     'card_local_unac_actv',
-    'PEND654321',
+    'PEND5C8R2W7K9M4Q',
     'batch_local_001',
     'UNACTIVATED',
     'c9c25e6fdf8a013039bf7993472ca8cc2daee082eb136f5ba7d6a1d978ec31b3'
@@ -36,7 +36,7 @@ VALUES (
 INSERT OR REPLACE INTO cards (id, public_id, batch_id, status, activation_code_hash)
 VALUES (
     'card_local_turnstile_1',
-    'TRNS123456',
+    'TRNS7K2M9Q4X8P6V',
     'batch_local_001',
     'UNACTIVATED',
     'c9c25e6fdf8a013039bf7993472ca8cc2daee082eb136f5ba7d6a1d978ec31b3'
@@ -45,7 +45,7 @@ VALUES (
 INSERT OR REPLACE INTO cards (id, public_id, batch_id, status, activation_code_hash)
 VALUES (
     'card_local_turnstile_2',
-    'TRNS654321',
+    'TRNS5C8R2W7K9M4Q',
     'batch_local_001',
     'UNACTIVATED',
     'c9c25e6fdf8a013039bf7993472ca8cc2daee082eb136f5ba7d6a1d978ec31b3'
@@ -54,7 +54,7 @@ VALUES (
 INSERT OR REPLACE INTO cards (id, public_id, batch_id, status, activation_code_hash, business_name, destination_url)
 VALUES (
     'card_local_disa',
-    'DACT123456',
+    'DACT7K2M9Q4X8P6V',
     'batch_local_001',
     'DISABLED',
     'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
@@ -65,7 +65,7 @@ VALUES (
 INSERT OR REPLACE INTO cards (id, public_id, batch_id, status, activation_code_hash, business_name, destination_url)
 VALUES (
     'card_local_retr',
-    'RETR123456',
+    'RETR7K2M9Q4X8P6V',
     'batch_local_001',
     'RETIRED',
     'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
@@ -76,7 +76,7 @@ VALUES (
 INSERT OR REPLACE INTO cards (id, public_id, batch_id, status, activation_code_hash, business_name, destination_url, activated_at)
 VALUES (
     'card_local_admin_actv',
-    'ADMN123456',
+    'ADMN7K2M9Q4X8P6V',
     'batch_local_001',
     'ACTIVE',
     'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
@@ -88,11 +88,10 @@ VALUES (
 INSERT OR REPLACE INTO cards (id, public_id, batch_id, status, activation_code_hash, business_name, destination_url)
 VALUES (
     'card_local_admin_disa',
-    'ADMD123456',
+    'ADMD7K2M9Q4X8P6V',
     'batch_local_001',
     'DISABLED',
     'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
     'Admin Test Bistro',
     'https://search.google.com/local/writereview?placeid=ChIJ_TEST_ADMIN_DISABLED'
 );
-

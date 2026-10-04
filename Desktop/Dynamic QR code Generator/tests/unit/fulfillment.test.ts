@@ -21,56 +21,56 @@ describe('Supplier Fulfillment & Asset Pipeline Engine', () => {
   const MOCK_CARDS: ProvisionedCard[] = [
     {
       id: 'uuid-card-1',
-      publicId: '8T2K9M4W1X',
+      publicId: '8T2K9M4W1X7P3N5Q',
       activationCode: 'K7XM-92PR-V8Q2',
-      nfcUrl: `https://${DEFAULT_PILOT_HOST}/c/8T2K9M4W1X`,
+      nfcUrl: `https://${DEFAULT_PILOT_HOST}/c/8T2K9M4W1X7P3N5Q`,
     },
     {
       id: 'uuid-card-2',
-      publicId: '3H5V7N2R9B',
+      publicId: '3H5V7N2R9B4M6K8W',
       activationCode: 'B4WT-81MK-P5Q9',
-      nfcUrl: `https://${DEFAULT_PILOT_HOST}/c/3H5V7N2R9B`,
+      nfcUrl: `https://${DEFAULT_PILOT_HOST}/c/3H5V7N2R9B4M6K8W`,
     },
   ];
 
   describe('Canonical URL Building & Domain Resolution (buildCardUrl)', () => {
     it('constructs pilot URL on workers.dev by default', () => {
-      const url = buildCardUrl('8T2K9M4W1X');
-      expect(url).toBe(`https://${DEFAULT_PILOT_HOST}/c/8T2K9M4W1X`);
+      const url = buildCardUrl('8T2K9M4W1X7P3N5Q');
+      expect(url).toBe(`https://${DEFAULT_PILOT_HOST}/c/8T2K9M4W1X7P3N5Q`);
     });
 
     it('constructs production URL with validated custom domain', () => {
-      const url = buildCardUrl('8T2K9M4W1X', {
+      const url = buildCardUrl('8T2K9M4W1X7P3N5Q', {
         environment: 'production',
         customDomain: 'qr.mybusiness.com',
       });
-      expect(url).toBe('https://qr.mybusiness.com/c/8T2K9M4W1X');
+      expect(url).toBe('https://qr.mybusiness.com/c/8T2K9M4W1X7P3N5Q');
     });
 
     it('normalizes custom domain by stripping accidental schemes, slashes, and paths', () => {
-      const url = buildCardUrl('8T2K9M4W1X', {
+      const url = buildCardUrl('8T2K9M4W1X7P3N5Q', {
         environment: 'production',
         customDomain: 'https://qr.mybusiness.com/extra/path/?query=1#hash',
       });
-      expect(url).toBe('https://qr.mybusiness.com/c/8T2K9M4W1X');
+      expect(url).toBe('https://qr.mybusiness.com/c/8T2K9M4W1X7P3N5Q');
     });
 
     it('supports development localhost URL', () => {
-      const url = buildCardUrl('8T2K9M4W1X', {
+      const url = buildCardUrl('8T2K9M4W1X7P3N5Q', {
         environment: 'development',
       });
-      expect(url).toBe('http://localhost:8787/c/8T2K9M4W1X');
+      expect(url).toBe('http://localhost:8787/c/8T2K9M4W1X7P3N5Q');
     });
 
     it('rejects missing custom domain in production mode', () => {
-      expect(() => buildCardUrl('8T2K9M4W1X', { environment: 'production' })).toThrow(
+      expect(() => buildCardUrl('8T2K9M4W1X7P3N5Q', { environment: 'production' })).toThrow(
         /Custom domain is required/
       );
     });
 
     it('rejects invalid or malformed public IDs', () => {
-      expect(() => buildCardUrl('TOO_SHORT')).toThrow(/Invalid identifier length/);
-      expect(() => buildCardUrl('123456789O')).toThrow(/contains invalid characters/);
+      expect(() => buildCardUrl('TOO_SHORT')).toThrow(/too short/);
+      expect(() => buildCardUrl('123456789O123456')).toThrow(/contains invalid characters/);
     });
   });
 
@@ -95,15 +95,17 @@ describe('Supplier Fulfillment & Asset Pipeline Engine', () => {
 
   describe('URL Identifier Parser (parseCardPublicIdFromUrl)', () => {
     it('parses public ID from full card URL', () => {
-      expect(parseCardPublicIdFromUrl('https://example.com/c/8T2K9M4W1X')).toBe('8T2K9M4W1X');
-      expect(parseCardPublicIdFromUrl('https://qroute.workers.dev/c/3H5V7N2R9B?ref=scan')).toBe(
-        '3H5V7N2R9B'
+      expect(parseCardPublicIdFromUrl('https://example.com/c/8T2K9M4W1X7P3N5Q')).toBe(
+        '8T2K9M4W1X7P3N5Q'
       );
+      expect(
+        parseCardPublicIdFromUrl('https://qroute.workers.dev/c/3H5V7N2R9B4M6K8W?ref=scan')
+      ).toBe('3H5V7N2R9B4M6K8W');
     });
 
     it('parses public ID from path or standalone string', () => {
-      expect(parseCardPublicIdFromUrl('/c/8T2K9M4W1X')).toBe('8T2K9M4W1X');
-      expect(parseCardPublicIdFromUrl('8T2K9M4W1X')).toBe('8T2K9M4W1X');
+      expect(parseCardPublicIdFromUrl('/c/8T2K9M4W1X7P3N5Q')).toBe('8T2K9M4W1X7P3N5Q');
+      expect(parseCardPublicIdFromUrl('8T2K9M4W1X7P3N5Q')).toBe('8T2K9M4W1X7P3N5Q');
     });
 
     it('returns null for unparseable or invalid strings', () => {
@@ -115,23 +117,23 @@ describe('Supplier Fulfillment & Asset Pipeline Engine', () => {
 
   describe('NFC Payload & Hardware Specification (generateNfcPayload)', () => {
     it('generates canonical NDEF URI Type U payload metadata', () => {
-      const nfc = generateNfcPayload('8T2K9M4W1X');
+      const nfc = generateNfcPayload('8T2K9M4W1X7P3N5Q');
 
-      expect(nfc.publicId).toBe('8T2K9M4W1X');
+      expect(nfc.publicId).toBe('8T2K9M4W1X7P3N5Q');
       expect(nfc.ndefRecordType).toBe('U');
       expect(nfc.ndefTnf).toBe('0x01');
       expect(nfc.ndefPrefixCode).toBe('0x04');
-      expect(nfc.ndefCompressedPayload).toBe(`${DEFAULT_PILOT_HOST}/c/8T2K9M4W1X`);
+      expect(nfc.ndefCompressedPayload).toBe(`${DEFAULT_PILOT_HOST}/c/8T2K9M4W1X7P3N5Q`);
       expect(nfc.factoryLockDirective).toBe('PERMANENT_READ_ONLY');
     });
 
     it('verifies NXP NTAG213 hardware memory limits (< 144 bytes)', () => {
-      const nfc = generateNfcPayload('8T2K9M4W1X');
+      const nfc = generateNfcPayload('8T2K9M4W1X7P3N5Q');
 
       expect(nfc.ntag213UserCapacityBytes).toBe(144);
       expect(nfc.isNtag213Compatible).toBe(true);
-      expect(nfc.ntag213BytesUsed).toBeLessThan(60);
-      expect(nfc.ntag213CapacityPercent).toBeLessThan(45);
+      expect(nfc.ntag213BytesUsed).toBeLessThan(70);
+      expect(nfc.ntag213CapacityPercent).toBeLessThan(50);
     });
   });
 
@@ -149,7 +151,7 @@ describe('Supplier Fulfillment & Asset Pipeline Engine', () => {
     });
 
     it('leaves clean alphanumeric strings untouched', () => {
-      expect(sanitizeCsvCell('8T2K9M4W1X')).toBe('8T2K9M4W1X');
+      expect(sanitizeCsvCell('8T2K9M4W1X7P3N5Q')).toBe('8T2K9M4W1X7P3N5Q');
       expect(sanitizeCsvCell(42)).toBe('42');
     });
   });
@@ -165,11 +167,11 @@ describe('Supplier Fulfillment & Asset Pipeline Engine', () => {
       expect(lines.length).toBe(3); // header + 2 cards
 
       // Card 1
-      expect(lines[1]).toContain('1,8T2K9M4W1X,qr/8T2K9M4W1X.svg,K7XM-92PR-V8Q2');
+      expect(lines[1]).toContain('1,8T2K9M4W1X7P3N5Q,qr/8T2K9M4W1X7P3N5Q.svg,K7XM-92PR-V8Q2');
       expect(lines[1]).toContain(DEFAULT_SUBSTRATE);
 
       // Card 2
-      expect(lines[2]).toContain('2,3H5V7N2R9B,qr/3H5V7N2R9B.svg,B4WT-81MK-P5Q9');
+      expect(lines[2]).toContain('2,3H5V7N2R9B4M6K8W,qr/3H5V7N2R9B4M6K8W.svg,B4WT-81MK-P5Q9');
     });
 
     it('guarantees zero-knowledge privacy: never leaks business, review, or DB tokens', () => {
@@ -192,7 +194,7 @@ describe('Supplier Fulfillment & Asset Pipeline Engine', () => {
     });
 
     it('verifyZeroKnowledgeManifest detects forbidden tokens if illegally injected', () => {
-      const badCsv = 'card_index,public_id,business_name\n1,8T2K9M4W1X,Acme Dental';
+      const badCsv = 'card_index,public_id,business_name\n1,8T2K9M4W1X7P3N5Q,Acme Dental';
       const check = verifyZeroKnowledgeManifest(badCsv);
       expect(check.isZeroKnowledge).toBe(false);
       expect(check.violations.length).toBeGreaterThan(0);
@@ -234,22 +236,22 @@ describe('Supplier Fulfillment & Asset Pipeline Engine', () => {
 
       // Read manifest from zip
       const manifestText = await unzipped.file('manifest.csv')!.async('string');
-      expect(manifestText).toContain('8T2K9M4W1X');
-      expect(manifestText).toContain('3H5V7N2R9B');
+      expect(manifestText).toContain('8T2K9M4W1X7P3N5Q');
+      expect(manifestText).toContain('3H5V7N2R9B4M6K8W');
 
       // Verify vector SVGs in /qr/ folder
-      expect(unzipped.file('qr/8T2K9M4W1X.svg')).not.toBeNull();
-      expect(unzipped.file('qr/3H5V7N2R9B.svg')).not.toBeNull();
+      expect(unzipped.file('qr/8T2K9M4W1X7P3N5Q.svg')).not.toBeNull();
+      expect(unzipped.file('qr/3H5V7N2R9B4M6K8W.svg')).not.toBeNull();
 
-      const svgContent = await unzipped.file('qr/8T2K9M4W1X.svg')!.async('string');
+      const svgContent = await unzipped.file('qr/8T2K9M4W1X7P3N5Q.svg')!.async('string');
       expect(svgContent).toContain('<svg');
       expect(svgContent).toContain('role="img"');
 
       // Verify raster PNGs in /qr/ folder
-      expect(unzipped.file('qr/8T2K9M4W1X.png')).not.toBeNull();
-      expect(unzipped.file('qr/3H5V7N2R9B.png')).not.toBeNull();
+      expect(unzipped.file('qr/8T2K9M4W1X7P3N5Q.png')).not.toBeNull();
+      expect(unzipped.file('qr/3H5V7N2R9B4M6K8W.png')).not.toBeNull();
 
-      const pngBytes = await unzipped.file('qr/8T2K9M4W1X.png')!.async('uint8array');
+      const pngBytes = await unzipped.file('qr/8T2K9M4W1X7P3N5Q.png')!.async('uint8array');
       expect(pngBytes[0]).toBe(0x89);
       expect(pngBytes[1]).toBe(0x50);
     });

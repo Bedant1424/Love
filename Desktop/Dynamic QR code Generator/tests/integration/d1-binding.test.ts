@@ -75,7 +75,7 @@ describe('D1 Database Binding & SQLite Foundation', () => {
 
   it('proves indexed point lookup on cards table', async () => {
     const cardId = 'card_test_001';
-    const publicId = 'A7K92P4X8Q';
+    const publicId = 'A7K92P4X8Q6M3V5N';
     const batchId = 'batch_test_001';
     const codeHash = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
 

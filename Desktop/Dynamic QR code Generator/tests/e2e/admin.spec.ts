@@ -65,11 +65,11 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
 
     // Search for the admin test card
     const searchInput = page.getByPlaceholder(/Search by Public ID or Business/i);
-    await searchInput.fill('ADMN123456');
+    await searchInput.fill('ADMN7K2M9Q4X8P6V');
 
     // Wait for row to appear
     await expect(page.getByText('Admin Test Boutique')).toBeVisible();
-    await expect(page.getByText('ADMN123456')).toBeVisible();
+    await expect(page.getByText('ADMN7K2M9Q4X8P6V')).toBeVisible();
 
     // Click Inspect to open detail modal
     const inspectBtn = page.getByRole('button', { name: /^Inspect$/i }).first();
@@ -108,9 +108,9 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
       page.getByRole('heading', { name: /Card Lifecycle & Routing Operations/i })
     ).toBeVisible();
 
-    // Filter to ADMN123456
+    // Filter to ADMN7K2M9Q4X8P6V
     const searchInput = page.getByPlaceholder(/Search by Public ID or Business/i);
-    await searchInput.fill('ADMN123456');
+    await searchInput.fill('ADMN7K2M9Q4X8P6V');
     await expect(page.getByText('Admin Test Boutique')).toBeVisible();
 
     // --- STEP A: DISABLE CARD ---
@@ -118,7 +118,9 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     await disableBtn.click();
 
     // Confirmation modal appears
-    await expect(page.getByRole('heading', { name: /Disable Card ADMN123456/i })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /Disable Card ADMN7K2M9Q4X8P6V/i })
+    ).toBeVisible();
     const confirmDisableBtn = page.getByRole('button', { name: /^Confirm Disable$/i });
     await confirmDisableBtn.click();
 
@@ -126,24 +128,26 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     await expect(page.getByText(/successfully updated \(DISABLE\)/i)).toBeVisible();
 
     // Verify customer redirect path now serves 200 Inactive Status Notice!
-    const scanInactive = await request.get('/c/ADMN123456');
+    const scanInactive = await request.get('/c/ADMN7K2M9Q4X8P6V');
     expect(scanInactive.status()).toBe(200);
     const scanHtml = await scanInactive.text();
     expect(scanHtml).toContain('Review Card Temporarily Inactive');
 
     // --- STEP B: RESTORE CARD ---
-    await searchInput.fill('ADMN123456');
+    await searchInput.fill('ADMN7K2M9Q4X8P6V');
     const restoreBtn = page.getByRole('button', { name: /^Restore$/i }).first();
     await restoreBtn.click();
 
-    await expect(page.getByRole('heading', { name: /Restore Card ADMN123456/i })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /Restore Card ADMN7K2M9Q4X8P6V/i })
+    ).toBeVisible();
     const confirmRestoreBtn = page.getByRole('button', { name: /^Confirm Restore$/i });
     await confirmRestoreBtn.click();
 
     await expect(page.getByText(/successfully updated \(RESTORE\)/i)).toBeVisible();
 
     // Customer redirect resumes 302 Found
-    const scanActive = await request.get('/c/ADMN123456', { maxRedirects: 0 });
+    const scanActive = await request.get('/c/ADMN7K2M9Q4X8P6V', { maxRedirects: 0 });
     expect(scanActive.status()).toBe(302);
     expect(scanActive.headers()['location']).toBe(
       'https://search.google.com/local/writereview?placeid=ChIJ_TEST_ADMIN_ACTIVE'
@@ -152,12 +156,12 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     // --- STEP C: UPDATE DESTINATION URL ---
     const newGoogleUrl =
       'https://search.google.com/local/writereview?placeid=ChIJ_UPDATED_ADMIN_URL_999';
-    await searchInput.fill('ADMN123456');
+    await searchInput.fill('ADMN7K2M9Q4X8P6V');
     const editUrlBtn = page.getByRole('button', { name: /^Edit URL$/i }).first();
     await editUrlBtn.click();
 
     await expect(
-      page.getByRole('heading', { name: /Update Destination for ADMN123456/i })
+      page.getByRole('heading', { name: /Update Destination for ADMN7K2M9Q4X8P6V/i })
     ).toBeVisible();
     const destInput = page.getByPlaceholder(/https:\/\/search\.google\.com\/local\/writereview/i);
     await destInput.fill(newGoogleUrl);
@@ -169,17 +173,17 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     await expect(page.getByText(/successfully updated \(CHANGE_DEST\)/i)).toBeVisible();
 
     // Customer redirect reflects new target
-    const scanUpdated = await request.get('/c/ADMN123456', { maxRedirects: 0 });
+    const scanUpdated = await request.get('/c/ADMN7K2M9Q4X8P6V', { maxRedirects: 0 });
     expect(scanUpdated.status()).toBe(302);
     expect(scanUpdated.headers()['location']).toBe(newGoogleUrl);
 
     // --- STEP D: PERMANENT RETIREMENT (* -> RETIRED) ---
-    await searchInput.fill('ADMN123456');
+    await searchInput.fill('ADMN7K2M9Q4X8P6V');
     const retireBtn = page.getByRole('button', { name: /^Retire$/i }).first();
     await retireBtn.click();
 
     await expect(
-      page.getByRole('heading', { name: /Permanently Retire Card ADMN123456/i })
+      page.getByRole('heading', { name: /Permanently Retire Card ADMN7K2M9Q4X8P6V/i })
     ).toBeVisible();
     await expect(page.getByText(/IRREVERSIBLE TERMINAL STATE/i)).toBeVisible();
 
@@ -189,7 +193,7 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     await expect(page.getByText(/successfully updated \(RETIRE\)/i)).toBeVisible();
 
     // Customer redirect path now serves 200 Retired Notice!
-    const scanRetired = await request.get('/c/ADMN123456');
+    const scanRetired = await request.get('/c/ADMN7K2M9Q4X8P6V');
     expect(scanRetired.status()).toBe(200);
     const retiredHtml = await scanRetired.text();
     expect(retiredHtml).toContain('Card Retired');

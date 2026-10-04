@@ -10,9 +10,9 @@ describe('Production Deployment & Launch Readiness (/healthz, /c/:id, /api/publi
   const AUTHORIZED_ADMIN = 'ops-lead@qroute.production';
   const UNAUTHORIZED_ADMIN = 'intruder@external-org.test';
 
-  const PROD_ACTIVE_PUBLIC_ID = 'PRD8888888';
+  const PROD_ACTIVE_PUBLIC_ID = 'PRD87K2M9Q4X8P6V';
   const PROD_ACTIVE_CARD_ID = 'c_prod_actv_01';
-  const PROD_UNAC_PUBLIC_ID = 'PRD1111111';
+  const PROD_UNAC_PUBLIC_ID = 'PRD15C8R2W7K9M4Q';
   const PROD_UNAC_CARD_ID = 'c_prod_unac_01';
   const PROD_UNAC_CODE = '7777-8888-9999';
 

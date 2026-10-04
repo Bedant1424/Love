@@ -12,15 +12,15 @@ import { isValidEmail } from '../../src/server/admin-auth';
 
 describe('Admin Utilities & Generation Logic', () => {
   describe('generateCrockfordPublicId', () => {
-    it('generates a 10-character canonical Crockford Base32 ID', () => {
-      const id = generateCrockfordPublicId(10);
-      expect(id).toHaveLength(10);
+    it('generates a 16-character canonical Crockford Base32 ID', () => {
+      const id = generateCrockfordPublicId(16);
+      expect(id).toHaveLength(16);
       expect(CROCKFORD_BASE32_REGEX.test(id)).toBe(true);
     });
 
     it('excludes ambiguous characters I, L, O, U', () => {
       for (let i = 0; i < 100; i++) {
-        const id = generateCrockfordPublicId(10);
+        const id = generateCrockfordPublicId(16);
         expect(id).not.toMatch(/[ILOU]/i);
       }
     });
@@ -28,7 +28,7 @@ describe('Admin Utilities & Generation Logic', () => {
     it('generates unique IDs with no collisions in 500 samples', () => {
       const set = new Set<string>();
       for (let i = 0; i < 500; i++) {
-        const id = generateCrockfordPublicId(10);
+        const id = generateCrockfordPublicId(16);
         expect(set.has(id)).toBe(false);
         set.add(id);
       }

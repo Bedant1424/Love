@@ -76,6 +76,13 @@ Customer Scan -> Cloudflare Worker -> Single Indexed D1 Query -> State Resolutio
 4. **Parameterized SQL Only:** Every D1 query must use `.prepare().bind(...)`. Raw string concatenation or `.exec()` with interpolated values is banned.
 5. **Generic Error Messages:** Activation errors must return generic feedback ("Invalid activation code or card ID") to prevent username/merchant enumeration.
 6. **No Plaintext in Logs:** Activation codes, secret keys, auth tokens, and request bodies must never appear in logs or error traces.
+7. **Random Public Card Identifiers:**
+   - Public card identifiers must be 16-character cryptographically random Crockford Base32 alphanumeric strings (`[0-9A-HJKMNP-TV-Z]{16}`).
+   - They must NEVER be sequential, predictable, or contain business names, counters, or timestamps.
+   - Public IDs are embedded directly in customer-facing physical QR/NFC routing URLs: `https://go.taprevieww.workers.dev/c/<publicId>`.
+   - Internal manufacturing/inventory references (e.g. batch IDs or card indices) remain strictly separate.
+   - Physical QR/NFC tags never encode the destination Google review URL directly. Future custom-domain routing does not alter the public ID.
+   - Public ID randomness prevents URL enumeration; it does not replace activation authentication (HMAC-SHA256 activation code verification is mandatory).
 
 ---
 

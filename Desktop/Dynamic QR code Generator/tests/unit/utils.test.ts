@@ -38,50 +38,53 @@ describe('Shared Utilities - API Envelopes & Sanitization', () => {
 });
 
 describe('Shared Utilities - Public ID Validation', () => {
-  it('validates canonical 10-character Crockford Base32 ID', () => {
-    const res = validatePublicId('A7K92P4X8Q');
+  it('validates canonical 16-character Crockford Base32 ID', () => {
+    const res = validatePublicId('X7K9Q2M4WP8VN3RZ');
     expect(res.isValid).toBe(true);
-    expect(res.normalizedId).toBe('A7K92P4X8Q');
+    expect(res.normalizedId).toBe('X7K9Q2M4WP8VN3RZ');
   });
 
-  it('normalizes lowercase inputs to uppercase', () => {
-    const res = validatePublicId('a7k92p4x8q');
-    expect(res.isValid).toBe(true);
-    expect(res.normalizedId).toBe('A7K92P4X8Q');
+  it('rejects lowercase inputs (strict canonical uppercase)', () => {
+    const res = validatePublicId('x7k9q2m4wp8vn3rz');
+    expect(res.isValid).toBe(false);
+    expect(res.error).toMatch(/must be uppercase/);
   });
 
-  it('trims leading and trailing whitespace', () => {
-    const res = validatePublicId('  A7K92P4X8Q  ');
-    expect(res.isValid).toBe(true);
-    expect(res.normalizedId).toBe('A7K92P4X8Q');
+  it('rejects whitespace in inputs', () => {
+    const res = validatePublicId('  X7K9Q2M4WP8VN3RZ  ');
+    expect(res.isValid).toBe(false);
+    expect(res.error).toMatch(/cannot contain whitespace/);
   });
 
-  it('validates all allowed Crockford digits and letters', () => {
-    // 0123456789 (digits)
-    expect(validatePublicId('0123456789').isValid).toBe(true);
-    // 10 valid letters
-    expect(validatePublicId('ABCDEFGHJK').isValid).toBe(true);
-    expect(validatePublicId('MNPQRSTVWX').isValid).toBe(true);
+  it('validates allowed Crockford alphanumeric combinations', () => {
+    expect(validatePublicId('ABCDEFGHJKMNPQRS').isValid).toBe(true);
+    expect(validatePublicId('TVWXYZ23456789KM').isValid).toBe(true);
   });
 
   it('strictly rejects ambiguous characters I, L, O, U', () => {
-    expect(validatePublicId('A7K92P4X8I').isValid).toBe(false); // contains I
-    expect(validatePublicId('A7K92P4X8L').isValid).toBe(false); // contains L
-    expect(validatePublicId('A7K92P4X8O').isValid).toBe(false); // contains O
-    expect(validatePublicId('A7K92P4X8U').isValid).toBe(false); // contains U
+    expect(validatePublicId('X7K9Q2M4WP8VN3RI').isValid).toBe(false); // contains I
+    expect(validatePublicId('X7K9Q2M4WP8VN3RL').isValid).toBe(false); // contains L
+    expect(validatePublicId('X7K9Q2M4WP8VN3RO').isValid).toBe(false); // contains O
+    expect(validatePublicId('X7K9Q2M4WP8VN3RU').isValid).toBe(false); // contains U
+  });
+
+  it('rejects sequential or predictable numeric IDs', () => {
+    expect(validatePublicId('0000000000000001').isValid).toBe(false);
+    expect(validatePublicId('0123456789012345').isValid).toBe(false);
+    expect(validatePublicId('1111111111111111').isValid).toBe(false);
   });
 
   it('rejects IDs with incorrect lengths', () => {
-    expect(validatePublicId('A7K92P4X8').isValid).toBe(false); // 9 chars
-    expect(validatePublicId('A7K92P4X8Q1').isValid).toBe(false); // 11 chars
+    expect(validatePublicId('X7K9Q2M4WP8VN3R').isValid).toBe(false); // 15 chars
+    expect(validatePublicId('X7K9Q2M4WP8VN3RZ1').isValid).toBe(false); // 17 chars
     expect(validatePublicId('').isValid).toBe(false); // 0 chars
   });
 
   it('rejects injection strings and malicious payloads', () => {
-    expect(validatePublicId('../../etc/').isValid).toBe(false);
-    expect(validatePublicId('<script>').isValid).toBe(false);
-    expect(validatePublicId("' OR 1=1--").isValid).toBe(false);
-    expect(validatePublicId('A7K92P4X8Q; DROP TABLE cards;').isValid).toBe(false);
+    expect(validatePublicId('../../etc/passwd').isValid).toBe(false);
+    expect(validatePublicId('<script>alert()').isValid).toBe(false);
+    expect(validatePublicId("' OR 1=1--123456").isValid).toBe(false);
+    expect(validatePublicId('X7K9Q2;DROP TABLE').isValid).toBe(false);
   });
 
   it('rejects non-string values safely', () => {
@@ -91,8 +94,8 @@ describe('Shared Utilities - Public ID Validation', () => {
     expect(validatePublicId({}).isValid).toBe(false);
   });
 
-  it('regex conforms to 10-char Crockford Base32 pattern', () => {
-    expect(CROCKFORD_BASE32_REGEX.test('A7K92P4X8Q')).toBe(true);
+  it('regex conforms to 16-char Crockford Base32 pattern', () => {
+    expect(CROCKFORD_BASE32_REGEX.test('X7K9Q2M4WP8VN3RZ')).toBe(true);
     expect(CROCKFORD_BASE32_REGEX.test('INVALID_ID')).toBe(false);
   });
 });

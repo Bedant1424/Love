@@ -46,9 +46,9 @@ export const AssetPipelineView: React.FC<AssetPipelineViewProps> = ({
     return [
       {
         id: 'sample-card-1',
-        publicId: '8T2K9M4W1X',
+        publicId: '8T2K9M4W1X7P3N5Q',
         activationCode: 'K7XM-92PR-V8Q2',
-        nfcUrl: `https://${DEFAULT_PILOT_HOST}/c/8T2K9M4W1X`,
+        nfcUrl: `https://${DEFAULT_PILOT_HOST}/c/8T2K9M4W1X7P3N5Q`,
       },
     ];
   }, [cards]);

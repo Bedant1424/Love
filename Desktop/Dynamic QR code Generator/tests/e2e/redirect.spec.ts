@@ -4,7 +4,7 @@ test.describe('QRoute Public Redirect Engine E2E', () => {
   test('ACTIVE card returns 302 redirect with private cache control and no-referrer', async ({
     request,
   }) => {
-    const response = await request.get('/c/ACTV123456', {
+    const response = await request.get('/c/ACTV7K2M9Q4X8P6V', {
       maxRedirects: 0,
     });
 
@@ -21,16 +21,16 @@ test.describe('QRoute Public Redirect Engine E2E', () => {
   test('UNACTIVATED card returns 302 redirect targeting /activate/:publicId', async ({
     request,
   }) => {
-    const response = await request.get('/c/PEND123456', {
+    const response = await request.get('/c/PEND7K2M9Q4X8P6V', {
       maxRedirects: 0,
     });
 
     expect(response.status()).toBe(302);
-    expect(response.headers()['location']).toBe('/activate/PEND123456');
+    expect(response.headers()['location']).toBe('/activate/PEND7K2M9Q4X8P6V');
   });
 
   test('DISABLED card renders accessible status page in browser', async ({ page }) => {
-    const response = await page.goto('/c/DACT123456');
+    const response = await page.goto('/c/DACT7K2M9Q4X8P6V');
     expect(response?.status()).toBe(200);
 
     const heading = page.getByRole('heading', {
@@ -45,7 +45,7 @@ test.describe('QRoute Public Redirect Engine E2E', () => {
   });
 
   test('RETIRED card renders retired notice in browser', async ({ page }) => {
-    const response = await page.goto('/c/RETR123456');
+    const response = await page.goto('/c/RETR7K2M9Q4X8P6V');
     expect(response?.status()).toBe(200);
 
     const heading = page.getByRole('heading', { name: /Card Retired/i });
