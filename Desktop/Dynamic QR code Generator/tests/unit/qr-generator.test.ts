@@ -196,5 +196,45 @@ describe('QR Code Generation Engine (ISO/IEC 18004 Standard)', () => {
       expect(pngBytes[0]).toBe(0x89);
       expect(pngBytes[1]).toBe(0x50);
     });
+
+    it('decodes real production custom domain QR code and confirms zero sensitive data', () => {
+      const PROD_CUSTOM_DOMAIN = 'qr.productiondomain.com';
+      const PROD_ROUTING_URL = `https://${PROD_CUSTOM_DOMAIN}/c/${TEST_PUBLIC_ID}`;
+      const qr = QRCode.create(PROD_ROUTING_URL, { errorCorrectionLevel: 'H' });
+      const scale = 4;
+      const margin = 4;
+      const modCount = qr.modules.size;
+      const fullSize = (modCount + margin * 2) * scale;
+
+      const rgba = new Uint8ClampedArray(fullSize * fullSize * 4);
+      for (let y = 0; y < fullSize; y++) {
+        const modY = Math.floor(y / scale) - margin;
+        for (let x = 0; x < fullSize; x++) {
+          const modX = Math.floor(x / scale) - margin;
+          let isDark = false;
+          if (modX >= 0 && modX < modCount && modY >= 0 && modY < modCount) {
+            isDark = qr.modules.get(modX, modY) === 1;
+          }
+          const val = isDark ? 0 : 255;
+          const idx = (y * fullSize + x) * 4;
+          rgba[idx] = val;
+          rgba[idx + 1] = val;
+          rgba[idx + 2] = val;
+          rgba[idx + 3] = 255;
+        }
+      }
+
+      const decoded = jsQR(rgba, fullSize, fullSize);
+      expect(decoded).not.toBeNull();
+      expect(decoded?.data).toBe(PROD_ROUTING_URL);
+
+      // Verify zero sensitive data embedded in QR payload
+      expect(decoded?.data).not.toContain('google.com');
+      expect(decoded?.data).not.toContain('placeid');
+      expect(decoded?.data).not.toContain('activationCode');
+      expect(decoded?.data).not.toContain('secret');
+      expect(decoded?.data).not.toContain('utm_');
+      expect(decoded?.data).not.toContain('uuid');
+    });
   });
 });
