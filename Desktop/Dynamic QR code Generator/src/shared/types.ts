@@ -227,4 +227,5 @@ export interface ChangeDestinationRequest {
 
 export type { CardEnvironment, CardUrlOptions } from './url';
 export type { NfcPayloadInfo } from './nfc';
-export type { SupplierSubstrate, ManifestOptions, BatchPackageOptions } from './fulfillment';
+export type { BatchPackageOptions } from './fulfillment';
+export type { QrSheetOptions } from './pdf-sheet';

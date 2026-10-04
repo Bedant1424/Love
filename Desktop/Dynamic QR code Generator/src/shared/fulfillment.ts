@@ -1,47 +1,186 @@
 import JSZip from 'jszip';
 import type { ProvisionedCard } from './types';
-import { buildCardUrl, type CardUrlOptions } from './url';
+import { type CardUrlOptions, CANONICAL_PUBLIC_HOST } from './url';
 import { generateCardQrSvg, generateCardQrPngBuffer } from './qr-generator';
-
-export type SupplierSubstrate =
-  'Matte PVC' | 'Glossy PVC' | 'Brushed Metal' | 'Bamboo / Wood' | 'Frosted Acrylic';
-
-export const DEFAULT_SUBSTRATE: SupplierSubstrate = 'Matte PVC';
-
-export const AVAILABLE_SUBSTRATES: SupplierSubstrate[] = [
-  'Matte PVC',
-  'Glossy PVC',
-  'Brushed Metal',
-  'Bamboo / Wood',
-  'Frosted Acrylic',
-];
-
-export interface ManifestOptions {
-  substrate?: SupplierSubstrate;
-  urlOptions?: CardUrlOptions;
-}
+import { generateQrSheetPdf } from './pdf-sheet';
 
 export interface BatchPackageOptions {
-  substrate?: SupplierSubstrate;
   urlOptions?: CardUrlOptions;
-  includePngPreviews?: boolean;
 }
 
 /**
- * Forbidden columns or tokens that must NEVER appear in a supplier manifest or package.
- * Enforces Zero-Knowledge Manufacturing privacy invariant.
+ * Forbidden tokens and sensitive fields that must NEVER appear in a supplier package.
+ * Enforces Zero-Knowledge Supplier Privacy Invariant.
  */
-export const FORBIDDEN_ZERO_KNOWLEDGE_TOKENS = [
+export const FORBIDDEN_SUPPLIER_TOKENS = [
+  'activation_code',
+  'activationcode',
+  'activation_password',
+  'password',
+  'secret',
   'business_name',
   'business',
   'destination_url',
   'google_url',
   'review_url',
   'place_id',
-  'activation_code_hash',
-  'secret',
   'db_uuid',
+  'activation_code_hash',
 ];
+
+/**
+ * Sanitizes a batch name for safe use in file and archive names.
+ */
+export function sanitizeBatchNameForFilename(batchName: string): string {
+  const sanitized = batchName
+    .trim()
+    .replace(/[^a-zA-Z0-9_-]/g, '-')
+    .replace(/-+/g, '-');
+  return sanitized || 'Unnamed-Batch';
+}
+
+/**
+ * Generates the canonical ZIP filename for a supplier batch package.
+ * Example: QRoute_Batch_Batch-2026-A.zip
+ */
+export function formatBatchZipFilename(batchName: string): string {
+  return `QRoute_Batch_${sanitizeBatchNameForFilename(batchName)}.zip`;
+}
+
+/**
+ * Formats standard padded QR asset file identifier.
+ * Example: i = 0, total = 10 -> 'QR-001'
+ * Example: i = 99, total = 100 -> 'QR-100'
+ */
+export function formatQrAssetIdentifier(index: number, totalCards: number): string {
+  const padLength = Math.max(3, String(totalCards).length);
+  const numStr = String(index + 1).padStart(padLength, '0');
+  return `QR-${numStr}`;
+}
+
+/**
+ * Verifies that a supplier ZIP package contains ONLY permitted QR assets.
+ * Permitted entries:
+ * - SVG/QR-*.svg
+ * - PNG/QR-*.png
+ * - QR-SHEET.pdf
+ *
+ * Strictly blocks:
+ * - Plaintext activation codes or hashes
+ * - Customer business names or Google review URLs
+ * - CSV manifests with credentials
+ * - Any unauthorized metadata files
+ */
+export function verifySupplierPackageSecurity(fileNames: string[]): {
+  isSecure: boolean;
+  violations: string[];
+} {
+  const violations: string[] = [];
+
+  for (const name of fileNames) {
+    const isSvg = /^SVG\/QR-\d+\.svg$/.test(name);
+    const isPng = /^PNG\/QR-\d+\.png$/.test(name);
+    const isPdf = name === 'QR-SHEET.pdf';
+    const isDir = name === 'SVG/' || name === 'PNG/';
+
+    if (!isSvg && !isPng && !isPdf && !isDir) {
+      violations.push(`Unauthorized file detected in supplier package: '${name}'`);
+    }
+
+    const lower = name.toLowerCase();
+    for (const forbidden of FORBIDDEN_SUPPLIER_TOKENS) {
+      if (lower.includes(forbidden)) {
+        violations.push(`Forbidden token '${forbidden}' detected in file path '${name}'`);
+      }
+    }
+  }
+
+  return {
+    isSecure: violations.length === 0,
+    violations,
+  };
+}
+
+/**
+ * Generates ONE complete supplier ZIP archive package containing:
+ *
+ * QRoute_Batch_<batch>.zip
+ *   SVG/
+ *     QR-001.svg
+ *     QR-002.svg
+ *     ...
+ *   PNG/
+ *     QR-001.png
+ *     QR-002.png
+ *     ...
+ *   QR-SHEET.pdf
+ *
+ * Sacred Security & Supplier Invariants:
+ * - Contains QR assets only.
+ * - Excludes activation codes and passwords.
+ * - Excludes Google review destination URLs.
+ * - Excludes customer and business names.
+ * - Customer-facing artwork does not display public IDs beneath/beside QR.
+ */
+export async function generateBatchZipPackage(
+  cards: Array<{ publicId: string }>,
+  _batchName?: string,
+  options: BatchPackageOptions = {}
+): Promise<Uint8Array> {
+  if (!cards || cards.length === 0) {
+    throw new Error('At least one card is required to generate a batch package');
+  }
+
+  const zip = new JSZip();
+  const totalCards = cards.length;
+
+  const svgFolder = zip.folder('SVG');
+  const pngFolder = zip.folder('PNG');
+
+  if (!svgFolder || !pngFolder) {
+    throw new Error('Failed to create asset folders inside ZIP archive');
+  }
+
+  // 1. Generate individual SVG and high-resolution PNG assets
+  for (let i = 0; i < totalCards; i++) {
+    const card = cards[i]!;
+    const assetId = formatQrAssetIdentifier(i, totalCards);
+
+    // Vector SVG print master (Vector QR only, no decorative frame, no credentials)
+    const svgContent = await generateCardQrSvg(card.publicId, options.urlOptions);
+    svgFolder.file(`${assetId}.svg`, svgContent);
+
+    // High resolution PNG (1024x1024 raster, QR only, no card mockup, no credentials)
+    const pngBuffer = await generateCardQrPngBuffer(card.publicId, options.urlOptions, {
+      width: 1024,
+    });
+    pngFolder.file(`${assetId}.png`, pngBuffer);
+  }
+
+  // 2. Generate A4 PDF Sheet containing all QR codes in a clean grid
+  const pdfBytes = await generateQrSheetPdf(cards, {
+    urlOptions: options.urlOptions,
+  });
+  zip.file('QR-SHEET.pdf', pdfBytes);
+
+  // 3. Verify security invariants of the zip package entries
+  const fileNames = Object.keys(zip.files);
+  const securityCheck = verifySupplierPackageSecurity(fileNames);
+  if (!securityCheck.isSecure) {
+    throw new Error(
+      `Supplier package security invariant violation: ${securityCheck.violations.join(', ')}`
+    );
+  }
+
+  // 4. Generate in-memory ZIP archive
+  const zipBytes = await zip.generateAsync({
+    type: 'uint8array',
+    compression: 'DEFLATE',
+    compressionOptions: { level: 6 },
+  });
+
+  return zipBytes;
+}
 
 /**
  * Escapes a CSV cell value per RFC 4180 and protects against CSV Formula Injection (CWE-1236).
@@ -66,204 +205,28 @@ export function sanitizeCsvCell(value: string | number): string {
 }
 
 /**
- * Verifies that a generated manifest string strictly complies with Zero-Knowledge invariants.
+ * Generates an internal admin-only CSV mapping for operators.
+ * This is NEVER sent to suppliers or included in the supplier ZIP package.
  */
-export function verifyZeroKnowledgeManifest(csvString: string): {
-  isZeroKnowledge: boolean;
-  violations: string[];
-} {
-  const violations: string[] = [];
-  const lowerCsv = csvString.toLowerCase();
-
-  for (const token of FORBIDDEN_ZERO_KNOWLEDGE_TOKENS) {
-    if (lowerCsv.includes(token)) {
-      violations.push(`Forbidden token '${token}' detected in manifest export`);
-    }
-  }
-
-  return {
-    isZeroKnowledge: violations.length === 0,
-    violations,
-  };
-}
-
-/**
- * Generates an RFC 4180 compliant CSV manifest for supplier card manufacturing.
- *
- * Sacred Zero-Knowledge Schema:
- * card_index,public_id,qr_file,printed_activation_code,nfc_url,substrate
- */
-export function generateManifestCsv(
-  cards: ProvisionedCard[],
-  options: ManifestOptions = {}
-): string {
-  const substrate = options.substrate ?? DEFAULT_SUBSTRATE;
-  const headers = [
-    'card_index',
-    'public_id',
-    'qr_file',
-    'printed_activation_code',
-    'nfc_url',
-    'substrate',
-  ];
-
+export function generateAdminMappingCsv(cards: ProvisionedCard[], batchName: string): string {
+  const headers = ['card_index', 'public_id', 'activation_code', 'routing_url', 'batch_name'];
   const rows: string[] = [];
   rows.push(headers.map(sanitizeCsvCell).join(','));
 
   for (let i = 0; i < cards.length; i++) {
     const card = cards[i]!;
     const cardIndex = i + 1;
-    const publicId = card.publicId;
-    const qrFile = `qr/${publicId}.svg`;
-    const printedActivationCode = card.activationCode;
-    const nfcUrl = buildCardUrl(publicId, options.urlOptions);
+    const routingUrl = `https://${CANONICAL_PUBLIC_HOST}/c/${card.publicId}`;
 
     const row = [
       sanitizeCsvCell(cardIndex),
-      sanitizeCsvCell(publicId),
-      sanitizeCsvCell(qrFile),
-      sanitizeCsvCell(printedActivationCode),
-      sanitizeCsvCell(nfcUrl),
-      sanitizeCsvCell(substrate),
+      sanitizeCsvCell(card.publicId),
+      sanitizeCsvCell(card.activationCode),
+      sanitizeCsvCell(routingUrl),
+      sanitizeCsvCell(batchName),
     ];
-
     rows.push(row.join(','));
   }
 
-  const manifestCsv = rows.join('\r\n') + '\r\n';
-
-  // Self-verification assertion
-  const verification = verifyZeroKnowledgeManifest(manifestCsv);
-  if (!verification.isZeroKnowledge) {
-    throw new Error(`Zero-knowledge manifest violation: ${verification.violations.join(', ')}`);
-  }
-
-  return manifestCsv;
-}
-
-/**
- * Generates technical manufacturing and print guidelines for the supplier.
- */
-export function generateSupplierReadme(
-  batchName: string,
-  cardCount: number,
-  substrate: SupplierSubstrate,
-  canonicalDomain: string
-): string {
-  return `================================================================================
-QROUTE PHYSICAL CARD MANUFACTURING & PRINT SPECIFICATION
-Batch: ${batchName}
-Quantity: ${cardCount} Cards
-Substrate: ${substrate}
-Date Generated: ${new Date().toISOString()}
-================================================================================
-
-1. ZERO-KNOWLEDGE PRIVACY NOTICE
---------------------------------------------------------------------------------
-This batch package contains blank, unactivated dynamic review cards.
-No business names, Google review URLs, or customer identities are included.
-All cards route through the permanent routing domain:
-https://${canonicalDomain}/c/<public_id>
-
-2. PHYSICAL CARD SPECIFICATION
---------------------------------------------------------------------------------
-- Standard Format: ISO/IEC 7810 ID-1 / CR-80 Standard
-- Finished Dimensions: 85.60 mm x 53.98 mm (3.370" x 2.125")
-- Corner Radius: 3.18 mm (0.125")
-- Core Substrate: ${substrate} (Standard 30 mil / 0.76 mm thickness)
-
-3. QR CODE PRINT REQUIREMENTS
---------------------------------------------------------------------------------
-- File Format: Vector SVG files located in the /qr/ folder
-- Placement: Back face of card, recommended size: 28.0 mm x 28.0 mm
-- Minimum Size: 20.0 mm x 20.0 mm
-- Quiet Zone: Minimum 4 modules (3.5 mm) white border on all 4 sides
-- Error Correction Level: ISO/IEC 18004 Level H (~30% damage recovery)
-- Contrast: 100% K Black (#000000) on 100% White Background (#FFFFFF)
-
-4. NFC ENCODING REQUIREMENTS
---------------------------------------------------------------------------------
-- Chip Standard: NXP NTAG213 (or NTAG215 / NTAG216)
-- Tag Protocol: NFC Forum Type 2 Tag / ISO 14443-A
-- Record Type: NDEF Well-Known Type 'U' (URI, Hex 0x55)
-- TNF: 0x01 (NFC Forum Well-Known Type)
-- Prefix Code: 0x04 ('https://')
-- NFC Payload URL: Found in manifest.csv column 'nfc_url'
-- Post-Programming Directive: PERMANENT READ-ONLY LOCK (OTP lock bits set)
-
-5. ACTIVATION CODE PRINTING & SECURITY
---------------------------------------------------------------------------------
-- Value: Found in manifest.csv column 'printed_activation_code'
-- Format: 12-character Crockford Base32 (XXXX-XXXX-XXXX)
-- Placement: Printed on separate welcome / activation insert (NEVER on physical card surface)
-- Font: Monospaced high-legibility OCR-B or Helvetica Bold (min 8pt)
-
-6. FILE PACKAGE CONTENTS
---------------------------------------------------------------------------------
-- manifest.csv : Complete manufacturing data mapping
-- README.txt   : This technical specification
-- qr/*.svg     : Vector artwork for each individual card (named by public_id)
-- qr/*.png     : High-resolution raster preview files (1024x1024)
-
-For technical manufacturing inquiries, contact your platform administrator.
-================================================================================
-`;
-}
-
-/**
- * Generates a complete supplier ZIP package containing:
- * - manifest.csv
- * - README.txt
- * - qr/<publicId>.svg
- * - qr/<publicId>.png
- */
-export async function generateBatchZipPackage(
-  cards: ProvisionedCard[],
-  batchName: string,
-  options: BatchPackageOptions = {}
-): Promise<Uint8Array> {
-  const zip = new JSZip();
-  const substrate = options.substrate ?? DEFAULT_SUBSTRATE;
-  const includePng = options.includePngPreviews !== false;
-
-  // 1. Generate Manifest CSV
-  const manifestCsv = generateManifestCsv(cards, {
-    substrate,
-    urlOptions: options.urlOptions,
-  });
-  zip.file('manifest.csv', manifestCsv);
-
-  // 2. Generate README.txt
-  const domain = options.urlOptions?.customDomain ?? 'qroute.workers.dev';
-  const readme = generateSupplierReadme(batchName, cards.length, substrate, domain);
-  zip.file('README.txt', readme);
-
-  // 3. Generate QR files
-  const qrFolder = zip.folder('qr');
-  if (!qrFolder) {
-    throw new Error('Failed to create qr folder inside zip');
-  }
-
-  for (const card of cards) {
-    const publicId = card.publicId;
-
-    // Vector SVG
-    const svgContent = await generateCardQrSvg(publicId, options.urlOptions);
-    qrFolder.file(`${publicId}.svg`, svgContent);
-
-    // Raster PNG preview
-    if (includePng) {
-      const pngBuffer = await generateCardQrPngBuffer(publicId, options.urlOptions);
-      qrFolder.file(`${publicId}.png`, pngBuffer);
-    }
-  }
-
-  // 4. Generate in-memory ZIP archive
-  const zipBytes = await zip.generateAsync({
-    type: 'uint8array',
-    compression: 'DEFLATE',
-    compressionOptions: { level: 6 },
-  });
-
-  return zipBytes;
+  return rows.join('\r\n') + '\r\n';
 }
