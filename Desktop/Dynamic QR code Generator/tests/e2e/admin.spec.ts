@@ -17,7 +17,7 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     expect(json.error.code).toBe('UNAUTHORIZED');
   });
 
-  test('2. Admin Console loads with authenticated operator identity and displays metrics', async ({
+  test('2. Admin Console loads with authenticated operator identity, displays metrics, and provides Cloudflare Access Logout', async ({
     page,
   }) => {
     // Intercept client fetch requests to inject test admin identity headers
@@ -41,14 +41,25 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     // Verify operator identity badge in top navigation
     await expect(page.getByText('QRoute Admin')).toBeVisible();
 
+    // Verify Logout link targets official Cloudflare Access logout path
+    const logoutLink = page.getByRole('link', { name: /Logout/i });
+    await expect(logoutLink).toBeVisible();
+    await expect(logoutLink).toHaveAttribute('href', '/cdn-cgi/access/logout');
+
     // Verify metric cards
     const kpiSection = page.locator('section[aria-label="Platform KPI Summary"]');
     await expect(kpiSection.getByText('Total Cards', { exact: true })).toBeVisible();
     await expect(kpiSection.getByText('Active', { exact: true })).toBeVisible();
     await expect(kpiSection.getByText('Unactivated', { exact: true })).toBeVisible();
+
+    // Verify all 4 admin tabs are present
+    await expect(page.getByRole('button', { name: /Card Inventory/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Batch Provisioning/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Activation Keys/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Audit Trail/i })).toBeVisible();
   });
 
-  test('3. Card inventory search, compact details modal, and edit metadata modal', async ({
+  test('3. Card inventory row has NO edit button; details modal displays compact read-only state', async ({
     page,
   }) => {
     await page.route('/api/admin/**', async (route) => {
@@ -73,48 +84,35 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     await expect(page.getByText('Admin Test Boutique')).toBeVisible();
     await expect(page.getByText('ADMN7K2M9Q4X8P6V')).toBeVisible();
 
-    // Click Public ID button to open compact detail modal
-    const publicIdBtn = page.getByRole('button', { name: 'ADMN7K2M9Q4X8P6V', exact: true });
-    await publicIdBtn.click();
+    // Invariant: Verify prominent per-card "Edit" button is completely REMOVED from the row!
+    await expect(page.getByRole('button', { name: /^Edit$/i })).not.toBeVisible();
+    await expect(
+      page.getByRole('button', { name: /Edit card ADMN7K2M9Q4X8P6V/i })
+    ).not.toBeVisible();
+
+    // Click Details button to open compact detail modal
+    const detailsBtn = page.getByRole('button', {
+      name: /View details for card ADMN7K2M9Q4X8P6V/i,
+    });
+    await detailsBtn.click();
 
     // Verify compact modal elements
     await expect(page.getByRole('heading', { name: /^Card Details$/i })).toBeVisible();
     await expect(page.getByText('STATUS', { exact: true })).toBeVisible();
     await expect(page.getByText('GOOGLE REVIEW URL', { exact: true })).toBeVisible();
+    await expect(page.getByText('Permanently Locked')).toBeVisible();
     await expect(page.getByText(/System Record ID/i)).not.toBeVisible();
+
+    // Invariant: Modal does NOT contain an Edit Card button
+    await expect(page.getByRole('button', { name: /^Edit Card$/i })).not.toBeVisible();
+
+    // Verify View Audit button is present
+    await expect(page.getByRole('button', { name: /View Audit/i })).toBeVisible();
 
     // Close modal
     const closeBtn = page.getByRole('button', { name: /^Close$/i });
     await closeBtn.click();
     await expect(page.getByRole('heading', { name: /^Card Details$/i })).not.toBeVisible();
-
-    // Click Edit button to open Edit Card modal
-    const editBtn = page.getByRole('button', { name: /Edit card ADMN7K2M9Q4X8P6V/i });
-    await editBtn.click();
-
-    // Verify Edit Card modal
-    await expect(page.getByRole('heading', { name: /^Edit Card$/i })).toBeVisible();
-    await expect(page.getByText('Public ID (Immutable)')).toBeVisible();
-    await expect(page.getByText('Permanently Locked')).toBeVisible();
-
-    // Edit non-routing business name
-    const businessNameInput = page.locator('input[placeholder*="Acme Coffee"]');
-    await expect(businessNameInput).toBeVisible();
-    await businessNameInput.fill('Admin Test Boutique Edited');
-
-    // Save Changes
-    const saveBtn = page.getByRole('button', { name: /^Save Changes$/i });
-    await saveBtn.click();
-
-    // Verify success toast and row update
-    await expect(page.getByText(/updated successfully/i)).toBeVisible();
-    await expect(page.getByText('Admin Test Boutique Edited')).toBeVisible();
-
-    // Revert business name to maintain baseline
-    await editBtn.click();
-    await businessNameInput.fill('Admin Test Boutique');
-    await saveBtn.click();
-    await expect(page.getByText(/updated successfully/i)).toBeVisible();
   });
 
   test('4. Full lifecycle journey: Disable -> Verify Inactive Redirect -> Restore -> Verify Locked Destination (No Change URL) -> Retire', async ({
@@ -186,16 +184,7 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     await searchInput.fill('ADMN7K2M9Q4X8P6V');
     // Verify "Edit URL" button does NOT exist on the active card row
     await expect(page.getByRole('button', { name: /^Edit URL$/i })).not.toBeVisible();
-
-    // Verify Edit Card modal shows locked destination and no URL input field
-    const editBtn = page.getByRole('button', { name: /Edit card ADMN7K2M9Q4X8P6V/i });
-    await editBtn.click();
-    await expect(page.getByText('Permanently Locked')).toBeVisible();
-    await expect(
-      page.locator('input[name="destinationUrl"], input[placeholder*="google.com"]')
-    ).toHaveCount(0);
-    const cancelEditBtn = page.getByRole('button', { name: /^Cancel$/i });
-    await cancelEditBtn.click();
+    await expect(page.getByRole('button', { name: /^Change URL$/i })).not.toBeVisible();
 
     // Verify backend rejects attempts to change destination with 404 (endpoint removed)
     const changeAttempt = await request.post(
@@ -244,7 +233,7 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     expect(retiredHtml).toContain('This card has been retired from service.');
   });
 
-  test('5. Batch provisioning generates unique Crockford cards and supplier manifest table', async ({
+  test('5. Batch provisioning generates unique Crockford cards with supplier package and vault CTAs', async ({
     page,
   }) => {
     await page.route('/api/admin/**', async (route) => {
@@ -285,10 +274,69 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
 
     // Verify primary and secondary CTAs
     await expect(page.getByTestId('export-batch-cta')).toBeVisible();
+    await expect(page.getByRole('button', { name: /View Activation Keys/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /View in Inventory/i })).toBeVisible();
 
     // Verify 3 newly generated cards are rendered
     const codes = page.locator('table tbody tr');
     await expect(codes).toHaveCount(3);
+  });
+
+  test('6. Activation Key Vault renders masked keys, allows reveal/hide, and supports copy to clipboard', async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+
+    await page.route('/api/admin/**', async (route) => {
+      await route.continue({
+        headers: {
+          ...route.request().headers(),
+          ...ADMIN_HEADERS,
+        },
+      });
+    });
+
+    await page.goto('/admin');
+    await expect(
+      page.getByRole('heading', { name: /Card Lifecycle & Routing Operations/i })
+    ).toBeVisible();
+
+    // Click Activation Keys tab
+    const keysTab = page.getByRole('button', { name: /Activation Keys/i });
+    await keysTab.click();
+
+    // Verify vault header
+    await expect(
+      page.getByRole('heading', { name: /Persistent Activation Key Vault/i })
+    ).toBeVisible();
+
+    // Verify confidentiality warning banner is present
+    await expect(page.getByText('ADMIN CONFIDENTIAL:')).toBeVisible();
+
+    // Wait for vaulted cards table
+    const keysTable = page.locator('table tbody tr');
+    await expect(keysTable.first()).toBeVisible({ timeout: 10000 });
+
+    // Verify default masked state
+    await expect(page.getByText('•••• •••• ••••').first()).toBeVisible();
+
+    // Click Reveal button on the first card
+    const revealBtn = page.getByRole('button', { name: /^Reveal$/i }).first();
+    await revealBtn.click();
+
+    // Verify revealed code format
+    const revealedCode = page.locator('code').first();
+    await expect(revealedCode).toBeVisible();
+
+    // Click Copy button on the revealed card
+    const copyBtn = page.getByRole('button', { name: /^Copy$/i }).first();
+    await copyBtn.click();
+    await expect(page.getByRole('button', { name: /^Copied$/i })).toBeVisible();
+
+    // Verify Export Activation Keys (CSV) button is present
+    await expect(
+      page.getByRole('button', { name: /Export Activation Keys \(CSV\)/i })
+    ).toBeVisible();
   });
 });

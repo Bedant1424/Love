@@ -220,6 +220,26 @@ export interface CreateBatchResponse {
   cards: ProvisionedCard[];
 }
 
+/**
+ * Vaulted activation key entry for authenticated admin recovery
+ */
+export interface AdminVaultKeyEntry {
+  publicId: string;
+  status: CardStatus;
+  activationCode: string;
+  batchName?: string | null;
+}
+
+/**
+ * Decrypted activation keys response for a batch
+ */
+export interface AdminBatchKeysResponse {
+  batchId: string;
+  batchName: string;
+  cardCount: number;
+  keys: AdminVaultKeyEntry[];
+}
+
 export type { CardEnvironment, CardUrlOptions } from './url';
 export type { NfcPayloadInfo } from './nfc';
 export type { BatchPackageOptions } from './fulfillment';

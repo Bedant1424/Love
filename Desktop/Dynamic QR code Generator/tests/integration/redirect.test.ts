@@ -35,6 +35,7 @@ describe('Public Card Redirect Engine (GET /c/:publicId)', () => {
           business_id TEXT,
           status TEXT NOT NULL DEFAULT 'UNACTIVATED',
           activation_code_hash TEXT NOT NULL,
+          encrypted_activation_code TEXT,
           code_rotation_counter INTEGER NOT NULL DEFAULT 0,
           business_name TEXT,
           destination_url TEXT,

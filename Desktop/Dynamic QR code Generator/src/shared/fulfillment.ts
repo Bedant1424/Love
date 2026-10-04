@@ -230,3 +230,42 @@ export function generateAdminMappingCsv(cards: ProvisionedCard[], batchName: str
 
   return rows.join('\r\n') + '\r\n';
 }
+
+/**
+ * Formats standard confidential admin activation keys export filename.
+ * Example: QRoute_Activation_Keys_batch-a.csv
+ */
+export function formatActivationKeysCsvFilename(batchName: string): string {
+  return `QRoute_Activation_Keys_${sanitizeBatchNameForFilename(batchName)}.csv`;
+}
+
+/**
+ * Generates confidential admin-only activation keys export CSV.
+ * Columns: PUBLIC_ID, ACTIVATION_CODE, BATCH, STATUS.
+ * Strictly excludes: Google destination, customer identity, secrets, hashes, tokens.
+ */
+export function generateActivationKeysCsv(
+  keys: Array<{
+    publicId: string;
+    activationCode: string;
+    batchName?: string | null;
+    status: string;
+  }>,
+  fallbackBatchName: string
+): string {
+  const headers = ['PUBLIC_ID', 'ACTIVATION_CODE', 'BATCH', 'STATUS'];
+  const rows: string[] = [];
+  rows.push(headers.map(sanitizeCsvCell).join(','));
+
+  for (const item of keys) {
+    const row = [
+      sanitizeCsvCell(item.publicId),
+      sanitizeCsvCell(item.activationCode),
+      sanitizeCsvCell(item.batchName || fallbackBatchName),
+      sanitizeCsvCell(item.status),
+    ];
+    rows.push(row.join(','));
+  }
+
+  return rows.join('\r\n') + '\r\n';
+}

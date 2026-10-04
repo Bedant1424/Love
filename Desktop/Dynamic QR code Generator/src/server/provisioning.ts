@@ -6,7 +6,11 @@ import type {
   ProvisionedCard,
 } from '../shared/types';
 import { generateRandomPublicId, PUBLIC_ID_LENGTH } from '../shared/public-id';
-import { generateActivationCode, hashActivationCode } from '../shared/activation-crypto';
+import {
+  generateActivationCode,
+  hashActivationCode,
+  encryptActivationCode,
+} from '../shared/activation-crypto';
 import { CANONICAL_PUBLIC_ORIGIN } from '../shared/url';
 
 export interface CardInsertData {
@@ -14,6 +18,7 @@ export interface CardInsertData {
   publicId: string;
   rawActivationCode: string;
   codeHash: string;
+  encryptedActivationCode: string;
   nfcUrl: string;
 }
 
@@ -34,7 +39,8 @@ export async function provisionCardBatch(
   secret: string,
   request: CreateBatchRequest,
   adminEmail: string,
-  originUrl = 'https://qr.local'
+  originUrl = 'https://qr.local',
+  encryptionSecret?: string
 ): Promise<CreateBatchResponse> {
   const { name, cardCount, notes } = request;
 
@@ -58,6 +64,7 @@ export async function provisionCardBatch(
     throw new Error('ACTIVATION_SECRET is required for card provisioning');
   }
 
+  const encSecret = encryptionSecret || secret;
   const batchId = `batch_${crypto.randomUUID()}`;
   const nowIso = new Date().toISOString();
 
@@ -74,9 +81,10 @@ export async function provisionCardBatch(
       }
       generatedIds.add(publicId);
 
-      // Generate secure random activation code and derive HMAC digest
+      // Generate secure random activation code and derive HMAC digest + encrypted vault code
       const rawActivationCode = generateActivationCode();
       const codeHash = await hashActivationCode(rawActivationCode, secret);
+      const encryptedActivationCode = await encryptActivationCode(rawActivationCode, encSecret);
       const nfcUrl = `${originUrl}/c/${publicId}`;
 
       cardsToInsert.push({
@@ -84,6 +92,7 @@ export async function provisionCardBatch(
         publicId,
         rawActivationCode,
         codeHash,
+        encryptedActivationCode,
         nfcUrl,
       });
     }
@@ -107,10 +116,18 @@ export async function provisionCardBatch(
           .prepare(
             `INSERT INTO cards (
                id, public_id, batch_id, status, activation_code_hash,
-               code_rotation_counter, created_at, updated_at
-             ) VALUES (?, ?, ?, 'UNACTIVATED', ?, 0, ?, ?)`
+               encrypted_activation_code, code_rotation_counter, created_at, updated_at
+             ) VALUES (?, ?, ?, 'UNACTIVATED', ?, ?, 0, ?, ?)`
           )
-          .bind(card.id, card.publicId, batchId, card.codeHash, nowIso, nowIso)
+          .bind(
+            card.id,
+            card.publicId,
+            batchId,
+            card.codeHash,
+            card.encryptedActivationCode,
+            nowIso,
+            nowIso
+          )
       );
 
       const auditId = crypto.randomUUID();
@@ -182,6 +199,7 @@ export async function insertCardWithRetry(
     id?: string;
     batchId: string;
     secret: string;
+    encryptionSecret?: string;
     originUrl?: string;
     status?: 'UNACTIVATED' | 'ACTIVE';
     businessName?: string | null;
@@ -192,6 +210,8 @@ export async function insertCardWithRetry(
   const cardId = cardData.id ?? crypto.randomUUID();
   const rawCode = generateActivationCode();
   const codeHash = await hashActivationCode(rawCode, cardData.secret);
+  const encSecret = cardData.encryptionSecret || cardData.secret;
+  const encryptedCode = await encryptActivationCode(rawCode, encSecret);
   const nowIso = new Date().toISOString();
   const origin = cardData.originUrl ?? CANONICAL_PUBLIC_ORIGIN;
 
@@ -204,9 +224,9 @@ export async function insertCardWithRetry(
         .prepare(
           `INSERT INTO cards (
              id, public_id, batch_id, status, activation_code_hash,
-             code_rotation_counter, business_name, destination_url,
+             encrypted_activation_code, code_rotation_counter, business_name, destination_url,
              created_at, updated_at
-           ) VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`
+           ) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?)`
         )
         .bind(
           cardId,
@@ -214,6 +234,7 @@ export async function insertCardWithRetry(
           cardData.batchId,
           cardData.status ?? 'UNACTIVATED',
           codeHash,
+          encryptedCode,
           cardData.businessName ?? null,
           cardData.destinationUrl ?? null,
           nowIso,

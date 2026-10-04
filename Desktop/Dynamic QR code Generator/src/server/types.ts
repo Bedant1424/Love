@@ -11,6 +11,8 @@ export interface Env {
   ASSETS: Fetcher;
   /** Server secret for HMAC-SHA256 activation code derivation */
   ACTIVATION_SECRET?: string;
+  /** Server secret for AES-GCM activation key vault encryption */
+  ACTIVATION_ENCRYPTION_KEY?: string;
   /** Server secret for Turnstile validation */
   TURNSTILE_SECRET_KEY?: string;
   /** Environment indicator */

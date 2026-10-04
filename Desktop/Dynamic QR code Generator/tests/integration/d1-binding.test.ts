@@ -25,6 +25,7 @@ describe('D1 Database Binding & SQLite Foundation', () => {
           business_id TEXT,
           status TEXT NOT NULL DEFAULT 'UNACTIVATED',
           activation_code_hash TEXT NOT NULL,
+          encrypted_activation_code TEXT,
           code_rotation_counter INTEGER NOT NULL DEFAULT 0,
           business_name TEXT,
           destination_url TEXT,

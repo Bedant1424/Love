@@ -7,9 +7,13 @@ import type {
   AdminDashboardStats,
   CreateBatchRequest,
   PaginatedResult,
+  AdminBatchKeysResponse,
+  AdminVaultKeyEntry,
+  CardStatus,
 } from '../shared/types';
 import { createErrorResponse, createSuccessResponse, parsePagination } from '../shared/utils';
 import { provisionCardBatch } from './provisioning';
+import { decryptActivationCode } from '../shared/activation-crypto';
 
 type AdminContext = Context<{ Bindings: Env; Variables: AppVariables }>;
 
@@ -288,6 +292,7 @@ export async function handleAdminCreateBatch(c: AdminContext) {
     );
   }
 
+  const encryptionSecret = c.env.ACTIVATION_ENCRYPTION_KEY || secret;
   const adminEmail = c.get('adminEmail') ?? 'admin@system';
   const url = new URL(c.req.url);
   const originUrl = `${url.protocol}//${url.host}`;
@@ -298,7 +303,8 @@ export async function handleAdminCreateBatch(c: AdminContext) {
       secret,
       { name, cardCount, notes },
       adminEmail,
-      originUrl
+      originUrl,
+      encryptionSecret
     );
 
     return c.json(createSuccessResponse(result), 201);
@@ -729,5 +735,77 @@ export async function handleAdminListAuditLogs(c: AdminContext) {
   } catch (error) {
     console.error('[Admin List Audit Error]', error instanceof Error ? error.message : error);
     return c.json(createErrorResponse('SERVER_ERROR', 'Failed to retrieve audit logs'), 500);
+  }
+}
+
+/**
+ * GET /api/admin/batches/:id/keys
+ * Retrieves decrypted activation keys for all cards in a specified batch.
+ * Strictly protected by Cloudflare Access Zero Trust authentication.
+ * Decrypts only inside authenticated admin request; never logs decrypted keys or writes them to audit trail.
+ */
+export async function handleAdminGetBatchKeys(c: AdminContext) {
+  const batchId = c.req.param('id');
+  const secret = c.env.ACTIVATION_ENCRYPTION_KEY || c.env.ACTIVATION_SECRET;
+
+  if (!secret) {
+    return c.json(
+      createErrorResponse('CONFIGURATION_ERROR', 'Encryption secret not configured'),
+      500
+    );
+  }
+
+  try {
+    const batch = await c.env.DB.prepare('SELECT id, name, card_count FROM batches WHERE id = ?')
+      .bind(batchId)
+      .first<{ id: string; name: string; card_count: number }>();
+
+    if (!batch) {
+      return c.json(createErrorResponse('NOT_FOUND', 'Batch not found'), 404);
+    }
+
+    const cardsRes = await c.env.DB.prepare(
+      `SELECT public_id, status, encrypted_activation_code, created_at
+       FROM cards
+       WHERE batch_id = ?
+       ORDER BY created_at ASC`
+    )
+      .bind(batchId)
+      .all<{
+        public_id: string;
+        status: CardStatus;
+        encrypted_activation_code: string | null;
+        created_at: string;
+      }>();
+
+    const keys: AdminVaultKeyEntry[] = [];
+    for (const card of cardsRes.results ?? []) {
+      let code = '[Not vaulted]';
+      if (card.encrypted_activation_code) {
+        try {
+          code = await decryptActivationCode(card.encrypted_activation_code, secret);
+        } catch {
+          code = '[Decryption error]';
+        }
+      }
+      keys.push({
+        publicId: card.public_id,
+        status: card.status,
+        activationCode: code,
+        batchName: batch.name,
+      });
+    }
+
+    const response: AdminBatchKeysResponse = {
+      batchId: batch.id,
+      batchName: batch.name,
+      cardCount: batch.card_count,
+      keys,
+    };
+
+    return c.json(createSuccessResponse(response), 200);
+  } catch (error) {
+    console.error('[Admin Batch Keys Error]', error instanceof Error ? error.message : error);
+    return c.json(createErrorResponse('SERVER_ERROR', 'Failed to retrieve batch keys'), 500);
   }
 }

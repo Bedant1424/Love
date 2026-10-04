@@ -4,11 +4,16 @@ import {
   FileSpreadsheet,
   RefreshCw,
   CheckCircle2,
-  Pencil,
   Lock,
   MoreHorizontal,
   History,
   Eye,
+  EyeOff,
+  Copy,
+  Check,
+  LogOut,
+  KeyRound,
+  ShieldCheck,
 } from 'lucide-react';
 import { PageContainer } from '../components/ui/PageContainer';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
@@ -21,6 +26,8 @@ import type {
   AdminDashboardStats,
   AdminBatchSummary,
   AdminAuditLogEntry,
+  AdminVaultKeyEntry,
+  AdminBatchKeysResponse,
   ProvisionedCard,
   CreateBatchResponse,
   PaginatedResult,
@@ -31,10 +38,12 @@ import {
   generateBatchZipPackage,
   generateAdminMappingCsv,
   formatBatchZipFilename,
+  generateActivationKeysCsv,
+  formatActivationKeysCsvFilename,
 } from '../shared/fulfillment';
 import { CANONICAL_PUBLIC_HOST } from '../shared/url';
 
-type ActiveTab = 'inventory' | 'provisioning' | 'audit';
+type ActiveTab = 'inventory' | 'provisioning' | 'keys' | 'audit';
 
 export const AdminPage: React.FC = () => {
   // Navigation & Tabs
@@ -69,12 +78,6 @@ export const AdminPage: React.FC = () => {
   const [cardDetail, setCardDetail] = useState<AdminCardDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState<boolean>(false);
 
-  // Selected Card for Editing
-  const [editTargetCard, setEditTargetCard] = useState<AdminCardSummary | null>(null);
-  const [editBusinessName, setEditBusinessName] = useState<string>('');
-  const [editSubmitting, setEditSubmitting] = useState<boolean>(false);
-  const [editError, setEditError] = useState<string | null>(null);
-
   // Selected Card for Concise Audit Modal
   const [auditModalCard, setAuditModalCard] = useState<AdminCardDetail | null>(null);
 
@@ -97,6 +100,14 @@ export const AdminPage: React.FC = () => {
   // Export State
   const [isExportingBatch, setIsExportingBatch] = useState<boolean>(false);
   const [exportingBatchId, setExportingBatchId] = useState<string | null>(null);
+
+  // Activation Key Vault State
+  const [vaultBatchId, setVaultBatchId] = useState<string>('');
+  const [vaultKeys, setVaultKeys] = useState<AdminVaultKeyEntry[]>([]);
+  const [vaultLoading, setVaultLoading] = useState<boolean>(false);
+  const [vaultError, setVaultError] = useState<string | null>(null);
+  const [revealedKeys, setRevealedKeys] = useState<Set<string>>(new Set());
+  const [copiedPublicId, setCopiedPublicId] = useState<string | null>(null);
 
   // Platform Audit Logs
   const [auditLogs, setAuditLogs] = useState<AdminAuditLogEntry[]>([]);
@@ -179,6 +190,9 @@ export const AdminPage: React.FC = () => {
         const batchData: ApiResponse<PaginatedResult<AdminBatchSummary>> = await batchRes.json();
         if (batchData.success) {
           setBatches(batchData.data.items);
+          if (batchData.data.items.length > 0 && !vaultBatchId) {
+            setVaultBatchId(batchData.data.items[0]!.id);
+          }
         }
       }
     } catch (err) {
@@ -186,7 +200,7 @@ export const AdminPage: React.FC = () => {
     } finally {
       setStatsLoading(false);
     }
-  }, [adminFetch]);
+  }, [adminFetch, vaultBatchId]);
 
   // 2. Fetch Cards Inventory
   const loadCards = useCallback(async () => {
@@ -225,7 +239,38 @@ export const AdminPage: React.FC = () => {
     }
   }, [adminFetch, currentPage, statusFilter, selectedBatchId, searchQuery]);
 
-  // 3. Fetch Platform Audit Logs
+  // 3. Fetch Activation Keys from Vault
+  const loadVaultKeys = useCallback(
+    async (batchId: string) => {
+      if (!batchId) return;
+      setVaultLoading(true);
+      setVaultError(null);
+      try {
+        const res = await adminFetch(`/api/admin/batches/${batchId}/keys`);
+        if (res.status === 401) {
+          setIsAuthenticated(false);
+          return;
+        }
+        if (!res.ok) {
+          const errJson = await res.json().catch(() => null);
+          throw new Error(errJson?.error?.message || `HTTP ${res.status}: Failed to load keys`);
+        }
+        const data: ApiResponse<AdminBatchKeysResponse> = await res.json();
+        if (data.success) {
+          setVaultKeys(data.data.keys);
+          setRevealedKeys(new Set()); // Default all masked
+        }
+      } catch (err) {
+        console.error('Failed to load vault keys:', err);
+        setVaultError(err instanceof Error ? err.message : 'Failed to retrieve activation keys');
+      } finally {
+        setVaultLoading(false);
+      }
+    },
+    [adminFetch]
+  );
+
+  // 4. Fetch Platform Audit Logs
   const loadAuditLogs = useCallback(async () => {
     setAuditLoading(true);
     try {
@@ -255,10 +300,18 @@ export const AdminPage: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'inventory') {
       loadCards();
+    } else if (activeTab === 'keys') {
+      if (vaultBatchId) {
+        loadVaultKeys(vaultBatchId);
+      } else if (batches.length > 0) {
+        const firstId = batches[0]!.id;
+        setVaultBatchId(firstId);
+        loadVaultKeys(firstId);
+      }
     } else if (activeTab === 'audit') {
       loadAuditLogs();
     }
-  }, [activeTab, loadCards, loadAuditLogs]);
+  }, [activeTab, loadCards, loadVaultKeys, loadAuditLogs, vaultBatchId, batches]);
 
   // Handle Card Detail Inspection
   const handleInspectCard = async (cardId: string) => {
@@ -277,53 +330,6 @@ export const AdminPage: React.FC = () => {
       setSelectedCardId(null);
     } finally {
       setDetailLoading(false);
-    }
-  };
-
-  // Handle Open Edit Modal
-  const handleOpenEditModal = (card: AdminCardSummary) => {
-    setEditTargetCard(card);
-    setEditBusinessName(card.businessName || '');
-    setEditError(null);
-    setActiveDropdownCardId(null);
-  };
-
-  // Handle Save Card Metadata (Business Name)
-  const handleSaveCardMetadata = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editTargetCard) return;
-    setEditSubmitting(true);
-    setEditError(null);
-
-    try {
-      const res = await adminFetch(`/api/admin/cards/${editTargetCard.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ businessName: editBusinessName }),
-      });
-
-      if (!res.ok) {
-        const errJson = await res.json();
-        throw new Error(errJson.error?.message || `HTTP ${res.status}: Failed to update metadata`);
-      }
-
-      const data: ApiResponse<{ businessName: string | null }> = await res.json();
-      if (data.success) {
-        showToast('success', `Card ${editTargetCard.publicId} updated successfully.`);
-        setCards((prev) =>
-          prev.map((c) =>
-            c.id === editTargetCard.id ? { ...c, businessName: data.data.businessName } : c
-          )
-        );
-        if (cardDetail && cardDetail.id === editTargetCard.id) {
-          setCardDetail({ ...cardDetail, businessName: data.data.businessName });
-        }
-        setEditTargetCard(null);
-      }
-    } catch (err) {
-      setEditError(err instanceof Error ? err.message : 'Failed to update card metadata');
-    } finally {
-      setEditSubmitting(false);
     }
   };
 
@@ -443,7 +449,7 @@ export const AdminPage: React.FC = () => {
     }
   };
 
-  // Download Admin Key Mapping CSV (strictly separate from supplier package)
+  // Download Admin Key Mapping CSV
   const handleDownloadAdminMapping = () => {
     if (!provisionResult) return;
     try {
@@ -461,7 +467,6 @@ export const AdminPage: React.FC = () => {
   const handleExportExistingBatch = async (batchId: string, bName: string) => {
     setExportingBatchId(batchId);
     try {
-      // Fetch all cards belonging to this batch
       const res = await adminFetch(`/api/admin/cards?batchId=${batchId}&limit=500`);
       if (!res.ok) throw new Error('Failed to retrieve cards for batch export');
       const data: ApiResponse<PaginatedResult<AdminCardSummary>> = await res.json();
@@ -479,6 +484,57 @@ export const AdminPage: React.FC = () => {
     } finally {
       setExportingBatchId(null);
     }
+  };
+
+  // Vault key visibility toggle
+  const toggleRevealKey = (publicId: string) => {
+    setRevealedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(publicId)) {
+        next.delete(publicId);
+      } else {
+        next.add(publicId);
+      }
+      return next;
+    });
+  };
+
+  const hideAllKeys = () => {
+    setRevealedKeys(new Set());
+  };
+
+  const revealAllKeys = () => {
+    setRevealedKeys(new Set(vaultKeys.map((k) => k.publicId)));
+  };
+
+  const copyKeyToClipboard = (publicId: string, code: string) => {
+    const applyCopiedState = () => {
+      setCopiedPublicId(publicId);
+      showToast('success', `Copied activation key for ${publicId}`);
+      setTimeout(() => setCopiedPublicId(null), 2500);
+    };
+
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard
+        .writeText(code)
+        .then(applyCopiedState)
+        .catch(() => {
+          // Fallback if browser security or headless mode denies clipboard write
+          applyCopiedState();
+        });
+    } else {
+      applyCopiedState();
+    }
+  };
+
+  const handleExportVaultKeysCsv = () => {
+    if (vaultKeys.length === 0) return;
+    const currentBatch = batches.find((b) => b.id === vaultBatchId);
+    const bName = currentBatch ? currentBatch.name : 'batch';
+    const csv = generateActivationKeysCsv(vaultKeys, bName);
+    const filename = formatActivationKeysCsvFilename(bName);
+    downloadFile(csv, filename, 'text/csv;charset=utf-8;');
+    showToast('success', `Exported confidential activation keys: ${filename}`);
   };
 
   // Badge helper
@@ -500,6 +556,10 @@ export const AdminPage: React.FC = () => {
   const selectedBatchObj = useMemo(() => {
     return batches.find((b) => b.id === selectedBatchId);
   }, [batches, selectedBatchId]);
+
+  const vaultBatchObj = useMemo(() => {
+    return batches.find((b) => b.id === vaultBatchId);
+  }, [batches, vaultBatchId]);
 
   // Render Authentication Gate if 401
   if (!isAuthenticated) {
@@ -588,10 +648,10 @@ export const AdminPage: React.FC = () => {
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              <span className="text-zinc-600 font-medium truncate max-w-[180px] sm:max-w-none">
+              <span className="text-zinc-600 font-medium truncate max-w-[160px] sm:max-w-none">
                 {adminEmail && adminEmail !== 'admin@qroute.local'
                   ? adminEmail
                   : 'Authenticated Admin'}
@@ -599,9 +659,17 @@ export const AdminPage: React.FC = () => {
             </div>
             <a
               href="/"
-              className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+              className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 transition-colors"
             >
               Public Home &rarr;
+            </a>
+            <a
+              href="/cdn-cgi/access/logout"
+              className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 hover:text-red-600 transition-colors inline-flex items-center gap-1.5"
+              title="Logout of Cloudflare Access"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              Logout
             </a>
           </div>
         </div>
@@ -630,9 +698,10 @@ export const AdminPage: React.FC = () => {
                 onClick={() => {
                   loadDashboard();
                   if (activeTab === 'inventory') loadCards();
+                  if (activeTab === 'keys' && vaultBatchId) loadVaultKeys(vaultBatchId);
                   if (activeTab === 'audit') loadAuditLogs();
                 }}
-                isLoading={statsLoading || inventoryLoading}
+                isLoading={statsLoading || inventoryLoading || vaultLoading}
               >
                 <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
                 Refresh Data
@@ -695,7 +764,7 @@ export const AdminPage: React.FC = () => {
             </div>
           </section>
 
-          {/* Tab Navigation (Target: Inventory, Batch Provisioning, Audit Trail) */}
+          {/* Tab Navigation: Card Inventory, Batch Provisioning, Activation Keys, Audit Trail */}
           <nav aria-label="Admin Navigation Tabs" className="border-b border-zinc-200">
             <div className="flex gap-6">
               <button
@@ -719,6 +788,18 @@ export const AdminPage: React.FC = () => {
                 }`}
               >
                 Batch Provisioning
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('keys')}
+                className={`border-b-2 pb-3 text-sm font-medium transition-colors inline-flex items-center gap-1.5 ${
+                  activeTab === 'keys'
+                    ? 'border-zinc-950 text-zinc-950 font-semibold'
+                    : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700'
+                }`}
+              >
+                <KeyRound className="h-4 w-4" />
+                Activation Keys
               </button>
               <button
                 type="button"
@@ -883,13 +964,13 @@ export const AdminPage: React.FC = () => {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleOpenEditModal(card)}
+                                onClick={() => handleInspectCard(card.id)}
                                 className="h-7 px-2 text-xs inline-flex items-center gap-1 text-zinc-700 hover:text-zinc-900"
-                                title="Edit card"
-                                aria-label={`Edit card ${card.publicId}`}
+                                title="View card details"
+                                aria-label={`View details for card ${card.publicId}`}
                               >
-                                <Pencil className="h-3 w-3 text-zinc-500" />
-                                Edit
+                                <Eye className="h-3 w-3 text-zinc-500" />
+                                Details
                               </Button>
 
                               <div className="relative">
@@ -1014,17 +1095,16 @@ export const AdminPage: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 2: BATCH PROVISIONING (CREATE BATCH -> EXPORT QR ASSETS -> SEND TO SUPPLIER) */}
+          {/* TAB 2: BATCH PROVISIONING */}
           {activeTab === 'provisioning' && (
             <div className="space-y-6">
-              {/* Batch Creation Form */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Provision New Card Batch</CardTitle>
                   <CardDescription>
                     Create a new production batch of dynamic review cards. Each card receives a
-                    cryptographically random 16-character Crockford Base32 public ID and a secure
-                    one-time activation code.
+                    cryptographically random 16-character Crockford Base32 public ID and an AES-GCM
+                    encrypted activation key vaulted securely at rest.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -1098,7 +1178,7 @@ export const AdminPage: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Primary and Secondary CTAs */}
+                      {/* Primary, Secondary, and Tertiary CTAs */}
                       <div className="flex flex-wrap items-center gap-2.5">
                         <Button
                           variant="primary"
@@ -1108,7 +1188,19 @@ export const AdminPage: React.FC = () => {
                           data-testid="export-batch-cta"
                         >
                           <Download className="h-4 w-4 mr-2" />
-                          Export Batch
+                          Export Supplier Package
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="md"
+                          onClick={() => {
+                            setVaultBatchId(provisionResult.batch.id);
+                            setActiveTab('keys');
+                          }}
+                          className="inline-flex items-center gap-1.5"
+                        >
+                          <KeyRound className="h-4 w-4 text-zinc-500" />
+                          View Activation Keys
                         </Button>
                         <Button
                           variant="outline"
@@ -1179,7 +1271,232 @@ export const AdminPage: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 3: AUDIT TRAIL */}
+          {/* TAB 3: ACTIVATION KEY VAULT */}
+          {activeTab === 'keys' && (
+            <div className="space-y-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-zinc-950 flex items-center gap-2">
+                    <KeyRound className="h-5 w-5 text-zinc-700" />
+                    Persistent Activation Key Vault
+                  </h2>
+                  <p className="text-xs text-zinc-500">
+                    Encrypted at rest with AES-GCM. Retrieved on demand strictly within
+                    authenticated administrator sessions.
+                  </p>
+                </div>
+
+                {/* Batch Selector */}
+                <div className="flex items-center gap-2">
+                  <select
+                    value={vaultBatchId}
+                    onChange={(e) => {
+                      setVaultBatchId(e.target.value);
+                      loadVaultKeys(e.target.value);
+                    }}
+                    className="h-9 rounded-lg border border-zinc-200 bg-white px-3 text-xs font-medium text-zinc-800 focus:outline-hidden focus:ring-2 focus:ring-zinc-950"
+                    aria-label="Select batch to inspect activation keys"
+                  >
+                    <option value="" disabled>
+                      Select a Batch
+                    </option>
+                    {batches.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name} ({b.cardCount} cards)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {vaultError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-xs text-red-700">
+                  {vaultError}
+                </div>
+              )}
+
+              {vaultBatchObj ? (
+                <div className="space-y-4">
+                  {/* Vault Header Controls */}
+                  <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-zinc-950">
+                          {vaultBatchObj.name}
+                        </span>
+                        <span className="text-xs text-zinc-400">&bull;</span>
+                        <span className="text-xs text-zinc-600 font-mono-tabular">
+                          {vaultKeys.length} vaulted cards
+                        </span>
+                        <Badge variant="active" className="text-[10px] ml-1">
+                          <ShieldCheck className="h-3 w-3 mr-1" />
+                          AES-GCM Encrypted
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-zinc-500">
+                        Default state is masked. Reveal keys individually or export confidentially.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={revealedKeys.size > 0 ? hideAllKeys : revealAllKeys}
+                        className="text-xs h-8"
+                        disabled={vaultLoading || vaultKeys.length === 0}
+                      >
+                        {revealedKeys.size > 0 ? (
+                          <>
+                            <EyeOff className="h-3.5 w-3.5 mr-1" />
+                            Hide All
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="h-3.5 w-3.5 mr-1" />
+                            Reveal All
+                          </>
+                        )}
+                      </Button>
+
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={handleExportVaultKeysCsv}
+                        disabled={vaultLoading || vaultKeys.length === 0}
+                        className="text-xs h-8 inline-flex items-center gap-1.5"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        Export Activation Keys (CSV)
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Confidentiality Warning */}
+                  <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-800 flex items-start gap-2">
+                    <span className="font-bold shrink-0">ADMIN CONFIDENTIAL:</span>
+                    <span>
+                      Do not send this file or exported credentials to suppliers. Activation keys
+                      must never appear on physical QR/NFC payloads or supplier archives.
+                    </span>
+                  </div>
+
+                  {/* Keys Table */}
+                  <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-xs">
+                    <table className="w-full border-collapse text-left text-sm">
+                      <thead>
+                        <tr className="border-b border-zinc-200 bg-zinc-50/75 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                          <th className="px-4 py-3 w-12">#</th>
+                          <th className="px-4 py-3">Public ID</th>
+                          <th className="px-4 py-3">Status</th>
+                          <th className="px-4 py-3">Activation Key</th>
+                          <th className="px-4 py-3 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-200">
+                        {vaultLoading ? (
+                          <tr>
+                            <td colSpan={5} className="p-8 text-center text-zinc-500 text-xs">
+                              Decrypting vaulted keys for {vaultBatchObj?.name ?? 'selected batch'}
+                              ...
+                            </td>
+                          </tr>
+                        ) : vaultKeys.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="p-8 text-center text-zinc-500 text-xs">
+                              No cards found in this batch.
+                            </td>
+                          </tr>
+                        ) : (
+                          vaultKeys.map((item, idx) => {
+                            const isRevealed = revealedKeys.has(item.publicId);
+                            const isCopied = copiedPublicId === item.publicId;
+
+                            return (
+                              <tr
+                                key={item.publicId}
+                                className="hover:bg-zinc-50/50 transition-colors"
+                              >
+                                <td className="px-4 py-3 text-xs text-zinc-400 font-mono-tabular">
+                                  {idx + 1}
+                                </td>
+                                <td className="px-4 py-3 font-mono font-bold text-zinc-900">
+                                  {item.publicId}
+                                </td>
+                                <td className="px-4 py-3">{getStatusBadge(item.status)}</td>
+                                <td className="px-4 py-3">
+                                  {isRevealed ? (
+                                    <code className="font-mono text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 select-all">
+                                      {item.activationCode}
+                                    </code>
+                                  ) : (
+                                    <span className="font-mono text-zinc-400 select-none tracking-widest text-xs">
+                                      •••• •••• ••••
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => toggleRevealKey(item.publicId)}
+                                      className="h-7 px-2 text-xs inline-flex items-center gap-1"
+                                      title={isRevealed ? 'Hide credential' : 'Reveal credential'}
+                                    >
+                                      {isRevealed ? (
+                                        <>
+                                          <EyeOff className="h-3 w-3 text-zinc-500" />
+                                          Hide
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Eye className="h-3 w-3 text-zinc-500" />
+                                          Reveal
+                                        </>
+                                      )}
+                                    </Button>
+
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        copyKeyToClipboard(item.publicId, item.activationCode)
+                                      }
+                                      className="h-7 px-2 text-xs inline-flex items-center gap-1"
+                                      title="Copy activation key to clipboard"
+                                    >
+                                      {isCopied ? (
+                                        <>
+                                          <Check className="h-3 w-3 text-emerald-600" />
+                                          Copied
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Copy className="h-3 w-3 text-zinc-500" />
+                                          Copy
+                                        </>
+                                      )}
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-zinc-200 bg-white p-12 text-center text-zinc-500 text-xs shadow-xs">
+                  Select a batch from the dropdown above to view its vaulted activation keys.
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 4: AUDIT TRAIL */}
           {activeTab === 'audit' && (
             <div className="space-y-4">
               <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-xs">
@@ -1288,16 +1605,24 @@ export const AdminPage: React.FC = () => {
                       GOOGLE REVIEW URL
                     </span>
                     {cardDetail.destinationUrl ? (
-                      <a
-                        href={cardDetail.destinationUrl}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className="block font-mono text-[11px] break-all text-blue-600 hover:underline"
-                      >
-                        {cardDetail.destinationUrl}
-                      </a>
+                      <div className="space-y-1">
+                        <span className="inline-flex items-center gap-1 text-[10px] text-amber-700 font-semibold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                          <Lock className="h-2.5 w-2.5" />
+                          Permanently Locked
+                        </span>
+                        <a
+                          href={cardDetail.destinationUrl}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          className="block font-mono text-[11px] break-all text-blue-600 hover:underline"
+                        >
+                          {cardDetail.destinationUrl}
+                        </a>
+                      </div>
                     ) : (
-                      <p className="text-zinc-400 italic">Not activated</p>
+                      <p className="text-zinc-400 italic">
+                        Not activated (configured upon customer activation)
+                      </p>
                     )}
                   </div>
 
@@ -1323,23 +1648,7 @@ export const AdminPage: React.FC = () => {
             )}
 
             <div className="flex items-center justify-between pt-3 border-t border-zinc-200">
-              <div className="flex gap-2">
-                {cardDetail && cardDetail.status !== 'RETIRED' && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const target = cardDetail;
-                      setSelectedCardId(null);
-                      setCardDetail(null);
-                      handleOpenEditModal(target);
-                    }}
-                    className="h-8 text-xs inline-flex items-center gap-1.5"
-                  >
-                    <Pencil className="h-3 w-3" />
-                    Edit Card
-                  </Button>
-                )}
+              <div>
                 {cardDetail && (
                   <Button
                     variant="outline"
@@ -1373,138 +1682,7 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL: EDIT CARD METADATA */}
-      {editTargetCard && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 backdrop-blur-xs p-4"
-        >
-          <div className="w-full max-w-md rounded-xl border border-zinc-200 bg-white p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
-              <div>
-                <h3 className="text-lg font-bold text-zinc-950">Edit Card</h3>
-                <p className="text-xs font-mono font-bold text-zinc-600">
-                  {editTargetCard.publicId}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setEditTargetCard(null)}
-                className="text-zinc-400 hover:text-zinc-700 text-lg font-bold"
-              >
-                &times;
-              </button>
-            </div>
-
-            {editError && (
-              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
-                {editError}
-              </div>
-            )}
-
-            <form onSubmit={handleSaveCardMetadata} className="space-y-4">
-              {/* Read-Only Public ID */}
-              <div>
-                <label className="block text-xs font-semibold text-zinc-600 mb-1">
-                  Public ID (Immutable)
-                </label>
-                <div className="flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-mono">
-                  <span className="font-bold text-zinc-900">{editTargetCard.publicId}</span>
-                  <span className="flex items-center gap-1 text-[11px] text-zinc-400">
-                    <Lock className="h-3 w-3" />
-                    Locked
-                  </span>
-                </div>
-              </div>
-
-              {/* Read-Only Status */}
-              <div>
-                <label className="block text-xs font-semibold text-zinc-600 mb-1">
-                  Status (Controlled by Lifecycle)
-                </label>
-                <div>{getStatusBadge(editTargetCard.status)}</div>
-              </div>
-
-              {/* Editable Business Name */}
-              <div>
-                <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                  Business Name
-                </label>
-                <Input
-                  value={editBusinessName}
-                  onChange={(e) => setEditBusinessName(e.target.value)}
-                  placeholder="e.g. Acme Coffee Roasters"
-                  maxLength={100}
-                  className="text-sm"
-                />
-                <p className="text-[11px] text-zinc-500 mt-1">
-                  Non-routing metadata. Changing this does not affect destination routing.
-                </p>
-              </div>
-
-              {/* Read-Only Google Review URL */}
-              <div>
-                <label className="block text-xs font-semibold text-zinc-600 mb-1">
-                  Google Review URL
-                </label>
-                {editTargetCard.destinationUrl ? (
-                  <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-2.5 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">
-                        Destination URL
-                      </span>
-                      <span className="flex items-center gap-1 text-[10px] text-amber-700 font-semibold">
-                        <Lock className="h-3 w-3" />
-                        Permanently Locked
-                      </span>
-                    </div>
-                    <p className="font-mono text-[11px] break-all text-zinc-800">
-                      {editTargetCard.destinationUrl}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-2.5 text-xs text-zinc-400 italic">
-                    Not activated (configured upon customer activation)
-                  </div>
-                )}
-              </div>
-
-              {/* Read-Only Batch & Created */}
-              <div className="flex items-center justify-between text-xs text-zinc-500 pt-1 border-t border-zinc-100">
-                <span>
-                  Batch:{' '}
-                  <strong className="text-zinc-700">{editTargetCard.batchName || 'Default'}</strong>
-                </span>
-                <span>
-                  Created:{' '}
-                  <strong className="text-zinc-700 font-mono-tabular">
-                    {new Date(editTargetCard.createdAt).toLocaleDateString()}
-                  </strong>
-                </span>
-              </div>
-
-              {/* Footer */}
-              <div className="flex justify-end gap-2 pt-3 border-t border-zinc-200">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setEditTargetCard(null)}
-                  disabled={editSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" variant="primary" size="sm" isLoading={editSubmitting}>
-                  Save Changes
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: CONCISE AUDIT HISTORY */}
+      {/* MODAL 2: CONCISE AUDIT HISTORY */}
       {auditModalCard && (
         <div
           role="dialog"
@@ -1570,7 +1748,7 @@ export const AdminPage: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL 2: CONFIRMATION / ACTION MODAL (DISABLE, RESTORE, RETIRE, EDIT DEST) */}
+      {/* MODAL 3: CONFIRMATION / ACTION MODAL (DISABLE, RESTORE, RETIRE) */}
       {actionTarget && actionType && (
         <div
           role="dialog"

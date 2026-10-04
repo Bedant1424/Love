@@ -16,6 +16,7 @@ import {
   handleAdminRetireCard,
   handleAdminUpdateCard,
   handleAdminListAuditLogs,
+  handleAdminGetBatchKeys,
 } from './admin';
 
 const app = new Hono<{ Bindings: Env; Variables: AppVariables }>();
@@ -135,6 +136,7 @@ app.post('/api/admin/cards/:id/retire', handleAdminRetireCard);
 app.patch('/api/admin/cards/:id', handleAdminUpdateCard);
 app.get('/api/admin/batches', handleAdminListBatches);
 app.post('/api/admin/batches', handleAdminCreateBatch);
+app.get('/api/admin/batches/:id/keys', handleAdminGetBatchKeys);
 app.get('/api/admin/audit', handleAdminListAuditLogs);
 
 /**

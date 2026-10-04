@@ -42,6 +42,7 @@ describe('Admin Operations, Lifecycle & Provisioning Engine (/api/admin/*)', () 
           business_id TEXT,
           status TEXT NOT NULL DEFAULT 'UNACTIVATED',
           activation_code_hash TEXT NOT NULL,
+          encrypted_activation_code TEXT,
           code_rotation_counter INTEGER NOT NULL DEFAULT 0,
           business_name TEXT,
           destination_url TEXT,
@@ -297,15 +298,19 @@ describe('Admin Operations, Lifecycle & Provisioning Engine (/api/admin/*)', () 
         expect(card.nfcUrl).toContain(`/c/${card.publicId}`);
 
         // Direct database inspection: verify PLAINTEXT code is NOT in D1!
-        const d1Card = await env.DB.prepare('SELECT activation_code_hash FROM cards WHERE id = ?')
+        const d1Card = await env.DB.prepare(
+          'SELECT activation_code_hash, encrypted_activation_code FROM cards WHERE id = ?'
+        )
           .bind(card.id)
-          .first<{ activation_code_hash: string }>();
+          .first<{ activation_code_hash: string; encrypted_activation_code: string }>();
 
         expect(d1Card).toBeDefined();
         // Stored hash must be 64-char lowercase hex digest
         expect(d1Card?.activation_code_hash).toMatch(/^[0-9a-f]{64}$/);
         // It must NOT equal the raw code
         expect(d1Card?.activation_code_hash).not.toBe(card.activationCode);
+        // Stored encrypted code must be AES-GCM ivHex:ctHex format
+        expect(d1Card?.encrypted_activation_code).toMatch(/^[0-9a-f]{24}:[0-9a-f]+$/);
       }
 
       // Check audit_logs has CARD_CREATED entries
@@ -316,6 +321,53 @@ describe('Admin Operations, Lifecycle & Provisioning Engine (/api/admin/*)', () 
         .first<{ count: number }>();
 
       expect(auditCount?.count).toBeGreaterThanOrEqual(4);
+
+      // Verify authenticated retrieval of vaulted activation keys: GET /api/admin/batches/:id/keys
+      const keysRes = await app.request(
+        `/api/admin/batches/${json.data.batch.id}/keys`,
+        {
+          headers: { 'cf-access-authenticated-user-email': ADMIN_EMAIL },
+        },
+        env
+      );
+
+      expect(keysRes.status).toBe(200);
+      const keysJson = await keysRes.json<{
+        success: boolean;
+        data: {
+          batchId: string;
+          cardCount: number;
+          keys: Array<{ publicId: string; activationCode: string; status: string }>;
+        };
+      }>();
+
+      expect(keysJson.success).toBe(true);
+      expect(keysJson.data.batchId).toBe(json.data.batch.id);
+      expect(keysJson.data.keys).toHaveLength(4);
+
+      // Verify that decrypted keys match the original generated codes exactly!
+      for (const card of json.data.cards) {
+        const found = keysJson.data.keys.find((k) => k.publicId === card.publicId);
+        expect(found).toBeDefined();
+        expect(found?.activationCode).toBe(card.activationCode);
+        expect(found?.status).toBe('UNACTIVATED');
+      }
+    });
+
+    it('rejects unauthenticated access to /api/admin/batches/:id/keys with 401', async () => {
+      const res = await app.request('/api/admin/batches/batch_admin_ops/keys', {}, env);
+      expect(res.status).toBe(401);
+    });
+
+    it('returns 404 for non-existent batch keys request', async () => {
+      const res = await app.request(
+        '/api/admin/batches/batch_does_not_exist/keys',
+        {
+          headers: { 'cf-access-authenticated-user-email': ADMIN_EMAIL },
+        },
+        env
+      );
+      expect(res.status).toBe(404);
     });
 
     it('rejects batch creation with invalid count or missing name', async () => {

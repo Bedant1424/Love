@@ -18,6 +18,8 @@ import {
   formatQrAssetIdentifier,
   verifySupplierPackageSecurity,
   FORBIDDEN_SUPPLIER_TOKENS,
+  generateActivationKeysCsv,
+  formatActivationKeysCsvFilename,
 } from '../../src/shared/fulfillment';
 import { generateQrSheetPdf } from '../../src/shared/pdf-sheet';
 
@@ -409,6 +411,68 @@ describe('Supplier Fulfillment & QR Export Engine', () => {
       const csv = generateAdminMappingCsv(dangerousCards, '@BatchMalicious');
       expect(csv).toContain(`"'=1+1"`);
       expect(csv).toContain(`"'@BatchMalicious"`);
+    });
+  });
+
+  describe('Confidential Activation Keys Export (Admin-Only CSV)', () => {
+    const VAULT_KEYS = [
+      {
+        publicId: '8T2K9M4W1X7P3N5Q',
+        activationCode: 'K7XM-92PR-V8Q2',
+        batchName: 'Batch 2026-A',
+        status: 'UNACTIVATED',
+      },
+      {
+        publicId: '3H5V7N2R9B4M6K8W',
+        activationCode: 'B4WT-81MK-P5Q9',
+        batchName: 'Batch 2026-A',
+        status: 'ACTIVE',
+      },
+    ];
+
+    it('formats correct filename with QRoute_Activation_Keys_ prefix', () => {
+      expect(formatActivationKeysCsvFilename('Batch 2026-A')).toBe(
+        'QRoute_Activation_Keys_Batch-2026-A.csv'
+      );
+      expect(formatActivationKeysCsvFilename('Batch@Test#01')).toBe(
+        'QRoute_Activation_Keys_Batch-Test-01.csv'
+      );
+    });
+
+    it('generates CSV with strictly PUBLIC_ID, ACTIVATION_CODE, BATCH, STATUS headers', () => {
+      const csv = generateActivationKeysCsv(VAULT_KEYS, 'Batch 2026-A');
+      const lines = csv.trim().split('\r\n');
+
+      expect(lines[0]).toBe('PUBLIC_ID,ACTIVATION_CODE,BATCH,STATUS');
+      expect(lines.length).toBe(3);
+
+      expect(lines[1]).toBe('8T2K9M4W1X7P3N5Q,K7XM-92PR-V8Q2,Batch 2026-A,UNACTIVATED');
+      expect(lines[2]).toBe('3H5V7N2R9B4M6K8W,B4WT-81MK-P5Q9,Batch 2026-A,ACTIVE');
+    });
+
+    it('protects against CSV formula injection in confidential key export', () => {
+      const dangerousKeys = [
+        {
+          publicId: '=cmd|',
+          activationCode: '+1234',
+          batchName: '@EvilBatch',
+          status: '-ACTIVE',
+        },
+      ];
+      const csv = generateActivationKeysCsv(dangerousKeys, 'SafeBatch');
+      expect(csv).toContain(`"'=cmd|"`);
+      expect(csv).toContain(`"'+1234"`);
+      expect(csv).toContain(`"'@EvilBatch"`);
+      expect(csv).toContain(`"'-ACTIVE"`);
+    });
+
+    it('never contains destinations, hashes, secrets, or tokens', () => {
+      const csv = generateActivationKeysCsv(VAULT_KEYS, 'Batch 2026-A');
+      expect(csv).not.toContain('google.com');
+      expect(csv).not.toContain('writereview');
+      expect(csv).not.toContain('activation_code_hash');
+      expect(csv).not.toContain('token');
+      expect(csv).not.toContain('secret');
     });
   });
 });

@@ -169,3 +169,83 @@ export function generateActivationCode(): string {
   }
   return formatActivationCode(code);
 }
+
+/**
+ * Derives a 256-bit AES-GCM CryptoKey from a secret key using SHA-256.
+ */
+async function deriveAesGcmKey(secret: string): Promise<CryptoKey> {
+  if (!secret || typeof secret !== 'string' || secret.trim().length === 0) {
+    throw new Error('ACTIVATION_ENCRYPTION_KEY or secret is not configured or empty');
+  }
+  const encoder = new TextEncoder();
+  const keyBytes = await crypto.subtle.digest('SHA-256', encoder.encode(secret));
+  return crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, [
+    'encrypt',
+    'decrypt',
+  ]);
+}
+
+/**
+ * Authenticated encryption of an activation code at rest using AES-GCM with a 96-bit random IV.
+ * Returns a colon-delimited string: `<ivHex>:<ciphertextHex>`.
+ */
+export async function encryptActivationCode(code: string, secret: string): Promise<string> {
+  if (!code || typeof code !== 'string') {
+    throw new Error('Activation code must be a non-empty string to encrypt');
+  }
+
+  const key = await deriveAesGcmKey(secret);
+  const iv = new Uint8Array(12);
+  crypto.getRandomValues(iv);
+
+  const encoder = new TextEncoder();
+  const ciphertextBuffer = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    encoder.encode(code)
+  );
+
+  const ivHex = Array.from(iv)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+  const ctBytes = new Uint8Array(ciphertextBuffer);
+  const ctHex = Array.from(ctBytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+
+  return `${ivHex}:${ctHex}`;
+}
+
+/**
+ * Authenticated decryption of an AES-GCM encrypted activation code at rest.
+ * Fails closed if the ciphertext has been modified or the key is incorrect.
+ */
+export async function decryptActivationCode(encryptedStr: string, secret: string): Promise<string> {
+  if (!encryptedStr || typeof encryptedStr !== 'string') {
+    throw new Error('Encrypted payload must be a non-empty string');
+  }
+
+  const parts = encryptedStr.split(':');
+  if (parts.length !== 2) {
+    throw new Error('Invalid encrypted activation code format');
+  }
+
+  const [ivHex, ctHex] = parts;
+  if (!ivHex || !ctHex || ivHex.length !== 24 || ctHex.length < 2) {
+    throw new Error('Invalid encrypted payload structure');
+  }
+
+  const ivMatches = ivHex.match(/.{1,2}/g);
+  const ctMatches = ctHex.match(/.{1,2}/g);
+  if (!ivMatches || !ctMatches) {
+    throw new Error('Failed to parse hexadecimal payload');
+  }
+
+  const iv = new Uint8Array(ivMatches.map((byte) => parseInt(byte, 16)));
+  const ct = new Uint8Array(ctMatches.map((byte) => parseInt(byte, 16)));
+
+  const key = await deriveAesGcmKey(secret);
+  const decryptedBuffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct);
+
+  return new TextDecoder().decode(decryptedBuffer);
+}

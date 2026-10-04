@@ -53,6 +53,7 @@ describe('Production Deployment & Launch Readiness (/healthz, /c/:id, /api/publi
           business_id TEXT REFERENCES businesses(id) ON DELETE SET NULL,
           status TEXT NOT NULL DEFAULT 'UNACTIVATED' CHECK (status IN ('UNACTIVATED', 'ACTIVE', 'DISABLED', 'RETIRED')),
           activation_code_hash TEXT NOT NULL,
+          encrypted_activation_code TEXT,
           code_rotation_counter INTEGER NOT NULL DEFAULT 0,
           business_name TEXT,
           destination_url TEXT,

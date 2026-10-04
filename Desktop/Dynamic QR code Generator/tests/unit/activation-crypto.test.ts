@@ -6,6 +6,8 @@ import {
   timingSafeEqualHex,
   hashActivationCode,
   verifyActivationCode,
+  encryptActivationCode,
+  decryptActivationCode,
 } from '../../src/shared/activation-crypto';
 
 describe('Activation Cryptography & Code Validation', () => {
@@ -189,6 +191,53 @@ describe('Activation Cryptography & Code Validation', () => {
 
       const isMatch = await verifyActivationCode('K7XM-92PR-V8Q2', storedHash, '');
       expect(isMatch).toBe(false);
+    });
+  });
+
+  describe('encryptActivationCode & decryptActivationCode (AES-GCM Key Vault)', () => {
+    it('successfully encrypts and decrypts an activation code with AES-GCM', async () => {
+      const originalCode = 'K7XM-92PR-V8Q2';
+      const encrypted = await encryptActivationCode(originalCode, TEST_SECRET);
+
+      expect(typeof encrypted).toBe('string');
+      expect(encrypted).toMatch(/^[0-9a-f]{24}:[0-9a-f]+$/);
+
+      const decrypted = await decryptActivationCode(encrypted, TEST_SECRET);
+      expect(decrypted).toBe(originalCode);
+    });
+
+    it('produces non-deterministic ciphertexts due to fresh 96-bit random IVs', async () => {
+      const code = 'K7XM-92PR-V8Q2';
+      const enc1 = await encryptActivationCode(code, TEST_SECRET);
+      const enc2 = await encryptActivationCode(code, TEST_SECRET);
+
+      expect(enc1).not.toBe(enc2);
+      expect(await decryptActivationCode(enc1, TEST_SECRET)).toBe(code);
+      expect(await decryptActivationCode(enc2, TEST_SECRET)).toBe(code);
+    });
+
+    it('fails closed when decrypting with an incorrect secret key', async () => {
+      const encrypted = await encryptActivationCode('K7XM-92PR-V8Q2', TEST_SECRET);
+      await expect(
+        decryptActivationCode(encrypted, 'wrong_encryption_secret_key_32bytes!')
+      ).rejects.toThrow();
+    });
+
+    it('fails closed when ciphertext payload is tampered with', async () => {
+      const encrypted = await encryptActivationCode('K7XM-92PR-V8Q2', TEST_SECRET);
+      const [ivHex, ctHex] = encrypted.split(':');
+      // Tamper with last byte of ciphertext
+      const tamperedCt = ctHex!.slice(0, -2) + (ctHex!.slice(-2) === 'aa' ? 'bb' : 'aa');
+      const tamperedPayload = `${ivHex}:${tamperedCt}`;
+
+      await expect(decryptActivationCode(tamperedPayload, TEST_SECRET)).rejects.toThrow();
+    });
+
+    it('fails closed on malformed encrypted payload format', async () => {
+      await expect(decryptActivationCode('not-a-valid-payload', TEST_SECRET)).rejects.toThrow(
+        /Invalid encrypted activation code format/
+      );
+      await expect(decryptActivationCode('', TEST_SECRET)).rejects.toThrow(/non-empty string/);
     });
   });
 });
