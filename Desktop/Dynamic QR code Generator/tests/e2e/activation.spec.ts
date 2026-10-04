@@ -53,7 +53,7 @@ test.describe('QRoute Merchant Activation Flow E2E', () => {
     // Verify success state
     const successCard = page.getByTestId('activation-success');
     await expect(successCard).toBeVisible();
-    await expect(page.getByText(/Your Review Card is Live!/i)).toBeVisible();
+    await expect(page.getByText(/Link Saved Successfully/i)).toBeVisible();
     await expect(page.getByText('Sunrise Bakery & Cafe')).toBeVisible();
 
     // Verify redirect endpoint /c/:publicId now returns 302 Found to destination

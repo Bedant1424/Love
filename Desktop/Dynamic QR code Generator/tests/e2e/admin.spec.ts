@@ -229,17 +229,21 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     await page.fill('input[type="number"]', '3');
 
     // Submit batch creation
-    const generateBtn = page.getByRole('button', { name: /Generate & Provision Batch/i });
+    const generateBtn = page.getByRole('button', { name: /^Generate Batch$/i });
     await generateBtn.click();
 
-    // Verify one-time activation manifest view
-    await expect(
-      page.getByRole('heading', { name: /Critical: One-Time Activation Code Manifest/i })
-    ).toBeVisible();
+    // Verify immediate batch success state
+    const successState = page.getByTestId('batch-success-state');
+    await expect(successState).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Batch Created Successfully/i })).toBeVisible();
+    await expect(successState.getByText('Q1 Supplier Pilot Batch')).toBeVisible();
+    await expect(successState.getByText('UNACTIVATED')).toBeVisible();
 
-    await expect(page.getByRole('button', { name: /Download Manifest CSV/i })).toBeVisible();
+    // Verify primary and secondary CTAs
+    await expect(page.getByTestId('export-batch-cta')).toBeVisible();
+    await expect(page.getByRole('button', { name: /View in Inventory/i })).toBeVisible();
 
-    // Verify 3 newly generated cards are rendered with formatted activation codes
+    // Verify 3 newly generated cards are rendered
     const codes = page.locator('table tbody tr');
     await expect(codes).toHaveCount(3);
   });

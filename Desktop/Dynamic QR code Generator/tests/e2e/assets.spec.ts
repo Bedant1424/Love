@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
+import JSZip from 'jszip/dist/jszip.min.js';
 
-test.describe('Milestone 5: QR Code & Physical Asset Pipeline E2E', () => {
+test.describe('QRoute Admin: Batch Provisioning & QR Export Workflow E2E', () => {
   const ADMIN_EMAIL = 'admin@qroute.local';
   const ADMIN_HEADERS = {
     'cf-access-authenticated-user-email': ADMIN_EMAIL,
@@ -18,139 +19,135 @@ test.describe('Milestone 5: QR Code & Physical Asset Pipeline E2E', () => {
     });
   });
 
-  test('1. Asset Pipeline tab displays CR-80 card preview and Level H QR vector SVG', async ({
+  test('1. Admin navigation reflects 3-tab architecture and removes obsolete Asset Pipeline tab', async ({
     page,
   }) => {
     await page.goto('/admin');
 
-    // Click Asset Pipeline tab
-    const assetTab = page.getByRole('button', { name: /Asset Pipeline & Print/i });
-    await expect(assetTab).toBeVisible();
-    await assetTab.click();
+    // Expected tabs
+    await expect(page.getByRole('button', { name: /^Card Inventory$/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Batch Provisioning$/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Audit Trail$/i })).toBeVisible();
 
-    // Verify header and standards badges
-    await expect(page.getByRole('heading', { name: /Batch Asset Pipeline/i })).toBeVisible();
-    await expect(page.getByText('ISO/IEC 18004 Level H').first()).toBeVisible();
-
-    // Verify CR-80 card back face with QR vector element
-    const qrSvg = page.locator('svg[role="img"][aria-label*="QR Code for card"]');
-    await expect(qrSvg).toBeVisible({ timeout: 10000 });
-
-    // Verify NTAG213 NFC contact point and memory gauge
-    await expect(page.getByText(/NFC NTAG213 CONTACT POINT/i)).toBeVisible();
-    await expect(page.getByText(/NTAG213 User Memory Consumption/i)).toBeVisible();
-    await expect(page.getByText(/144 bytes/i)).toBeVisible();
+    // Obsolete Asset Pipeline tab must NOT exist
+    await expect(page.getByRole('button', { name: /Asset Pipeline & Print/i })).not.toBeVisible();
   });
 
-  test('2. Card face flip toggles between Review prompt and QR/NFC back face', async ({ page }) => {
+  test('2. Complete Batch Creation -> Success State -> Export Batch workflow', async ({ page }) => {
     await page.goto('/admin');
-    await page.getByRole('button', { name: /Asset Pipeline & Print/i }).click();
 
-    // Initial face is back face (QR code visible)
-    await expect(page.locator('svg[role="img"][aria-label*="QR Code for card"]')).toBeVisible();
+    // 1. Open Batch Provisioning
+    await page.getByRole('button', { name: /^Batch Provisioning$/i }).click();
+    await expect(page.getByRole('heading', { name: /Provision New Card Batch/i })).toBeVisible();
 
-    // Switch to Front Face
-    await page.getByRole('button', { name: 'Front Face' }).click();
+    // 2. Fill batch details
+    await page.fill('input[placeholder*="Batch 2026-A"]', 'Supplier Alpha Batch');
+    await page.fill('input[type="number"]', '3');
 
-    // Verify front face review invitation and stars
-    await expect(page.getByRole('heading', { name: /Review Us On Google/i })).toBeVisible();
-    await expect(page.getByText(/Instant Contactless Tap/i)).toBeVisible();
-    await expect(page.getByText(/★★★★★/)).toBeVisible();
+    // 3. Click Generate Batch
+    await page.getByRole('button', { name: /^Generate Batch$/i }).click();
 
-    // Switch back to Back Face
-    await page.getByRole('button', { name: 'Back Face (QR + NFC)' }).click();
-    await expect(page.locator('svg[role="img"][aria-label*="QR Code for card"]')).toBeVisible();
-  });
+    // 4. Verify immediate success state
+    const successSection = page.getByTestId('batch-success-state');
+    await expect(successSection).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Batch Created Successfully/i })).toBeVisible();
+    await expect(successSection.getByText('Supplier Alpha Batch')).toBeVisible();
+    await expect(successSection.getByText('UNACTIVATED')).toBeVisible();
 
-  test('3. Environment switch to Production with custom domain validation and live URL update', async ({
-    page,
-  }) => {
-    await page.goto('/admin');
-    await page.getByRole('button', { name: /Asset Pipeline & Print/i }).click();
+    // 5. Verify Primary and Secondary CTAs
+    const exportCta = page.getByTestId('export-batch-cta');
+    await expect(exportCta).toBeVisible();
+    await expect(page.getByRole('button', { name: /View in Inventory/i })).toBeVisible();
 
-    // Click Production environment radio
-    await page.getByRole('button', { name: /Production Owned Custom Domain/i }).click();
-
-    // Fill valid production domain
-    const domainInput = page.locator('input[placeholder*="qr.yourbrand.com"]');
-    await expect(domainInput).toBeVisible();
-    await domainInput.fill('qr.bistrosanfrancisco.com');
-
-    // Verify validation feedback
-    await expect(page.getByText(/Valid RFC 1123 Hostname/i)).toBeVisible();
-
-    // Verify updated canonical URL in NFC spec
-    await expect(page.getByText(/qr\.bistrosanfrancisco\.com\/c\//i).first()).toBeVisible();
-
-    // Test invalid domain shows validation error
-    await domainInput.fill('invalid domain with spaces');
-    await expect(page.getByText(/Invalid domain format/i)).toBeVisible();
-  });
-
-  test('4. Substrate material selection updates visual style', async ({ page }) => {
-    await page.goto('/admin');
-    await page.getByRole('button', { name: /Asset Pipeline & Print/i }).click();
-
-    // Click various substrates
-    const brushedMetalBtn = page.getByRole('button', { name: 'Brushed Metal', exact: true });
-    await expect(brushedMetalBtn).toBeVisible();
-    await brushedMetalBtn.click();
-
-    const bambooBtn = page.getByRole('button', { name: 'Bamboo / Wood', exact: true });
-    await expect(bambooBtn).toBeVisible();
-    await bambooBtn.click();
-
-    const acrylicBtn = page.getByRole('button', { name: 'Frosted Acrylic', exact: true });
-    await expect(acrylicBtn).toBeVisible();
-    await acrylicBtn.click();
-
-    const mattePvcBtn = page.getByRole('button', { name: 'Matte PVC', exact: true });
-    await expect(mattePvcBtn).toBeVisible();
-    await mattePvcBtn.click();
-  });
-
-  test('5. Manifest CSV download triggers and produces non-empty file', async ({ page }) => {
-    await page.goto('/admin');
-    await page.getByRole('button', { name: /Asset Pipeline & Print/i }).click();
-
-    // Setup download listener
+    // 6. Test Primary CTA: Export Batch downloads supplier ZIP package
     const downloadPromise = page.waitForEvent('download');
-    await page.getByRole('button', { name: /Download Manifest \(CSV\)/i }).click();
-
+    await exportCta.click();
     const download = await downloadPromise;
-    expect(download.suggestedFilename()).toContain('.csv');
+
+    // Verify canonical filename
+    const filename = download.suggestedFilename();
+    expect(filename).toBe('QRoute_Batch_Supplier-Alpha-Batch.zip');
+
+    // Read download stream and inspect ZIP archive contents
+    const stream = await download.createReadStream();
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) {
+      chunks.push(Buffer.from(chunk));
+    }
+    const zipBuffer = Buffer.concat(chunks);
+    const unzipped = await JSZip.loadAsync(zipBuffer);
+
+    // Verify SVG print masters
+    expect(unzipped.file('SVG/QR-001.svg')).not.toBeNull();
+    expect(unzipped.file('SVG/QR-002.svg')).not.toBeNull();
+    expect(unzipped.file('SVG/QR-003.svg')).not.toBeNull();
+
+    // Verify PNG high-resolution files
+    expect(unzipped.file('PNG/QR-001.png')).not.toBeNull();
+    expect(unzipped.file('PNG/QR-002.png')).not.toBeNull();
+    expect(unzipped.file('PNG/QR-003.png')).not.toBeNull();
+
+    // Verify A4 PDF sheet
+    expect(unzipped.file('QR-SHEET.pdf')).not.toBeNull();
+
+    // Security invariant: strictly exclude manifest.csv and activation codes from supplier ZIP
+    expect(unzipped.file('manifest.csv')).toBeNull();
+    expect(unzipped.file('README.txt')).toBeNull();
+
+    // Check SVG content: uses canonical host and has no text label or credentials
+    const svgText = await unzipped.file('SVG/QR-001.svg')!.async('string');
+    expect(svgText).toContain('<svg');
+    expect(svgText).not.toContain('<text');
+    expect(svgText.toLowerCase()).not.toContain('activation');
+
+    // 7. Test Secondary CTA: View in Inventory navigates to inventory tab
+    await page.getByRole('button', { name: /View in Inventory/i }).click();
+    await expect(page.getByPlaceholder(/Search by Public ID or Business/i)).toBeVisible();
   });
 
-  test('6. Batch provisioning transitions directly to Asset Pipeline view with generated cards', async ({
+  test('3. Card Inventory provides batch-level Export Batch action for existing batches', async ({
     page,
   }) => {
     await page.goto('/admin');
+    await expect(page.getByRole('button', { name: /^Card Inventory$/i })).toBeVisible();
 
-    // Go to Batch Provisioning
-    await page.getByRole('button', { name: /Batch Provisioning/i }).click();
-    await page.fill('input[placeholder*="Batch 2026-A"]', 'Fulfillment Test Batch');
+    // Verify batch dropdown is present
+    const batchSelect = page.locator('select[aria-label="Filter cards by batch"]');
+    await expect(batchSelect).toBeVisible();
+
+    // Select an existing batch if available or create one
+    const options = await batchSelect.locator('option').allInnerTexts();
+    if (options.length > 1) {
+      // Pick second option (first non-ALL batch)
+      await batchSelect.selectOption({ index: 1 });
+
+      // Verify batch-level Export Batch button appears
+      const exportBtn = page.getByRole('button', { name: /Export Batch \(/i });
+      await expect(exportBtn).toBeVisible();
+
+      // Trigger export and verify ZIP download
+      const downloadPromise = page.waitForEvent('download');
+      await exportBtn.click();
+      const download = await downloadPromise;
+      expect(download.suggestedFilename()).toMatch(/^QRoute_Batch_.*\.zip$/);
+    }
+  });
+
+  test('4. Admin Key Mapping CSV downloads separately from supplier package', async ({ page }) => {
+    await page.goto('/admin');
+    await page.getByRole('button', { name: /^Batch Provisioning$/i }).click();
+
+    // Generate quick 2-card batch
+    await page.fill('input[placeholder*="Batch 2026-A"]', 'Key Backup Test Batch');
     await page.fill('input[type="number"]', '2');
-    await page.getByRole('button', { name: /Generate & Provision Batch/i }).click();
+    await page.getByRole('button', { name: /^Generate Batch$/i }).click();
 
-    // Verify button to open asset pipeline
-    const openPipelineBtn = page.getByRole('button', {
-      name: /Open Asset Pipeline \(ZIP & Print\)/i,
-    });
-    await expect(openPipelineBtn).toBeVisible();
-    await openPipelineBtn.click();
+    // Download admin mapping CSV
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: /Download Admin Keys \(CSV\)/i }).click();
+    const download = await downloadPromise;
 
-    // Verifies pipeline view loads with the newly created batch
-    await expect(
-      page.getByRole('heading', { name: /Batch Asset Pipeline: Fulfillment Test Batch/i })
-    ).toBeVisible();
-
-    // Verifies multi-card navigation shows "1 of 2"
-    await expect(page.getByText('1 of 2')).toBeVisible();
-
-    // Flip to next card
-    const nextBtn = page.getByRole('button', { name: 'Next card in batch' });
-    await expect(nextBtn).toBeVisible();
-    await nextBtn.click();
-    await expect(page.getByText('2 of 2')).toBeVisible();
+    expect(download.suggestedFilename()).toContain('QRoute_Admin_Keys_');
+    expect(download.suggestedFilename()).toContain('.csv');
   });
 });
