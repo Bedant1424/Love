@@ -119,6 +119,7 @@ export async function handleAdminDashboard(c: AdminContext) {
       retiredCards: statusMap.RETIRED,
       cardsByStatus: statusMap,
       totalBatches: totalBatchesRes?.count ?? 0,
+      adminEmail: c.get('adminEmail') ?? undefined,
     };
 
     return c.json(createSuccessResponse(stats), 200);

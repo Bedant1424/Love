@@ -32,7 +32,7 @@ export const AdminPage: React.FC = () => {
 
   // Authentication & Identity
   const [adminEmail, setAdminEmail] = useState<string>(
-    () => sessionStorage.getItem('qroute_admin_email') || 'admin@qroute.local'
+    () => sessionStorage.getItem('qroute_admin_email') || ''
   );
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -95,9 +95,10 @@ export const AdminPage: React.FC = () => {
   const adminFetch = useCallback(
     async (url: string, options: RequestInit = {}): Promise<Response> => {
       const headers = new Headers(options.headers || {});
-      if (adminEmail) {
-        headers.set('x-admin-email', adminEmail);
-        headers.set('cf-access-authenticated-user-email', adminEmail);
+      const activeEmail = adminEmail || sessionStorage.getItem('qroute_admin_email');
+      if (activeEmail) {
+        headers.set('x-admin-email', activeEmail);
+        headers.set('cf-access-authenticated-user-email', activeEmail);
       }
       return fetch(url, { ...options, headers });
     },
@@ -131,12 +132,20 @@ export const AdminPage: React.FC = () => {
         return;
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data: ApiResponse<{ stats: AdminDashboardStats; recentBatches: AdminBatchSummary[] }> =
-        await res.json();
+      const data: ApiResponse<
+        AdminDashboardStats | { stats: AdminDashboardStats; recentBatches?: AdminBatchSummary[] }
+      > = await res.json();
       if (data.success) {
-        setDashboardStats(data.data.stats);
-        if (data.data.recentBatches) {
-          setBatches(data.data.recentBatches);
+        const rawData = data.data as Record<string, unknown>;
+        const statsData = (
+          'stats' in rawData && rawData.stats ? rawData.stats : rawData
+        ) as AdminDashboardStats;
+        setDashboardStats(statsData);
+        if ('recentBatches' in rawData && Array.isArray(rawData.recentBatches)) {
+          setBatches(rawData.recentBatches as AdminBatchSummary[]);
+        }
+        if (statsData.adminEmail) {
+          setAdminEmail(statsData.adminEmail);
         }
         setIsAuthenticated(true);
         setAuthError(null);
@@ -441,7 +450,7 @@ export const AdminPage: React.FC = () => {
                     type="email"
                     value={adminEmail}
                     onChange={(e) => setAdminEmail(e.target.value)}
-                    placeholder="admin@qroute.local"
+                    placeholder="admin@example.com"
                   />
                   <Button
                     onClick={() => {
@@ -498,7 +507,9 @@ export const AdminPage: React.FC = () => {
             <div className="flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
               <span className="text-zinc-600 font-medium truncate max-w-[180px] sm:max-w-none">
-                {adminEmail}
+                {adminEmail && adminEmail !== 'admin@qroute.local'
+                  ? adminEmail
+                  : 'Authenticated Admin'}
               </span>
             </div>
             <a

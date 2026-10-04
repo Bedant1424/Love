@@ -137,11 +137,12 @@ describe('Admin Operations, Lifecycle & Provisioning Engine (/api/admin/*)', () 
 
       const json = await res.json<{
         success: boolean;
-        data: { totalCards: number; totalBatches: number };
+        data: { totalCards: number; totalBatches: number; adminEmail?: string };
       }>();
       expect(json.success).toBe(true);
       expect(json.data.totalCards).toBeGreaterThanOrEqual(3);
       expect(json.data.totalBatches).toBeGreaterThanOrEqual(1);
+      expect(json.data.adminEmail).toBe(ADMIN_EMAIL);
     });
   });
 

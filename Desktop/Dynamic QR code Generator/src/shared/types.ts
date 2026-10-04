@@ -189,6 +189,7 @@ export interface AdminDashboardStats {
     RETIRED: number;
   };
   totalBatches: number;
+  adminEmail?: string;
 }
 
 /**
