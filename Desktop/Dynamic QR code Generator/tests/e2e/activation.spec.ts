@@ -228,17 +228,15 @@ test.describe('QRoute Merchant Activation Flow E2E', () => {
     await expect(submitBtn).toBeEnabled();
 
     // Intercept network call to verify turnstileToken reaches POST /api/public/activate
-    let interceptedToken: string | undefined;
-    await page.route('/api/public/activate', async (route) => {
-      const postData = route.request().postDataJSON();
-      interceptedToken = postData.turnstileToken;
-      await route.continue();
-    });
-
+    const requestPromise = page.waitForRequest(
+      (req) => req.url().includes('/api/public/activate') && req.method() === 'POST'
+    );
     await submitBtn.click();
+    const req = await requestPromise;
+    const postData = req.postDataJSON();
 
     // Confirm the token was transmitted
-    expect(interceptedToken).toBe('test-fresh-turnstile-token');
+    expect(postData.turnstileToken).toBe('test-fresh-turnstile-token');
   });
 
   test('7. Turnstile error callback displays user message and failure resets widget', async ({
