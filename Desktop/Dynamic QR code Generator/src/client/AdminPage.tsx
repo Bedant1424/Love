@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Download, FileSpreadsheet, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { PageContainer } from '../components/ui/PageContainer';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -17,10 +18,14 @@ import type {
   ApiResponse,
   CardStatus,
 } from '../shared/types';
-import { AssetPipelineView } from './AssetPipelineView';
-import { generateManifestCsv } from '../shared/fulfillment';
+import {
+  generateBatchZipPackage,
+  generateAdminMappingCsv,
+  formatBatchZipFilename,
+} from '../shared/fulfillment';
+import { CANONICAL_PUBLIC_HOST } from '../shared/url';
 
-type ActiveTab = 'inventory' | 'provisioning' | 'assets' | 'audit';
+type ActiveTab = 'inventory' | 'provisioning' | 'audit';
 
 export const AdminPage: React.FC = () => {
   // Navigation & Tabs
@@ -36,6 +41,10 @@ export const AdminPage: React.FC = () => {
   // Dashboard Overview
   const [dashboardStats, setDashboardStats] = useState<AdminDashboardStats | null>(null);
   const [statsLoading, setStatsLoading] = useState<boolean>(false);
+
+  // Batches
+  const [batches, setBatches] = useState<AdminBatchSummary[]>([]);
+  const [selectedBatchId, setSelectedBatchId] = useState<string>('ALL');
 
   // Card Inventory
   const [cards, setCards] = useState<AdminCardSummary[]>([]);
@@ -71,6 +80,10 @@ export const AdminPage: React.FC = () => {
   const [provisionResult, setProvisionResult] = useState<CreateBatchResponse | null>(null);
   const [provisionError, setProvisionError] = useState<string | null>(null);
 
+  // Export State
+  const [isExportingBatch, setIsExportingBatch] = useState<boolean>(false);
+  const [exportingBatchId, setExportingBatchId] = useState<string | null>(null);
+
   // Platform Audit Logs
   const [auditLogs, setAuditLogs] = useState<AdminAuditLogEntry[]>([]);
   const [auditLoading, setAuditLoading] = useState<boolean>(false);
@@ -99,7 +112,23 @@ export const AdminPage: React.FC = () => {
     [adminEmail]
   );
 
-  // 1. Fetch Dashboard Stats
+  // Trigger browser file download
+  const downloadFile = (bytes: Uint8Array | string, filename: string, mimeType: string) => {
+    const blob =
+      typeof bytes === 'string'
+        ? new Blob([bytes], { type: mimeType })
+        : new Blob([bytes as BlobPart], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // 1. Fetch Dashboard Stats & Batches
   const loadDashboard = useCallback(async () => {
     setStatsLoading(true);
     try {
@@ -114,8 +143,20 @@ export const AdminPage: React.FC = () => {
         await res.json();
       if (data.success) {
         setDashboardStats(data.data.stats);
+        if (data.data.recentBatches) {
+          setBatches(data.data.recentBatches);
+        }
         setIsAuthenticated(true);
         setAuthError(null);
+      }
+
+      // Also refresh full batch list
+      const batchRes = await adminFetch('/api/admin/batches?limit=100');
+      if (batchRes.ok) {
+        const batchData: ApiResponse<PaginatedResult<AdminBatchSummary>> = await batchRes.json();
+        if (batchData.success) {
+          setBatches(batchData.data.items);
+        }
       }
     } catch (err) {
       console.error('Failed to load dashboard:', err);
@@ -133,6 +174,9 @@ export const AdminPage: React.FC = () => {
       params.set('limit', '10');
       if (statusFilter !== 'ALL') {
         params.set('status', statusFilter);
+      }
+      if (selectedBatchId !== 'ALL') {
+        params.set('batchId', selectedBatchId);
       }
       if (searchQuery.trim()) {
         params.set('q', searchQuery.trim());
@@ -156,13 +200,13 @@ export const AdminPage: React.FC = () => {
     } finally {
       setInventoryLoading(false);
     }
-  }, [adminFetch, currentPage, statusFilter, searchQuery]);
+  }, [adminFetch, currentPage, statusFilter, selectedBatchId, searchQuery]);
 
   // 3. Fetch Platform Audit Logs
   const loadAuditLogs = useCallback(async () => {
     setAuditLoading(true);
     try {
-      const res = await adminFetch('/api/admin/audit-logs?limit=50');
+      const res = await adminFetch('/api/admin/audit?limit=50');
       if (res.status === 401) {
         setIsAuthenticated(false);
         return;
@@ -263,50 +307,33 @@ export const AdminPage: React.FC = () => {
 
       const res = await adminFetch(endpoint, {
         method,
-        headers: body ? { 'Content-Type': 'application/json' } : {},
+        headers: { 'Content-Type': 'application/json' },
         body,
       });
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error?.message || `Action failed with status ${res.status}`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error?.message || 'Operation failed');
       }
 
       showToast(
         'success',
         `Card ${actionTarget.publicId} successfully updated (${actionType.toUpperCase()}).`
       );
-
-      // Close modal & reload data
       setActionTarget(null);
       setActionType(null);
-      setNewDestinationUrl('');
       loadCards();
       loadDashboard();
-
-      // If detail modal was open for this card, refresh it
-      if (selectedCardId === actionTarget.id) {
-        handleInspectCard(actionTarget.id);
-      }
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Operation failed.');
+      setActionError(err instanceof Error ? err.message : 'Action execution failed');
     } finally {
       setActionSubmitting(false);
     }
   };
 
-  // Execute Batch Provisioning
+  // Provision Batch
   const handleProvisionBatch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!batchName.trim()) {
-      setProvisionError('Batch name is required.');
-      return;
-    }
-    if (batchCount < 1 || batchCount > 500) {
-      setProvisionError('Card count must be between 1 and 500.');
-      return;
-    }
-
     setProvisioningLoading(true);
     setProvisionError(null);
 
@@ -315,51 +342,87 @@ export const AdminPage: React.FC = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: batchName.trim(),
-          cardCount: Number(batchCount),
-          count: Number(batchCount),
+          name: batchName,
+          cardCount: batchCount,
         }),
       });
 
-      const data: ApiResponse<CreateBatchResponse> = await res.json();
-      if (!res.ok || !data.success) {
-        const errorMsg = (!data.success && data.error?.message) || 'Failed to provision batch.';
-        throw new Error(errorMsg);
+      if (!res.ok) {
+        const errJson = await res.json();
+        throw new Error(errJson.error?.message || `HTTP ${res.status}: Failed to create batch`);
       }
 
-      setProvisionResult(data.data);
-      showToast('success', `Batch "${data.data.batch.name}" provisioned successfully!`);
-      loadDashboard();
+      const data: ApiResponse<CreateBatchResponse> = await res.json();
+      if (data.success) {
+        setProvisionResult(data.data);
+        showToast(
+          'success',
+          `Batch "${data.data.batch.name}" (${data.data.batch.cardCount} cards) created successfully.`
+        );
+        loadDashboard();
+      }
     } catch (err) {
-      setProvisionError(err instanceof Error ? err.message : 'Provisioning failed.');
+      setProvisionError(err instanceof Error ? err.message : 'Failed to provision batch');
     } finally {
       setProvisioningLoading(false);
     }
   };
 
-  // Download Manifest CSV
-  const handleDownloadManifest = (cards: ProvisionedCard[], batchName: string) => {
+  // Export newly provisioned batch
+  const handleExportProvisionedBatch = async () => {
+    if (!provisionResult) return;
+    setIsExportingBatch(true);
     try {
-      const csvContent = generateManifestCsv(cards, {
-        urlOptions: {
-          environment: 'pilot',
-          devHost: window.location.host,
-        },
-      });
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.setAttribute('href', url);
-      link.setAttribute(
-        'download',
-        `qroute-manifest-${batchName.toLowerCase().replace(/[^a-z0-9]/g, '-')}.csv`
+      const zipBytes = await generateBatchZipPackage(
+        provisionResult.cards,
+        provisionResult.batch.name
       );
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      const filename = formatBatchZipFilename(provisionResult.batch.name);
+      downloadFile(zipBytes, filename, 'application/zip');
+      showToast('success', `Supplier package "${filename}" exported successfully.`);
     } catch (err) {
-      console.error('Failed to download manifest CSV:', err);
+      console.error('Batch export failed:', err);
+      showToast('error', err instanceof Error ? err.message : 'Batch export failed');
+    } finally {
+      setIsExportingBatch(false);
+    }
+  };
+
+  // Download Admin Key Mapping CSV (strictly separate from supplier package)
+  const handleDownloadAdminMapping = () => {
+    if (!provisionResult) return;
+    try {
+      const csv = generateAdminMappingCsv(provisionResult.cards, provisionResult.batch.name);
+      const filename = `QRoute_Admin_Keys_${provisionResult.batch.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}.csv`;
+      downloadFile(csv, filename, 'text/csv;charset=utf-8;');
+      showToast('success', 'Admin key mapping backup downloaded.');
+    } catch (err) {
+      console.error('Admin mapping download failed:', err);
+      showToast('error', 'Failed to generate admin mapping');
+    }
+  };
+
+  // Export existing batch from inventory
+  const handleExportExistingBatch = async (batchId: string, bName: string) => {
+    setExportingBatchId(batchId);
+    try {
+      // Fetch all cards belonging to this batch
+      const res = await adminFetch(`/api/admin/cards?batchId=${batchId}&limit=500`);
+      if (!res.ok) throw new Error('Failed to retrieve cards for batch export');
+      const data: ApiResponse<PaginatedResult<AdminCardSummary>> = await res.json();
+      if (!data.success || data.data.items.length === 0) {
+        throw new Error('No cards found in this batch');
+      }
+
+      const zipBytes = await generateBatchZipPackage(data.data.items, bName);
+      const filename = formatBatchZipFilename(bName);
+      downloadFile(zipBytes, filename, 'application/zip');
+      showToast('success', `Supplier package "${filename}" exported successfully.`);
+    } catch (err) {
+      console.error('Batch export error:', err);
+      showToast('error', err instanceof Error ? err.message : 'Export failed');
+    } finally {
+      setExportingBatchId(null);
     }
   };
 
@@ -378,6 +441,10 @@ export const AdminPage: React.FC = () => {
         return <Badge variant="neutral">{status}</Badge>;
     }
   };
+
+  const selectedBatchObj = useMemo(() => {
+    return batches.find((b) => b.id === selectedBatchId);
+  }, [batches, selectedBatchId]);
 
   // Render Authentication Gate if 401
   if (!isAuthenticated) {
@@ -440,7 +507,7 @@ export const AdminPage: React.FC = () => {
         <aside
           role="status"
           aria-live="polite"
-          className={`fixed top-4 right-4 z-50 flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium shadow-md border ${
+          className={`fixed top-4 right-4 z-50 flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium shadow-md border transition-all ${
             notification.type === 'success'
               ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
               : 'bg-red-50 text-red-800 border-red-200'
@@ -462,7 +529,7 @@ export const AdminPage: React.FC = () => {
             </a>
             <span className="hidden sm:inline-block h-4 w-px bg-zinc-200" />
             <span className="hidden sm:inline-block text-xs text-zinc-500 font-mono">
-              Zero Trust &bull; Edge Ops
+              Zero Trust &bull; Edge Operations
             </span>
           </div>
 
@@ -493,7 +560,10 @@ export const AdminPage: React.FC = () => {
                 Card Lifecycle & Routing Operations
               </h1>
               <p className="text-sm text-zinc-500">
-                Self-hosted dynamic QR & NFC inventory management and instant edge controls.
+                Self-hosted dynamic QR & NFC routing platform. Canonical host:{' '}
+                <code className="text-xs font-mono bg-zinc-100 px-1.5 py-0.5 rounded text-zinc-700">
+                  {CANONICAL_PUBLIC_HOST}
+                </code>
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -507,12 +577,13 @@ export const AdminPage: React.FC = () => {
                 }}
                 isLoading={statsLoading || inventoryLoading}
               >
+                <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
                 Refresh Data
               </Button>
             </div>
           </div>
 
-          {/* Metric KPI Cards */}
+          {/* Metric KPI Summary */}
           <section
             aria-label="Platform KPI Summary"
             className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6"
@@ -567,7 +638,7 @@ export const AdminPage: React.FC = () => {
             </div>
           </section>
 
-          {/* Tab Navigation */}
+          {/* Tab Navigation (Target: Inventory, Batch Provisioning, Audit Trail) */}
           <nav aria-label="Admin Navigation Tabs" className="border-b border-zinc-200">
             <div className="flex gap-6">
               <button
@@ -591,17 +662,6 @@ export const AdminPage: React.FC = () => {
                 }`}
               >
                 Batch Provisioning
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('assets')}
-                className={`border-b-2 pb-3 text-sm font-medium transition-colors ${
-                  activeTab === 'assets'
-                    ? 'border-zinc-950 text-zinc-950 font-semibold'
-                    : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700'
-                }`}
-              >
-                Asset Pipeline & Print
               </button>
               <button
                 type="button"
@@ -633,6 +693,8 @@ export const AdminPage: React.FC = () => {
                     }}
                     className="max-w-xs h-9 text-sm"
                   />
+
+                  {/* Status Filters */}
                   <div className="flex items-center gap-1 rounded-lg border border-zinc-200 bg-white p-0.5">
                     {['ALL', 'ACTIVE', 'UNACTIVATED', 'DISABLED', 'RETIRED'].map((st) => (
                       <button
@@ -650,6 +712,42 @@ export const AdminPage: React.FC = () => {
                         {st}
                       </button>
                     ))}
+                  </div>
+
+                  {/* Batch Selector Filter */}
+                  <div className="flex items-center gap-1.5">
+                    <select
+                      value={selectedBatchId}
+                      onChange={(e) => {
+                        setSelectedBatchId(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="h-9 rounded-lg border border-zinc-200 bg-white px-2.5 text-xs font-medium text-zinc-700 focus:outline-hidden focus:ring-2 focus:ring-zinc-950"
+                      aria-label="Filter cards by batch"
+                    >
+                      <option value="ALL">All Batches</option>
+                      {batches.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.name} ({b.cardCount} cards)
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* Batch-Level Export Batch Action */}
+                    {selectedBatchId !== 'ALL' && selectedBatchObj && (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        className="h-9 text-xs"
+                        onClick={() =>
+                          handleExportExistingBatch(selectedBatchObj.id, selectedBatchObj.name)
+                        }
+                        isLoading={exportingBatchId === selectedBatchObj.id}
+                      >
+                        <Download className="h-3.5 w-3.5 mr-1" />
+                        Export Batch ({selectedBatchObj.name})
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -821,15 +919,17 @@ export const AdminPage: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 2: BATCH PROVISIONING */}
+          {/* TAB 2: BATCH PROVISIONING (CREATE BATCH -> EXPORT QR ASSETS -> SEND TO SUPPLIER) */}
           {activeTab === 'provisioning' && (
             <div className="space-y-6">
+              {/* Batch Creation Form */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Provision New Card Batch</CardTitle>
                   <CardDescription>
-                    Generate unique Crockford Base32 public IDs and raw 12-character activation
-                    codes for physical card production. Raw codes are never stored in the database.
+                    Create a new production batch of dynamic review cards. Each card receives a
+                    cryptographically random 16-character Crockford Base32 public ID and a secure
+                    one-time activation code.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -864,88 +964,127 @@ export const AdminPage: React.FC = () => {
                       />
                     </div>
                     <Button type="submit" isLoading={provisioningLoading}>
-                      Generate & Provision Batch
+                      Generate Batch
                     </Button>
                   </form>
                 </CardContent>
               </Card>
 
-              {/* Newly Provisioned Result View */}
+              {/* Immediate Batch Success State */}
               {provisionResult && (
-                <div className="space-y-4">
-                  <div className="rounded-xl border border-amber-300 bg-amber-50 p-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h4 className="text-base font-bold text-amber-900">
-                          Critical: One-Time Activation Code Manifest
-                        </h4>
-                        <p className="mt-1 text-sm text-amber-800">
-                          Batch <strong>{provisionResult.batch.name}</strong> generated with{' '}
-                          <strong>{provisionResult.batch.cardCount}</strong> cards. Raw activation
-                          codes are displayed <em>only once</em> and cannot be recovered from the
-                          database. Download the supplier manifest immediately.
-                        </p>
+                <div className="space-y-5" data-testid="batch-success-state">
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-5 shadow-xs">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                          <h3 className="text-base font-bold text-zinc-950">
+                            Batch Created Successfully
+                          </h3>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3 pt-1 text-sm text-zinc-700 font-mono-tabular">
+                          <span>
+                            Batch:{' '}
+                            <strong className="text-zinc-950 font-sans">
+                              {provisionResult.batch.name}
+                            </strong>
+                          </span>
+                          <span className="text-zinc-300">&bull;</span>
+                          <span>
+                            Cards:{' '}
+                            <strong className="text-zinc-950">
+                              {provisionResult.batch.cardCount}
+                            </strong>
+                          </span>
+                          <span className="text-zinc-300">&bull;</span>
+                          <span className="flex items-center gap-1">
+                            Status: <Badge variant="unactivated">UNACTIVATED</Badge>
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Button variant="primary" size="md" onClick={() => setActiveTab('assets')}>
-                          Open Asset Pipeline (ZIP & Print)
+
+                      {/* Primary and Secondary CTAs */}
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <Button
+                          variant="primary"
+                          size="md"
+                          onClick={handleExportProvisionedBatch}
+                          isLoading={isExportingBatch}
+                          data-testid="export-batch-cta"
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Export Batch
                         </Button>
                         <Button
                           variant="outline"
                           size="md"
-                          onClick={() =>
-                            handleDownloadManifest(
-                              provisionResult.cards,
-                              provisionResult.batch.name
-                            )
-                          }
+                          onClick={() => {
+                            setSelectedBatchId(provisionResult.batch.id);
+                            setActiveTab('inventory');
+                            loadCards();
+                          }}
                         >
-                          Download Manifest CSV
+                          View in Inventory
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="md"
+                          onClick={handleDownloadAdminMapping}
+                          title="Internal admin backup only. Never send to suppliers."
+                          className="text-xs text-zinc-600"
+                        >
+                          <FileSpreadsheet className="h-4 w-4 mr-1.5 text-zinc-500" />
+                          Download Admin Keys (CSV)
                         </Button>
                       </div>
                     </div>
                   </div>
 
-                  <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
-                    <table className="w-full text-left text-sm">
-                      <thead>
-                        <tr className="border-b border-zinc-200 bg-zinc-50 text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                          <th className="px-4 py-3">Public ID</th>
-                          <th className="px-4 py-3">One-Time Activation Code</th>
-                          <th className="px-4 py-3">Routing URL</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-zinc-200">
-                        {provisionResult.cards.map((c: ProvisionedCard) => (
-                          <tr key={c.publicId}>
-                            <td className="px-4 py-2 font-mono font-bold text-zinc-900">
-                              {c.publicId}
-                            </td>
-                            <td className="px-4 py-2 font-mono font-semibold text-emerald-700">
-                              {c.activationCode}
-                            </td>
-                            <td className="px-4 py-2 font-mono text-xs text-zinc-500">
-                              {window.location.origin}/c/{c.publicId}
-                            </td>
+                  {/* Summary of Cards in Batch */}
+                  <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden shadow-xs">
+                    <div className="px-4 py-3 bg-zinc-50 border-b border-zinc-200 flex items-center justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-zinc-600">
+                        Generated Cards ({provisionResult.cards.length})
+                      </span>
+                      <span className="text-xs text-zinc-500">
+                        Ready for supplier export (SVG + PNG + PDF)
+                      </span>
+                    </div>
+                    <div className="overflow-x-auto max-h-80 overflow-y-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead>
+                          <tr className="border-b border-zinc-200 bg-zinc-50/50 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                            <th className="px-4 py-2.5">#</th>
+                            <th className="px-4 py-2.5">Public ID</th>
+                            <th className="px-4 py-2.5">One-Time Activation Code</th>
+                            <th className="px-4 py-2.5">Routing URL</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-200 font-mono text-xs">
+                          {provisionResult.cards.map((c: ProvisionedCard, idx: number) => (
+                            <tr key={c.publicId} className="hover:bg-zinc-50/50">
+                              <td className="px-4 py-2 text-zinc-400 font-mono-tabular">
+                                {idx + 1}
+                              </td>
+                              <td className="px-4 py-2 font-bold text-zinc-900">{c.publicId}</td>
+                              <td className="px-4 py-2 font-semibold text-emerald-700">
+                                {c.activationCode}
+                              </td>
+                              <td className="px-4 py-2 text-zinc-500">
+                                https://{CANONICAL_PUBLIC_HOST}/c/{c.publicId}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
           )}
 
-          {/* TAB 3: ASSET PIPELINE & PRINT FULFILLMENT */}
-          {activeTab === 'assets' && (
-            <AssetPipelineView
-              batchName={provisionResult?.batch.name || 'Current Production Batch'}
-              cards={provisionResult?.cards || []}
-            />
-          )}
-
-          {/* TAB 4: PLATFORM AUDIT TRAIL */}
+          {/* TAB 3: AUDIT TRAIL */}
           {activeTab === 'audit' && (
             <div className="space-y-4">
               <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-xs">
@@ -954,8 +1093,8 @@ export const AdminPage: React.FC = () => {
                     <tr className="border-b border-zinc-200 bg-zinc-50 text-xs font-semibold uppercase tracking-wider text-zinc-500">
                       <th className="px-4 py-3">Timestamp</th>
                       <th className="px-4 py-3">Action</th>
-                      <th className="px-4 py-3">Card Public ID</th>
-                      <th className="px-4 py-3">Actor / Admin</th>
+                      <th className="px-4 py-3">Public Card ID</th>
+                      <th className="px-4 py-3">Admin / Actor</th>
                       <th className="px-4 py-3">Details</th>
                     </tr>
                   </thead>
@@ -986,7 +1125,7 @@ export const AdminPage: React.FC = () => {
                           <td className="px-4 py-3 font-mono font-semibold text-zinc-900">
                             {log.publicId || '—'}
                           </td>
-                          <td className="px-4 py-3 text-xs text-zinc-600">
+                          <td className="px-4 py-3 text-xs text-zinc-600 font-mono">
                             {log.actor || log.actorIdentifier}
                           </td>
                           <td className="px-4 py-3 text-xs text-zinc-500 max-w-xs truncate">

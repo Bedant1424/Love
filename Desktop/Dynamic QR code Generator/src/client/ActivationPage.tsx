@@ -307,14 +307,12 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({
                 </svg>
               </div>
               <Badge variant="active" className="mx-auto">
-                Card Activated
+                Link Active
               </Badge>
-              <CardTitle className="text-2xl pt-2 text-zinc-950">
-                Your Review Card is Live!
-              </CardTitle>
+              <CardTitle className="text-2xl pt-2 text-zinc-950">Link Saved Successfully</CardTitle>
               <CardDescription>
-                Physical QR scans and NFC taps on this card will now immediately direct customers to
-                your official Google review page.
+                Your card is now connected to Google. Customers who tap or scan will be directed
+                straight to your official Google review page.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 pt-4">
@@ -324,9 +322,24 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({
                   <span className="font-semibold text-zinc-900">{successData.businessName}</span>
                 </div>
                 <div className="flex justify-between items-center pb-1 border-b border-zinc-200">
-                  <span className="text-zinc-500 font-medium">Card Identifier</span>
-                  <span className="font-mono text-zinc-900 font-semibold">
+                  <span className="text-zinc-500 font-medium">QR ID</span>
+                  <span
+                    className="font-mono text-zinc-900 font-semibold"
+                    data-testid="qr-id-display"
+                  >
                     {successData.publicId}
+                  </span>
+                </div>
+                <div className="flex justify-between items-start pb-1 border-b border-zinc-200">
+                  <span className="text-zinc-500 font-medium whitespace-nowrap mr-2">
+                    Destination
+                  </span>
+                  <span
+                    className="font-mono text-xs text-zinc-700 max-w-[240px] truncate text-right"
+                    title={successData.destinationUrl}
+                    data-testid="destination-url-display"
+                  >
+                    {successData.destinationUrl}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -343,7 +356,7 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({
                   className="w-full"
                 >
                   <Button variant="primary" size="md" className="w-full">
-                    Test Customer Redirect &rarr;
+                    Continue to Google &rarr;
                   </Button>
                 </a>
               </div>
@@ -446,10 +459,10 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({
                   </Badge>
                 )}
               </div>
-              <CardTitle className="text-2xl pt-2">Activate Your Review Card</CardTitle>
+              <CardTitle className="text-2xl pt-2">Set Up Your Link</CardTitle>
               <CardDescription>
-                Link your physical NFC and QR card to your Google Business review link. Once
-                activated, tapping or scanning routes visitors directly to your review form.
+                Connect your Google review link to your card. Once saved, customers who tap or scan
+                will be taken directly to your official Google review page.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -589,7 +602,7 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({
                     htmlFor="reviewUrl"
                     className="block text-sm font-medium text-zinc-900 mb-1"
                   >
-                    Google Review Link
+                    Google Review URL
                   </label>
                   <Input
                     id="reviewUrl"
@@ -618,7 +631,7 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({
                     htmlFor="activationCode"
                     className="block text-sm font-medium text-zinc-900 mb-1"
                   >
-                    Activation Security Code
+                    Activation Password / Activation Code
                   </label>
                   <Input
                     id="activationCode"
