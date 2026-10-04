@@ -69,3 +69,14 @@ flowchart TD
 - [x] Zero-knowledge privacy verification confirms zero business identities, review URLs, or database UUIDs in manifests or packages.
 - [x] Full batch packaging builds in-memory ZIP archives with manifest.csv, README.txt, SVGs, and PNGs.
 - [x] Playwright E2E browser test validates CR-80 card preview, face flipping, custom domain live validation, substrate switching, and manifest downloads.
+
+### Suite 6: Production Deployment & Launch Readiness (`tests/integration/production-readiness.test.ts`) — [VERIFIED M6]
+- [x] Health check endpoint `/healthz` reflects `environment: 'production'` and status `ok`.
+- [x] Multi-hostname resilience verifies identical 302 redirects across owned custom domain (`qr.yourbrand.com`), pilot domain (`qroute.workers.dev`), and local edge runtime.
+- [x] SQLite `EXPLAIN QUERY PLAN` confirms redirect lookup uses covering index `idx_cards_public_id` with zero full-table scans.
+- [x] Cloudflare Access Zero Trust strictly enforces `cf-access-authenticated-user-email` and rejects simulated `x-admin-email` bypass in production.
+- [x] Operator email allowlist `ADMIN_ALLOWED_EMAILS` enforced with HTTP 403 Forbidden for unauthorized identities.
+- [x] Cloudflare Turnstile bot defense fails closed with HTTP 500 if `TURNSTILE_SECRET_KEY` is missing in production.
+- [x] Turnstile token verification rejects missing or invalid tokens with HTTP 403 Forbidden.
+- [x] Turnstile verification accepts valid challenge responses from Cloudflare's siteverify API.
+- [x] All 5 performance database indexes (`idx_cards_public_id`, `idx_cards_batch_id`, `idx_cards_status`, `idx_audit_logs_card_id`, `idx_audit_logs_created_at`) validated in production D1 schema.

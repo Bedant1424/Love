@@ -45,8 +45,11 @@
 
 ---
 
-## 4. Multi-Hostname Resilience & Zero Cost
+## 4. Multi-Hostname Resilience & Production Operations
 
-- [ ] **AC-OPS-01:** Both `workers.dev` and an owned custom domain resolve to the same Worker simultaneously without altering card identifiers.
-- [ ] **AC-OPS-02:** Platform operates 100% within published Cloudflare and GitHub free limits.
-- [ ] **AC-OPS-03:** If daily Worker limit (100k requests) is exhausted, edge fails safely (HTTP 1027/429) with zero credit card overage charges.
+- [x] **AC-OPS-01:** Both `workers.dev` and an owned custom domain resolve to the same Worker simultaneously without altering card identifiers.
+- [x] **AC-OPS-02:** Platform operates 100% within published Cloudflare and GitHub free limits (\$0.00/month pilot cost).
+- [x] **AC-OPS-03:** If daily Worker limit (100k requests) is exhausted, edge fails safely (HTTP 1027/429) with zero credit card overage charges.
+- [x] **AC-OPS-04:** Cloudflare Access Zero Trust is strictly enforced in production; developer bypass headers (`x-admin-email`) are ignored.
+- [x] **AC-OPS-05:** Cloudflare Turnstile bot defense fails closed if `TURNSTILE_SECRET_KEY` is missing in production and validates real siteverify responses.
+- [x] **AC-OPS-06:** Production D1 database executes single-read indexed queries (`EXPLAIN QUERY PLAN` uses `idx_cards_public_id`) and migrates forward cleanly with zero dev seed data.

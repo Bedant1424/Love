@@ -158,11 +158,12 @@ Both `qroute.workers.dev` and `qr.yourbrand.com` route to the same Cloudflare Wo
 | :--- | :--- | :--- | :--- |
 | **Unit Tests (QR Generator)** | `tests/unit/qr-generator.test.ts` | 16 passed | **PASS** |
 | **Unit Tests (Fulfillment & Manifest)** | `tests/unit/fulfillment.test.ts` | 23 passed | **PASS** |
-| **Full Vitest Suite** | All 11 unit & integration test files | 161 passed | **PASS** |
+| **Integration (Production Readiness)** | `tests/integration/production-readiness.test.ts` | 13 passed | **PASS** |
+| **Full Vitest Suite** | All 12 unit & integration test files | 174 passed | **PASS** |
 | **Playwright E2E Suite** | Full browser flows (`tests/e2e/*.spec.ts`) | 22 passed | **PASS** |
 | **Asset Pipeline E2E** | `tests/e2e/assets.spec.ts` | 6 journeys passed | **PASS** |
 | **TypeScript Typecheck** | `tsc -b --noEmit` | 0 errors | **PASS** |
 | **ESLint Static Analysis** | `eslint .` | 0 errors, 0 warnings | **PASS** |
 | **Prettier Code Formatting** | `prettier --check .` | 100% matched | **PASS** |
-| **Vite Client Production Build** | `vite build` | 0 warnings, built in 13s | **PASS** |
+| **Vite Client Production Build** | `vite build` | 0 warnings, built in 11s | **PASS** |
 | **Security Invariant** | `npm config get strict-ssl` | `true` | **PASS** |

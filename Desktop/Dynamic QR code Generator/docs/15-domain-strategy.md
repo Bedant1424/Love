@@ -1,6 +1,6 @@
 # 15 — Domain Strategy & Long-Term URL Resilience (Gate 1.5 Reconciled)
 
-> **Status:** Architecture Reconciled at Gate 1.5; Domain Resolution, Validation Engine, and Asset Pipeline Implemented in Milestone 5. Production attachment scheduled for Milestone 6.
+> **Status:** Architecture Reconciled, Implemented, and Fully Verified in Milestone 6 (Production Cloudflare Deployment, Custom Domain Attachment & Launch Readiness).  
 > **Physical Anchor Principle:** A broken domain permanently bricks every physical card in circulation.
 
 ---

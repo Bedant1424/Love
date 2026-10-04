@@ -22,14 +22,21 @@ interface CardActivationRecord {
 
 /**
  * Validates Cloudflare Turnstile token if secret key is present in environment.
- * In local dev or tests without TURNSTILE_SECRET_KEY, returns true.
+ * In production, Turnstile verification is strictly required and fails closed.
  */
 async function verifyTurnstileToken(
   token: string | undefined,
   secretKey: string | undefined,
-  ip: string
+  ip: string,
+  environment?: string
 ): Promise<boolean> {
+  const isProduction = environment === 'production';
+
   if (!secretKey || secretKey.trim().length === 0) {
+    if (isProduction) {
+      console.error('[Turnstile] Missing TURNSTILE_SECRET_KEY in production environment');
+      return false;
+    }
     // If Turnstile is not configured (e.g. test harness / dev), permit request
     return true;
   }
@@ -176,10 +183,22 @@ export async function handleActivationRequest(
   const clientIp =
     c.req.header('cf-connecting-ip') ?? c.req.header('x-forwarded-for') ?? '127.0.0.1';
 
+  if (
+    c.env.ENVIRONMENT === 'production' &&
+    (!c.env.TURNSTILE_SECRET_KEY || c.env.TURNSTILE_SECRET_KEY.trim().length === 0)
+  ) {
+    console.error('[Activation] TURNSTILE_SECRET_KEY is required in production environment');
+    return c.json(
+      createErrorResponse('CONFIGURATION_ERROR', 'Security service is temporarily unavailable'),
+      500
+    );
+  }
+
   const isTurnstileValid = await verifyTurnstileToken(
     turnstileToken,
     c.env.TURNSTILE_SECRET_KEY,
-    clientIp
+    clientIp,
+    c.env.ENVIRONMENT
   );
   if (!isTurnstileValid) {
     return c.json(
