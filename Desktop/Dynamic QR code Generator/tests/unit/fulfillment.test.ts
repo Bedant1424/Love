@@ -68,6 +68,15 @@ describe('Supplier Fulfillment & Asset Pipeline Engine', () => {
       );
     });
 
+    it('never encodes activation codes, query parameters, or secrets in card URLs', () => {
+      const url = buildCardUrl('8T2K9M4W1X7P3N5Q');
+      expect(url).not.toContain('?');
+      expect(url).not.toContain('#');
+      expect(url).not.toContain('code');
+      expect(url).not.toContain('secret');
+      expect(url).toBe(`https://${DEFAULT_PILOT_HOST}/c/8T2K9M4W1X7P3N5Q`);
+    });
+
     it('rejects invalid or malformed public IDs', () => {
       expect(() => buildCardUrl('TOO_SHORT')).toThrow(/too short/);
       expect(() => buildCardUrl('123456789O123456')).toThrow(/contains invalid characters/);
@@ -125,6 +134,15 @@ describe('Supplier Fulfillment & Asset Pipeline Engine', () => {
       expect(nfc.ndefPrefixCode).toBe('0x04');
       expect(nfc.ndefCompressedPayload).toBe(`${DEFAULT_PILOT_HOST}/c/8T2K9M4W1X7P3N5Q`);
       expect(nfc.factoryLockDirective).toBe('PERMANENT_READ_ONLY');
+    });
+
+    it('never encodes activation codes, secrets, or sensitive parameters in NFC payload', () => {
+      const nfc = generateNfcPayload('8T2K9M4W1X7P3N5Q');
+
+      expect(nfc.ndefCompressedPayload).not.toContain('code');
+      expect(nfc.ndefCompressedPayload).not.toContain('secret');
+      expect(nfc.ndefCompressedPayload).not.toContain('?');
+      expect(nfc.ndefCompressedPayload).toBe(`${DEFAULT_PILOT_HOST}/c/8T2K9M4W1X7P3N5Q`);
     });
 
     it('verifies NXP NTAG213 hardware memory limits (< 144 bytes)', () => {

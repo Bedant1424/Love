@@ -64,6 +64,13 @@ describe('QR Code Generation Engine (ISO/IEC 18004 Standard)', () => {
       expect(svg).not.toContain('google.com');
       expect(svg).not.toContain('search.google.com');
       expect(svg).not.toContain('review');
+
+      // Invariant: QR code never encodes activation security codes, query params, or secrets
+      expect(EXPECTED_PILOT_URL).not.toContain('code');
+      expect(EXPECTED_PILOT_URL).not.toContain('secret');
+      expect(EXPECTED_PILOT_URL).not.toContain('?');
+      expect(svg).not.toContain('code=');
+      expect(svg).not.toContain('secret');
     });
 
     it('supports custom production domains in generated QR vector', async () => {

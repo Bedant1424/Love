@@ -109,12 +109,23 @@ describe('Public Card Redirect Engine (GET /c/:publicId)', () => {
     expect(res.headers.get('Location')).toBe(ACTIVE_DESTINATION);
   });
 
-  it('2. UNACTIVATED card returns 302 Found directing to /activate/:publicId', async () => {
+  it('2. UNACTIVATED card returns 302 Found directing to /activate/:publicId without activation code in URL', async () => {
     const req = new Request(`http://localhost/c/${UNACTIVATED_ID}`, { method: 'GET' });
     const res = await app.fetch(req, env);
 
     expect(res.status).toBe(302);
-    expect(res.headers.get('Location')).toBe(`/activate/${UNACTIVATED_ID}`);
+    const location = res.headers.get('Location');
+    expect(location).toBe(`/activate/${UNACTIVATED_ID}`);
+
+    // Invariant: Activation code and private credentials are NEVER exposed in redirect URLs
+    expect(location).not.toContain('?');
+    expect(location).not.toContain('#');
+    expect(location).not.toContain('code=');
+    expect(location).not.toContain('secret');
+
+    // Header Invariant
+    expect(res.headers.get('Cache-Control')).toBe('private, no-cache, no-store, must-revalidate');
+    expect(res.headers.get('Referrer-Policy')).toBe('no-referrer');
   });
 
   it('3. DISABLED card returns 200 OK with maintenance message and does NOT redirect', async () => {

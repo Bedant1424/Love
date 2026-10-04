@@ -55,7 +55,12 @@ export const App: React.FC = () => {
   // Route to Activation Page if on /activate or /activate/:publicId
   if (currentPath.startsWith('/activate')) {
     const segments = currentPath.split('/').filter(Boolean);
-    const initialId = segments.length > 1 ? segments[1] : '';
+    let initialId = segments.length > 1 ? segments[1] : '';
+    if (!initialId && typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      initialId =
+        searchParams.get('card') || searchParams.get('id') || searchParams.get('publicId') || '';
+    }
     return <ActivationPage initialPublicId={initialId} />;
   }
 

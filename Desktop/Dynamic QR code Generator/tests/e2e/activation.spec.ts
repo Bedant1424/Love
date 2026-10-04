@@ -26,12 +26,22 @@ test.describe('QRoute Merchant Activation Flow E2E', () => {
     // Verify card context
     await expect(page.getByText(`ID: ${UNACTIVATED_ID}`)).toBeVisible();
 
+    // Verify auto-detected card identifier is pre-populated, read-only, and displays detection badge
+    const publicIdInput = page.locator('#publicId');
+    await expect(publicIdInput).toBeVisible();
+    await expect(publicIdInput).toHaveValue(UNACTIVATED_ID);
+    await expect(publicIdInput).toHaveAttribute('readonly', '');
+    await expect(page.getByTestId('detected-badge')).toBeVisible();
+
+    // Verify activation code remains strictly manual (initially empty)
+    const codeInput = page.locator('#activationCode');
+    await expect(codeInput).toHaveValue('');
+
     // Fill in activation details
     await page.fill('#businessName', 'Sunrise Bakery & Cafe');
     await page.fill('#reviewUrl', VALID_REVIEW_URL);
 
     // Enter activation code in lowercase to verify auto-formatting and normalization
-    const codeInput = page.locator('#activationCode');
     await codeInput.fill('k7xm92prv8q2');
     await expect(codeInput).toHaveValue('K7XM-92PR-V8Q2');
 
@@ -335,5 +345,77 @@ test.describe('QRoute Merchant Activation Flow E2E', () => {
       ).__turnstileMock.getResetCount();
     });
     expect(resetCalls).toBeGreaterThan(0);
+  });
+
+  test('8. Owner scans physical card (/c/:publicId) -> 302 into activation with pre-populated read-only identifier', async ({
+    page,
+  }) => {
+    // Owner scans physical card URL
+    await page.goto('/c/PEND7K2M9Q4X8P6V');
+
+    // Follows 302 redirect and lands on /activate/PEND7K2M9Q4X8P6V
+    await expect(page).toHaveURL(/\/activate\/PEND7K2M9Q4X8P6V/);
+
+    const form = page.getByTestId('activation-form');
+    await expect(form).toBeVisible({ timeout: 15000 });
+
+    // Verify identifier is pre-populated and read-only
+    const idInput = page.locator('#publicId');
+    await expect(idInput).toHaveValue('PEND7K2M9Q4X8P6V');
+    await expect(idInput).toHaveAttribute('readonly', '');
+    await expect(page.getByTestId('detected-badge')).toBeVisible();
+
+    // Verify identifier cannot be changed by user input
+    await idInput.click();
+    await idInput.pressSequentially('MODIFIED');
+    await expect(idInput).toHaveValue('PEND7K2M9Q4X8P6V');
+
+    // Verify activation security code remains empty and manual
+    const codeInput = page.locator('#activationCode');
+    await expect(codeInput).toHaveValue('');
+
+    // Verify helper copy explains auto-detection from physical card
+    await expect(
+      page.getByText(/Automatically detected from your physical card scan/i)
+    ).toBeVisible();
+  });
+
+  test('9. Direct /activate route without card context supports manual identifier entry with validation', async ({
+    page,
+  }) => {
+    // Direct visit without card context
+    await page.goto('/activate');
+
+    const form = page.getByTestId('activation-form');
+    await expect(form).toBeVisible({ timeout: 15000 });
+
+    // Manual input is rendered and editable (not readonly)
+    const manualInput = page.getByTestId('manual-card-id');
+    await expect(manualInput).toBeVisible();
+    await expect(manualInput).not.toHaveAttribute('readonly', '');
+    await expect(page.getByTestId('detected-badge')).not.toBeVisible();
+
+    // Verify helper copy for manual entry
+    await expect(
+      page.getByText(/Enter the 16-character identifier from your card setup link/i)
+    ).toBeVisible();
+
+    // Fill valid business and destination details but leave publicId empty
+    await page.fill('#businessName', 'Manual Bakery');
+    await page.fill('#reviewUrl', VALID_REVIEW_URL);
+    await page.fill('#activationCode', VALID_CODE);
+
+    // Attempt submit without identifier
+    const submitBtn = page.getByRole('button', { name: /Activate Review Card/i });
+    await submitBtn.click();
+
+    // Error for missing/invalid identifier should be displayed
+    await expect(
+      page.getByText(/Please enter a valid 16-character card identifier/i)
+    ).toBeVisible();
+
+    // Type valid identifier manually
+    await manualInput.fill('PEND5C8R2W7K9M4Q');
+    await expect(manualInput).toHaveValue('PEND5C8R2W7K9M4Q');
   });
 });

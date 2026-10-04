@@ -25,26 +25,37 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({
   initialPublicId = '',
   turnstileSiteKey,
 }) => {
+  const isDetected = Boolean(initialPublicId);
   const [publicId, setPublicId] = useState<string>(initialPublicId.toUpperCase());
   const [cardStatus, setCardStatus] = useState<CardStatus | 'NOT_FOUND' | 'INVALID_ID' | null>(
     null
   );
   const [initialLoading, setInitialLoading] = useState<boolean>(Boolean(initialPublicId));
 
-  // Determine Turnstile configuration and environment
-  const siteKey =
-    turnstileSiteKey ??
-    (typeof window !== 'undefined'
-      ? (window as unknown as { __TURNSTILE_TEST_SITE_KEY__?: string }).__TURNSTILE_TEST_SITE_KEY__
-      : undefined) ??
-    import.meta.env.VITE_TURNSTILE_SITE_KEY;
+  // Sync state if initialPublicId prop changes
+  useEffect(() => {
+    if (initialPublicId) {
+      setPublicId(initialPublicId.toUpperCase());
+    }
+  }, [initialPublicId]);
+
   const isLocalhost =
     typeof window !== 'undefined' &&
     (window.location.hostname === 'localhost' ||
       window.location.hostname === '127.0.0.1' ||
       window.location.hostname.endsWith('.local'));
   const isProductionDomain = typeof window !== 'undefined' && !isLocalhost;
-  const isTurnstileRequired = Boolean(siteKey) || isProductionDomain;
+
+  // Determine Turnstile configuration and environment
+  const testSiteKey =
+    typeof window !== 'undefined'
+      ? (window as unknown as { __TURNSTILE_TEST_SITE_KEY__?: string }).__TURNSTILE_TEST_SITE_KEY__
+      : undefined;
+  const siteKey =
+    turnstileSiteKey ??
+    testSiteKey ??
+    (isProductionDomain ? import.meta.env.VITE_TURNSTILE_SITE_KEY : undefined);
+  const isTurnstileRequired = isProductionDomain || Boolean(turnstileSiteKey || testSiteKey);
 
   // Turnstile state
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -63,6 +74,7 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({
 
   // Field validation states
   const [fieldErrors, setFieldErrors] = useState<{
+    publicId?: string;
     businessName?: string;
     reviewUrl?: string;
     activationCode?: string;
@@ -78,31 +90,49 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({
 
     const val = validatePublicId(publicId);
     if (!val.isValid || !val.normalizedId) {
-      setCardStatus('INVALID_ID');
-      setInitialLoading(false);
+      if (isDetected) {
+        setCardStatus('INVALID_ID');
+      } else {
+        setCardStatus(null);
+      }
+      if (isDetected) setInitialLoading(false);
       return;
     }
 
     let isMounted = true;
-    setInitialLoading(true);
+    if (isDetected) {
+      setInitialLoading(true);
+    }
     setErrorMessage(null);
 
     fetch(`/api/public/card/${val.normalizedId}/status`)
       .then(async (res) => {
         if (!isMounted) return;
-        if (res.status === 404) {
-          setCardStatus('NOT_FOUND');
-          return;
-        }
-        if (!res.ok) {
-          setCardStatus('NOT_FOUND');
+        if (res.status === 404 || !res.ok) {
+          if (isDetected) {
+            setCardStatus('NOT_FOUND');
+          } else {
+            setFieldErrors((prev) => ({
+              ...prev,
+              publicId: 'Card not found. Please check your identifier.',
+            }));
+          }
           return;
         }
         const data: ApiResponse<CardPublicStatusData> = await res.json();
         if (data.success) {
-          setCardStatus(data.data.status);
+          if (isDetected || data.data.status !== 'UNACTIVATED') {
+            setCardStatus(data.data.status);
+          }
         } else {
-          setCardStatus('NOT_FOUND');
+          if (isDetected) {
+            setCardStatus('NOT_FOUND');
+          } else {
+            setFieldErrors((prev) => ({
+              ...prev,
+              publicId: 'Card not found. Please check your identifier.',
+            }));
+          }
         }
       })
       .catch(() => {
@@ -110,13 +140,13 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({
           setErrorMessage('Unable to connect to the network. Please check your connection.');
       })
       .finally(() => {
-        if (isMounted) setInitialLoading(false);
+        if (isMounted && isDetected) setInitialLoading(false);
       });
 
     return () => {
       isMounted = false;
     };
-  }, [publicId]);
+  }, [publicId, isDetected]);
 
   // Handle formatted activation code input
   const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,7 +165,29 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({
     e.preventDefault();
     setErrorMessage(null);
 
-    const errors: { businessName?: string; reviewUrl?: string; activationCode?: string } = {};
+    const errors: {
+      publicId?: string;
+      businessName?: string;
+      reviewUrl?: string;
+      activationCode?: string;
+    } = {};
+
+    // Validate Card Identifier (if entered manually)
+    const targetPublicId = isDetected
+      ? initialPublicId.toUpperCase()
+      : publicId.trim().toUpperCase();
+
+    if (!isDetected) {
+      if (!targetPublicId) {
+        errors.publicId = 'Please enter a valid 16-character card identifier';
+      } else {
+        const idValidation = validatePublicId(targetPublicId);
+        if (!idValidation.isValid) {
+          errors.publicId =
+            idValidation.error ?? 'Please enter a valid 16-character card identifier';
+        }
+      }
+    }
 
     // Validate Business Name
     const cleanName = businessName.replace(/[<>]/g, '').trim();
@@ -182,7 +234,7 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({
 
     try {
       const payload: ActivationRequest = {
-        publicId,
+        publicId: targetPublicId,
         businessName: cleanName,
         reviewUrl: urlValidation.normalizedUrl ?? reviewUrl.trim(),
         activationCode: codeValidation.normalizedCode ?? activationCode.trim(),
@@ -365,6 +417,20 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({
                 Please ensure you scanned an official card.
               </CardDescription>
             </CardHeader>
+            <CardContent className="pt-2 text-center">
+              <a
+                href="/activate"
+                onClick={(e) => {
+                  e.preventDefault();
+                  window.history.pushState({}, '', '/activate');
+                  window.dispatchEvent(new PopStateEvent('popstate'));
+                }}
+              >
+                <Button variant="outline" size="md">
+                  Enter Card Identifier Manually &rarr;
+                </Button>
+              </a>
+            </CardContent>
           </Card>
         ) : (
           /* ACTIVATION FORM STATE */
@@ -374,7 +440,11 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({
                 <span className="text-xs font-semibold tracking-wider text-zinc-500 uppercase">
                   Card Activation
                 </span>
-                {publicId && <Badge variant="unactivated">ID: {publicId}</Badge>}
+                {publicId && (
+                  <Badge variant="unactivated" data-testid="card-id-badge">
+                    ID: {publicId}
+                  </Badge>
+                )}
               </div>
               <CardTitle className="text-2xl pt-2">Activate Your Review Card</CardTitle>
               <CardDescription>
@@ -394,8 +464,63 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({
               )}
 
               <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-                {/* Public ID input if not pre-populated in URL */}
-                {!initialPublicId && (
+                {/* Card Identifier: Auto-detected (read-only) vs Manual fallback */}
+                {isDetected ? (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label htmlFor="publicId" className="block text-sm font-medium text-zinc-900">
+                        Card Identifier
+                      </label>
+                      <span
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5"
+                        data-testid="detected-badge"
+                      >
+                        <svg
+                          className="h-3 w-3 text-emerald-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          aria-hidden="true"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Detected from Card
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="publicId"
+                        name="publicId"
+                        type="text"
+                        value={publicId}
+                        readOnly
+                        aria-readonly="true"
+                        className="font-mono tracking-wider bg-zinc-100 text-zinc-700 cursor-not-allowed border-zinc-200 pr-10 select-all"
+                        data-testid="detected-card-id"
+                      />
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-zinc-400">
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      Automatically detected from your physical card scan. Cannot be modified.
+                    </p>
+                  </div>
+                ) : (
                   <div>
                     <label
                       htmlFor="publicId"
@@ -409,11 +534,23 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({
                       type="text"
                       placeholder="e.g. TRNS7K2M9Q4X8P6V"
                       value={publicId}
-                      onChange={(e) => setPublicId(e.target.value.toUpperCase().trim())}
+                      onChange={(e) => {
+                        setPublicId(e.target.value.toUpperCase().trim());
+                        if (fieldErrors.publicId) {
+                          setFieldErrors((prev) => ({ ...prev, publicId: undefined }));
+                        }
+                      }}
+                      error={fieldErrors.publicId}
                       maxLength={16}
                       autoCapitalize="characters"
+                      className="font-mono tracking-wider"
                       required
+                      data-testid="manual-card-id"
                     />
+                    <p className="mt-1 text-xs text-zinc-500">
+                      Enter the 16-character identifier from your card setup link, or scan your card
+                      to detect it automatically.
+                    </p>
                   </div>
                 )}
 
@@ -499,7 +636,7 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({
                     required
                   />
                   <p className="mt-1 text-xs text-zinc-500">
-                    12-character security code printed on your card welcome insert.
+                    12-character security code supplied on your card welcome insert.
                   </p>
                 </div>
 

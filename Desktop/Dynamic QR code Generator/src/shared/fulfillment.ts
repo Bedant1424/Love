@@ -195,7 +195,7 @@ https://${canonicalDomain}/c/<public_id>
 --------------------------------------------------------------------------------
 - Value: Found in manifest.csv column 'printed_activation_code'
 - Format: 12-character Crockford Base32 (XXXX-XXXX-XXXX)
-- Placement: Back face of card under scratch-off security foil or protective sleeve
+- Placement: Printed on separate welcome / activation insert (NEVER on physical card surface)
 - Font: Monospaced high-legibility OCR-B or Helvetica Bold (min 8pt)
 
 6. FILE PACKAGE CONTENTS
