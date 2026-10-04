@@ -55,7 +55,7 @@ Execute the numbered forward-only migration against remote production D1:
 # Apply migration to remote D1
 npm run d1:migrate:prod
 # Or directly:
-npx wrangler d1 migrations apply qroute_production --remote
+npx wrangler d1 migrations apply qroute_production --remote --env production
 ```
 
 Verify that the remote database is completely clean (zero dev seed data) and contains all required performance indexes:

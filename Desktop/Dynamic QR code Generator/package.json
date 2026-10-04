@@ -18,7 +18,7 @@
     "test:integration": "vitest run tests/integration",
     "test:e2e": "npm run d1:seed:local && playwright test",
     "d1:migrate:local": "wrangler d1 migrations apply qroute_local --local",
-    "d1:migrate:prod": "wrangler d1 migrations apply qroute_production --remote",
+    "d1:migrate:prod": "wrangler d1 migrations apply qroute_production --remote --env production",
     "d1:seed:local": "wrangler d1 execute qroute_local --local --file=./seed-local.sql",
     "deploy:prod": "wrangler deploy --env production"
   },
