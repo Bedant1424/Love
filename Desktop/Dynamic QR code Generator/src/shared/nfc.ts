@@ -11,7 +11,7 @@ export interface NfcPayloadInfo {
   ndefRecordType: 'U'; // Well-Known Type 'U' (URI, 0x55)
   ndefTnf: '0x01'; // NFC Forum Well-Known Type
   ndefPrefixCode: '0x04'; // Prefix code 0x04 represents 'https://'
-  ndefCompressedPayload: string; // URL without https:// prefix (e.g. qroute.workers.dev/c/A7K92P4X8Q)
+  ndefCompressedPayload: string; // URL without https:// prefix (e.g. go.taprevieww.workers.dev/c/A7K92P4X8Q)
   byteLength: number; // Raw ASCII/UTF-8 byte length of full URL
   compressedByteLength: number; // Payload size when using 0x04 prefix compression (1 byte prefix + domain/path)
   ntag213UserCapacityBytes: 144;

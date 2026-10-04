@@ -29,6 +29,13 @@ const DEFAULT_QR_SIZE_PT = 130.0; // ~45.8 mm QR size (industry standard for sca
  * Generates a multi-page, standards-compliant A4 PDF sheet (PDF 1.4)
  * containing all cards in a clean grid of vector QR codes.
  *
+ * Pagination & Grid Rules:
+ * - Default layout: 3 columns x 4 rows = 12 QR codes per A4 sheet.
+ * - 1–12 QR codes = 1 A4 page (e.g. a 10-card batch generates exactly ONE A4 sheet with 10 QR codes).
+ * - 13–24 QR codes = 2 A4 pages.
+ * - 25–36 QR codes = 3 A4 pages.
+ * - Sheet count scales via Math.ceil(cards.length / 12). Does NOT create one page per QR code.
+ *
  * Sacred Security & Supplier Invariants:
  * - Pure vector QR geometry (lossless scaling, sharp at 1200+ DPI).
  * - ZERO activation codes or passwords.

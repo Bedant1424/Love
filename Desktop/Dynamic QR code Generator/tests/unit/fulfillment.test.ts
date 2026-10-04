@@ -184,13 +184,22 @@ describe('Supplier Fulfillment & QR Export Engine', () => {
       expect(pdfText).toContain('/MediaBox [0 0 595.28 841.89]'); // A4 size
     });
 
-    it('scales page count correctly for batch sizes: 1 card (1 page), 12 cards (1 page), 13 cards (2 pages), 25 cards (3 pages)', async () => {
+    it('scales page count correctly for batch sizes: 1-12 cards (1 page, including 10-card batch), 13-24 cards (2 pages), 25-36 cards (3 pages)', async () => {
+      // 1 card -> 1 page
       const cards1 = [{ publicId: '8T2K9M4W1X7P3N5Q' }];
       const pdf1 = await generateQrSheetPdf(cards1);
       const text1 = new TextDecoder().decode(pdf1);
       expect(text1).toContain('/Count 1');
 
-      // 12 cards -> 1 page (3x4 grid)
+      // 10 cards -> 1 page (all 10 on ONE sheet)
+      const cards10 = Array.from({ length: 10 }, (_, i) => ({
+        publicId: `TESTCARD${String(i).padStart(8, '0')}`,
+      }));
+      const pdf10 = await generateQrSheetPdf(cards10);
+      const text10 = new TextDecoder().decode(pdf10);
+      expect(text10).toContain('/Count 1');
+
+      // 12 cards -> 1 page (full 3x4 grid)
       const cards12 = Array.from({ length: 12 }, (_, i) => ({
         publicId: `TESTCARD${String(i).padStart(8, '0')}`,
       }));
@@ -206,6 +215,14 @@ describe('Supplier Fulfillment & QR Export Engine', () => {
       const text13 = new TextDecoder().decode(pdf13);
       expect(text13).toContain('/Count 2');
 
+      // 24 cards -> 2 pages
+      const cards24 = Array.from({ length: 24 }, (_, i) => ({
+        publicId: `TESTCARD${String(i).padStart(8, '0')}`,
+      }));
+      const pdf24 = await generateQrSheetPdf(cards24);
+      const text24 = new TextDecoder().decode(pdf24);
+      expect(text24).toContain('/Count 2');
+
       // 25 cards -> 3 pages
       const cards25 = Array.from({ length: 25 }, (_, i) => ({
         publicId: `TESTCARD${String(i).padStart(8, '0')}`,
@@ -213,6 +230,14 @@ describe('Supplier Fulfillment & QR Export Engine', () => {
       const pdf25 = await generateQrSheetPdf(cards25);
       const text25 = new TextDecoder().decode(pdf25);
       expect(text25).toContain('/Count 3');
+
+      // 36 cards -> 3 pages
+      const cards36 = Array.from({ length: 36 }, (_, i) => ({
+        publicId: `TESTCARD${String(i).padStart(8, '0')}`,
+      }));
+      const pdf36 = await generateQrSheetPdf(cards36);
+      const text36 = new TextDecoder().decode(pdf36);
+      expect(text36).toContain('/Count 3');
     });
 
     it('guarantees security invariants in PDF: zero activation codes, passwords, Google URLs, or public IDs in text', async () => {

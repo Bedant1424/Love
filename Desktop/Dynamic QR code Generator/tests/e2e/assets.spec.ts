@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
-import JSZip from 'jszip/dist/jszip.min.js';
+import type JSZipType from 'jszip';
+// @ts-expect-error - standalone jszip dist bundle avoids Node 22 CJS circular require issue in Playwright ESM loader
+import JSZipBundle from 'jszip/dist/jszip.min.js';
+
+const JSZip = JSZipBundle as unknown as typeof JSZipType;
 
 test.describe('QRoute Admin: Batch Provisioning & QR Export Workflow E2E', () => {
   const ADMIN_EMAIL = 'admin@qroute.local';
