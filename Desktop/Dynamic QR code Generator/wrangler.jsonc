@@ -35,7 +35,7 @@
         {
           "binding": "DB",
           "database_name": "qroute_production",
-          "database_id": "00000000-0000-0000-0000-000000000000",
+          "database_id": "c1fc7cb3-4d91-4911-ace4-cb8dc953a540",
           "migrations_dir": "migrations",
         },
       ],
