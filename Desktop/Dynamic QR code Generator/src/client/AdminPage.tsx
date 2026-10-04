@@ -1,5 +1,15 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Download, FileSpreadsheet, RefreshCw, CheckCircle2 } from 'lucide-react';
+import {
+  Download,
+  FileSpreadsheet,
+  RefreshCw,
+  CheckCircle2,
+  Pencil,
+  Lock,
+  MoreHorizontal,
+  History,
+  Eye,
+} from 'lucide-react';
 import { PageContainer } from '../components/ui/PageContainer';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -58,6 +68,18 @@ export const AdminPage: React.FC = () => {
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [cardDetail, setCardDetail] = useState<AdminCardDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState<boolean>(false);
+
+  // Selected Card for Editing
+  const [editTargetCard, setEditTargetCard] = useState<AdminCardSummary | null>(null);
+  const [editBusinessName, setEditBusinessName] = useState<string>('');
+  const [editSubmitting, setEditSubmitting] = useState<boolean>(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
+  // Selected Card for Concise Audit Modal
+  const [auditModalCard, setAuditModalCard] = useState<AdminCardDetail | null>(null);
+
+  // Active Dropdown Action Menu
+  const [activeDropdownCardId, setActiveDropdownCardId] = useState<string | null>(null);
 
   // Modals & Confirmation States
   const [actionTarget, setActionTarget] = useState<AdminCardSummary | null>(null);
@@ -242,6 +264,7 @@ export const AdminPage: React.FC = () => {
   const handleInspectCard = async (cardId: string) => {
     setSelectedCardId(cardId);
     setDetailLoading(true);
+    setActiveDropdownCardId(null);
     try {
       const res = await adminFetch(`/api/admin/cards/${cardId}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -254,6 +277,68 @@ export const AdminPage: React.FC = () => {
       setSelectedCardId(null);
     } finally {
       setDetailLoading(false);
+    }
+  };
+
+  // Handle Open Edit Modal
+  const handleOpenEditModal = (card: AdminCardSummary) => {
+    setEditTargetCard(card);
+    setEditBusinessName(card.businessName || '');
+    setEditError(null);
+    setActiveDropdownCardId(null);
+  };
+
+  // Handle Save Card Metadata (Business Name)
+  const handleSaveCardMetadata = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editTargetCard) return;
+    setEditSubmitting(true);
+    setEditError(null);
+
+    try {
+      const res = await adminFetch(`/api/admin/cards/${editTargetCard.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ businessName: editBusinessName }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json();
+        throw new Error(errJson.error?.message || `HTTP ${res.status}: Failed to update metadata`);
+      }
+
+      const data: ApiResponse<{ businessName: string | null }> = await res.json();
+      if (data.success) {
+        showToast('success', `Card ${editTargetCard.publicId} updated successfully.`);
+        setCards((prev) =>
+          prev.map((c) =>
+            c.id === editTargetCard.id ? { ...c, businessName: data.data.businessName } : c
+          )
+        );
+        if (cardDetail && cardDetail.id === editTargetCard.id) {
+          setCardDetail({ ...cardDetail, businessName: data.data.businessName });
+        }
+        setEditTargetCard(null);
+      }
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'Failed to update card metadata');
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
+  // Handle Open Audit Modal
+  const handleOpenAuditModal = async (card: AdminCardSummary) => {
+    setActiveDropdownCardId(null);
+    try {
+      const res = await adminFetch(`/api/admin/cards/${card.id}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data: ApiResponse<AdminCardDetail> = await res.json();
+      if (data.success) {
+        setAuditModalCard(data.data);
+      }
+    } catch {
+      showToast('error', 'Failed to retrieve card audit history.');
     }
   };
 
@@ -758,9 +843,14 @@ export const AdminPage: React.FC = () => {
                       cards.map((card) => (
                         <tr key={card.id} className="hover:bg-zinc-50/50 transition-colors">
                           <td className="px-4 py-3">
-                            <span className="font-mono font-semibold text-zinc-900">
+                            <button
+                              type="button"
+                              onClick={() => handleInspectCard(card.id)}
+                              className="font-mono font-bold text-zinc-900 hover:text-blue-600 transition-colors text-left"
+                              title="View card details"
+                            >
                               {card.publicId}
-                            </span>
+                            </button>
                           </td>
                           <td className="px-4 py-3">{getStatusBadge(card.status)}</td>
                           <td className="px-4 py-3 max-w-[280px]">
@@ -789,57 +879,104 @@ export const AdminPage: React.FC = () => {
                             {new Date(card.createdAt).toLocaleDateString()}
                           </td>
                           <td className="px-4 py-3 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
+                            <div className="flex items-center justify-end gap-1.5 relative">
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleInspectCard(card.id)}
-                                className="h-7 px-2 text-xs"
+                                onClick={() => handleOpenEditModal(card)}
+                                className="h-7 px-2 text-xs inline-flex items-center gap-1 text-zinc-700 hover:text-zinc-900"
+                                title="Edit card"
+                                aria-label={`Edit card ${card.publicId}`}
                               >
-                                Inspect
+                                <Pencil className="h-3 w-3 text-zinc-500" />
+                                Edit
                               </Button>
 
-                              {card.status === 'ACTIVE' && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setActionTarget(card);
-                                    setActionType('disable');
-                                  }}
-                                  className="h-7 px-2 text-xs text-red-600 hover:bg-red-50"
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setActiveDropdownCardId(
+                                      activeDropdownCardId === card.id ? null : card.id
+                                    )
+                                  }
+                                  className="h-7 w-7 rounded-md border border-zinc-200 bg-white flex items-center justify-center text-zinc-500 hover:text-zinc-800 hover:bg-zinc-50 transition-colors"
+                                  title="More actions"
+                                  aria-label={`More actions for card ${card.publicId}`}
                                 >
-                                  Disable
-                                </Button>
-                              )}
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </button>
 
-                              {card.status === 'DISABLED' && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setActionTarget(card);
-                                    setActionType('restore');
-                                  }}
-                                  className="h-7 px-2 text-xs text-emerald-600 hover:bg-emerald-50"
-                                >
-                                  Restore
-                                </Button>
-                              )}
+                                {activeDropdownCardId === card.id && (
+                                  <>
+                                    <div
+                                      className="fixed inset-0 z-20"
+                                      onClick={() => setActiveDropdownCardId(null)}
+                                    />
+                                    <div className="absolute right-0 top-8 z-30 w-40 rounded-lg border border-zinc-200 bg-white shadow-lg p-1 text-xs text-left">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleInspectCard(card.id)}
+                                        className="w-full text-left px-2.5 py-1.5 rounded hover:bg-zinc-100 flex items-center gap-2 text-zinc-700"
+                                      >
+                                        <Eye className="h-3.5 w-3.5 text-zinc-400" />
+                                        Card Details
+                                      </button>
 
-                              {card.status !== 'RETIRED' && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setActionTarget(card);
-                                    setActionType('retire');
-                                  }}
-                                  className="h-7 px-2 text-xs text-zinc-600 hover:bg-zinc-100"
-                                >
-                                  Retire
-                                </Button>
-                              )}
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenAuditModal(card)}
+                                        className="w-full text-left px-2.5 py-1.5 rounded hover:bg-zinc-100 flex items-center gap-2 text-zinc-700"
+                                      >
+                                        <History className="h-3.5 w-3.5 text-zinc-400" />
+                                        View Audit
+                                      </button>
+
+                                      {card.status === 'ACTIVE' && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setActiveDropdownCardId(null);
+                                            setActionTarget(card);
+                                            setActionType('disable');
+                                          }}
+                                          className="w-full text-left px-2.5 py-1.5 rounded hover:bg-red-50 text-red-600 flex items-center gap-2"
+                                        >
+                                          Disable Card
+                                        </button>
+                                      )}
+
+                                      {card.status === 'DISABLED' && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setActiveDropdownCardId(null);
+                                            setActionTarget(card);
+                                            setActionType('restore');
+                                          }}
+                                          className="w-full text-left px-2.5 py-1.5 rounded hover:bg-emerald-50 text-emerald-600 flex items-center gap-2"
+                                        >
+                                          Restore Card
+                                        </button>
+                                      )}
+
+                                      {card.status !== 'RETIRED' && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setActiveDropdownCardId(null);
+                                            setActionTarget(card);
+                                            setActionType('retire');
+                                          }}
+                                          className="w-full text-left px-2.5 py-1.5 rounded hover:bg-zinc-100 text-zinc-700 flex items-center gap-2"
+                                        >
+                                          Retire Card
+                                        </button>
+                                      )}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           </td>
                         </tr>
@@ -1100,18 +1237,20 @@ export const AdminPage: React.FC = () => {
         </PageContainer>
       </main>
 
-      {/* MODAL 1: CARD DETAIL & AUDIT TIMELINE INSPECTOR */}
+      {/* MODAL 1: COMPACT CARD DETAILS MODAL */}
       {selectedCardId && (
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 backdrop-blur-xs p-4 overflow-y-auto"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 backdrop-blur-xs p-4"
         >
-          <div className="w-full max-w-2xl rounded-xl border border-zinc-200 bg-white p-6 shadow-xl space-y-5 my-8">
+          <div className="w-full max-w-md rounded-xl border border-zinc-200 bg-white p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
               <div>
-                <h3 className="text-lg font-bold text-zinc-950">Card Detail & Audit Timeline</h3>
-                <p className="text-xs text-zinc-500">System Record ID: {selectedCardId}</p>
+                <h3 className="text-lg font-bold text-zinc-950">Card Details</h3>
+                <p className="text-xs font-mono font-bold text-zinc-600">
+                  {cardDetail?.publicId || selectedCardId}
+                </p>
               </div>
               <button
                 type="button"
@@ -1126,70 +1265,98 @@ export const AdminPage: React.FC = () => {
             </div>
 
             {detailLoading || !cardDetail ? (
-              <div className="p-8 text-center text-zinc-500">Loading card metadata...</div>
+              <div className="p-8 text-center text-zinc-500 text-xs">Loading card details...</div>
             ) : (
-              <div className="space-y-6">
-                {/* Metadata Grid */}
-                <div className="grid grid-cols-2 gap-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-xs font-mono">
-                  <div>
-                    <span className="text-zinc-500">PUBLIC ID:</span>
-                    <p className="font-bold text-zinc-900 text-sm">{cardDetail.publicId}</p>
-                  </div>
-                  <div>
-                    <span className="text-zinc-500">STATUS:</span>
+              <div className="space-y-3">
+                <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 space-y-3 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-zinc-500 font-semibold">STATUS</span>
                     <div>{getStatusBadge(cardDetail.status)}</div>
                   </div>
-                  <div>
-                    <span className="text-zinc-500">BUSINESS NAME:</span>
-                    <p className="font-sans font-medium text-zinc-900">
-                      {cardDetail.businessName || '—'}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-zinc-500">BATCH NAME:</span>
-                    <p className="font-sans text-zinc-700">{cardDetail.batchName || 'Default'}</p>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-zinc-500">DESTINATION URL:</span>
-                    <p className="font-sans text-xs break-all text-zinc-800">
-                      {cardDetail.destinationUrl || 'None'}
-                    </p>
-                  </div>
-                </div>
 
-                {/* Audit Timeline */}
-                <div>
-                  <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-3">
-                    Audit Log Timeline ({cardDetail.auditLogs.length} events)
-                  </h4>
-                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                    {cardDetail.auditLogs.map((log) => (
-                      <div
-                        key={log.id}
-                        className="rounded-lg border border-zinc-200 p-3 text-xs space-y-1 bg-white"
+                  <div>
+                    <span className="text-zinc-500 font-semibold block mb-0.5">BUSINESS NAME</span>
+                    <p className="font-medium text-zinc-900 text-sm">
+                      {cardDetail.businessName || (
+                        <span className="text-zinc-400 italic font-normal">Unclaimed</span>
+                      )}
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="text-zinc-500 font-semibold block mb-0.5">
+                      GOOGLE REVIEW URL
+                    </span>
+                    {cardDetail.destinationUrl ? (
+                      <a
+                        href={cardDetail.destinationUrl}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="block font-mono text-[11px] break-all text-blue-600 hover:underline"
                       >
-                        <div className="flex items-center justify-between">
-                          <span className="font-mono font-bold text-zinc-900">{log.action}</span>
-                          <span className="text-zinc-400 font-mono-tabular">
-                            {new Date(log.createdAt).toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="text-zinc-600">
-                          Actor: <strong>{log.actor || log.actorIdentifier}</strong>
-                        </div>
-                        {log.metadata && (
-                          <div className="text-zinc-500 font-mono text-[11px] pt-1">
-                            {JSON.stringify(log.metadata)}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                        {cardDetail.destinationUrl}
+                      </a>
+                    ) : (
+                      <p className="text-zinc-400 italic">Not activated</p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-zinc-200/60">
+                    <span className="text-zinc-500">BATCH</span>
+                    <span className="font-medium text-zinc-800">
+                      {cardDetail.batchName || 'Default'}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-zinc-500">CREATED</span>
+                    <span className="font-mono-tabular text-zinc-800">
+                      {new Date(cardDetail.createdAt).toLocaleDateString(undefined, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </span>
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="flex justify-end pt-2 border-t border-zinc-200">
+            <div className="flex items-center justify-between pt-3 border-t border-zinc-200">
+              <div className="flex gap-2">
+                {cardDetail && cardDetail.status !== 'RETIRED' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const target = cardDetail;
+                      setSelectedCardId(null);
+                      setCardDetail(null);
+                      handleOpenEditModal(target);
+                    }}
+                    className="h-8 text-xs inline-flex items-center gap-1.5"
+                  >
+                    <Pencil className="h-3 w-3" />
+                    Edit Card
+                  </Button>
+                )}
+                {cardDetail && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const target = cardDetail;
+                      setSelectedCardId(null);
+                      setCardDetail(null);
+                      setAuditModalCard(target);
+                    }}
+                    className="h-8 text-xs inline-flex items-center gap-1.5"
+                  >
+                    <History className="h-3 w-3" />
+                    View Audit
+                  </Button>
+                )}
+              </div>
               <Button
                 variant="outline"
                 size="sm"
@@ -1197,7 +1364,205 @@ export const AdminPage: React.FC = () => {
                   setSelectedCardId(null);
                   setCardDetail(null);
                 }}
+                className="h-8 text-xs"
               >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: EDIT CARD METADATA */}
+      {editTargetCard && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 backdrop-blur-xs p-4"
+        >
+          <div className="w-full max-w-md rounded-xl border border-zinc-200 bg-white p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
+              <div>
+                <h3 className="text-lg font-bold text-zinc-950">Edit Card</h3>
+                <p className="text-xs font-mono font-bold text-zinc-600">
+                  {editTargetCard.publicId}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditTargetCard(null)}
+                className="text-zinc-400 hover:text-zinc-700 text-lg font-bold"
+              >
+                &times;
+              </button>
+            </div>
+
+            {editError && (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                {editError}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveCardMetadata} className="space-y-4">
+              {/* Read-Only Public ID */}
+              <div>
+                <label className="block text-xs font-semibold text-zinc-600 mb-1">
+                  Public ID (Immutable)
+                </label>
+                <div className="flex items-center justify-between rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-mono">
+                  <span className="font-bold text-zinc-900">{editTargetCard.publicId}</span>
+                  <span className="flex items-center gap-1 text-[11px] text-zinc-400">
+                    <Lock className="h-3 w-3" />
+                    Locked
+                  </span>
+                </div>
+              </div>
+
+              {/* Read-Only Status */}
+              <div>
+                <label className="block text-xs font-semibold text-zinc-600 mb-1">
+                  Status (Controlled by Lifecycle)
+                </label>
+                <div>{getStatusBadge(editTargetCard.status)}</div>
+              </div>
+
+              {/* Editable Business Name */}
+              <div>
+                <label className="block text-xs font-semibold text-zinc-700 mb-1">
+                  Business Name
+                </label>
+                <Input
+                  value={editBusinessName}
+                  onChange={(e) => setEditBusinessName(e.target.value)}
+                  placeholder="e.g. Acme Coffee Roasters"
+                  maxLength={100}
+                  className="text-sm"
+                />
+                <p className="text-[11px] text-zinc-500 mt-1">
+                  Non-routing metadata. Changing this does not affect destination routing.
+                </p>
+              </div>
+
+              {/* Read-Only Google Review URL */}
+              <div>
+                <label className="block text-xs font-semibold text-zinc-600 mb-1">
+                  Google Review URL
+                </label>
+                {editTargetCard.destinationUrl ? (
+                  <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-2.5 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider">
+                        Destination URL
+                      </span>
+                      <span className="flex items-center gap-1 text-[10px] text-amber-700 font-semibold">
+                        <Lock className="h-3 w-3" />
+                        Permanently Locked
+                      </span>
+                    </div>
+                    <p className="font-mono text-[11px] break-all text-zinc-800">
+                      {editTargetCard.destinationUrl}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-2.5 text-xs text-zinc-400 italic">
+                    Not activated (configured upon customer activation)
+                  </div>
+                )}
+              </div>
+
+              {/* Read-Only Batch & Created */}
+              <div className="flex items-center justify-between text-xs text-zinc-500 pt-1 border-t border-zinc-100">
+                <span>
+                  Batch:{' '}
+                  <strong className="text-zinc-700">{editTargetCard.batchName || 'Default'}</strong>
+                </span>
+                <span>
+                  Created:{' '}
+                  <strong className="text-zinc-700 font-mono-tabular">
+                    {new Date(editTargetCard.createdAt).toLocaleDateString()}
+                  </strong>
+                </span>
+              </div>
+
+              {/* Footer */}
+              <div className="flex justify-end gap-2 pt-3 border-t border-zinc-200">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditTargetCard(null)}
+                  disabled={editSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" variant="primary" size="sm" isLoading={editSubmitting}>
+                  Save Changes
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: CONCISE AUDIT HISTORY */}
+      {auditModalCard && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 backdrop-blur-xs p-4"
+        >
+          <div className="w-full max-w-md rounded-xl border border-zinc-200 bg-white p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
+              <div>
+                <h3 className="text-lg font-bold text-zinc-950">Audit History</h3>
+                <p className="text-xs font-mono font-bold text-zinc-600">
+                  {auditModalCard.publicId}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAuditModalCard(null)}
+                className="text-zinc-400 hover:text-zinc-700 text-lg font-bold"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+              {auditModalCard.auditLogs && auditModalCard.auditLogs.length > 0 ? (
+                auditModalCard.auditLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="rounded-lg border border-zinc-200 bg-zinc-50/50 p-2.5 text-xs space-y-1"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono font-bold text-zinc-900">{log.action}</span>
+                      <span className="text-[11px] text-zinc-400 font-mono-tabular">
+                        {new Date(log.createdAt).toLocaleString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-zinc-500">
+                      Actor:{' '}
+                      <span className="font-medium text-zinc-700">
+                        {log.actor || log.actorIdentifier}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="py-6 text-center text-xs text-zinc-400 italic">
+                  No audit records found.
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-3 border-t border-zinc-200">
+              <Button variant="outline" size="sm" onClick={() => setAuditModalCard(null)}>
                 Close
               </Button>
             </div>

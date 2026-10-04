@@ -19,9 +19,9 @@ test.describe('QRoute Merchant Activation Flow E2E', () => {
     // 1. Open activation page for unactivated card
     await page.goto(`/activate/${UNACTIVATED_ID}`);
 
-    // Wait for readiness check to complete and form to be visible (allow up to 15s for worker dev server cold boot)
+    // Wait for readiness check to complete and form to be visible (allow up to 30s for worker dev server cold boot)
     const form = page.getByTestId('activation-form');
-    await expect(form).toBeVisible({ timeout: 15000 });
+    await expect(form).toBeVisible({ timeout: 25000 });
 
     // Verify card context
     await expect(page.getByText(`ID: ${UNACTIVATED_ID}`)).toBeVisible();

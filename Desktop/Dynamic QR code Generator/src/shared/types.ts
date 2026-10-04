@@ -144,7 +144,8 @@ export interface AdminAuditLogEntry {
     | 'DESTINATION_CHANGED'
     | 'CARD_DISABLED'
     | 'CARD_RESTORED'
-    | 'CARD_RETIRED';
+    | 'CARD_RETIRED'
+    | 'CARD_METADATA_UPDATED';
   actorType: 'SYSTEM' | 'PUBLIC' | 'ADMIN';
   actorIdentifier: string;
   actor?: string;

@@ -14,6 +14,7 @@ import {
   handleAdminDisableCard,
   handleAdminRestoreCard,
   handleAdminRetireCard,
+  handleAdminUpdateCard,
   handleAdminListAuditLogs,
 } from './admin';
 
@@ -131,6 +132,7 @@ app.get('/api/admin/cards/:id', handleAdminGetCard);
 app.post('/api/admin/cards/:id/disable', handleAdminDisableCard);
 app.post('/api/admin/cards/:id/restore', handleAdminRestoreCard);
 app.post('/api/admin/cards/:id/retire', handleAdminRetireCard);
+app.patch('/api/admin/cards/:id', handleAdminUpdateCard);
 app.get('/api/admin/batches', handleAdminListBatches);
 app.post('/api/admin/batches', handleAdminCreateBatch);
 app.get('/api/admin/audit', handleAdminListAuditLogs);

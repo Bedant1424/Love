@@ -37,7 +37,8 @@ interface RawAuditRow {
     | 'DESTINATION_CHANGED'
     | 'CARD_DISABLED'
     | 'CARD_RESTORED'
-    | 'CARD_RETIRED';
+    | 'CARD_RETIRED'
+    | 'CARD_METADATA_UPDATED';
   actor_type: 'SYSTEM' | 'PUBLIC' | 'ADMIN';
   actor_identifier: string;
   previous_state: string | null;
@@ -555,6 +556,111 @@ export async function handleAdminRetireCard(c: AdminContext) {
   } catch (error) {
     console.error('[Admin Retire Error]', error instanceof Error ? error.message : error);
     return c.json(createErrorResponse('SERVER_ERROR', 'Failed to retire card'), 500);
+  }
+}
+
+/**
+ * PATCH /api/admin/cards/:id
+ * Updates non-routing card metadata (business_name only).
+ * Google Review destination, status, and public routing identifiers are strictly immutable.
+ */
+export async function handleAdminUpdateCard(c: AdminContext) {
+  const cardIdOrPublicId = c.req.param('id');
+  let body: Record<string, unknown>;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json(createErrorResponse('INVALID_BODY', 'Invalid JSON body'), 400);
+  }
+
+  // Strict Invariant: Reject any attempt to mutate destination_url
+  if ('destinationUrl' in body || 'destination_url' in body) {
+    return c.json(
+      createErrorResponse(
+        'DESTINATION_LOCKED',
+        'Google Review destinations are permanently locked and cannot be modified.'
+      ),
+      400
+    );
+  }
+
+  // Strict Invariant: Reject attempts to mutate status, publicId, or database id via metadata edit
+  if ('status' in body || 'publicId' in body || 'public_id' in body || 'id' in body) {
+    return c.json(
+      createErrorResponse(
+        'FORBIDDEN_MUTATION',
+        'Card status and routing identifiers cannot be modified via metadata edit.'
+      ),
+      400
+    );
+  }
+
+  const adminEmail = c.get('adminEmail') ?? 'admin@system';
+  const nowIso = new Date().toISOString();
+
+  try {
+    const card = await c.env.DB.prepare(
+      'SELECT id, public_id, status, business_name, destination_url FROM cards WHERE id = ? OR public_id = ?'
+    )
+      .bind(cardIdOrPublicId, cardIdOrPublicId)
+      .first<RawCardRow>();
+
+    if (!card) {
+      return c.json(createErrorResponse('NOT_FOUND', 'Card not found'), 404);
+    }
+
+    if (card.status === 'RETIRED') {
+      return c.json(createErrorResponse('INVALID_STATE', 'Retired cards cannot be modified'), 400);
+    }
+
+    const rawBusinessName =
+      body.businessName !== undefined ? body.businessName : body.business_name;
+    let businessName: string | null = null;
+    if (typeof rawBusinessName === 'string') {
+      const trimmed = rawBusinessName.trim();
+      businessName = trimmed.length > 0 ? trimmed.slice(0, 100) : null;
+    } else if (rawBusinessName === null) {
+      businessName = null;
+    } else {
+      return c.json(
+        createErrorResponse('INVALID_PARAM', 'Business name must be a string or null'),
+        400
+      );
+    }
+
+    await c.env.DB.prepare('UPDATE cards SET business_name = ?, updated_at = ? WHERE id = ?')
+      .bind(businessName, nowIso, card.id)
+      .run();
+
+    // Immutable audit log
+    await c.env.DB.prepare(
+      `INSERT INTO audit_logs (id, card_id, action, actor_type, actor_identifier, previous_state, new_state, metadata, created_at)
+         VALUES (?, ?, 'CARD_METADATA_UPDATED', 'ADMIN', ?, ?, ?, ?, ?)`
+    )
+      .bind(
+        crypto.randomUUID(),
+        card.id,
+        adminEmail,
+        JSON.stringify({ businessName: card.business_name }),
+        JSON.stringify({ businessName }),
+        JSON.stringify({ field: 'business_name' }),
+        nowIso
+      )
+      .run();
+
+    return c.json(
+      createSuccessResponse({
+        id: card.id,
+        publicId: card.public_id,
+        businessName,
+        status: card.status,
+        updatedAt: nowIso,
+      }),
+      200
+    );
+  } catch (error) {
+    console.error('[Admin Update Card Error]', error instanceof Error ? error.message : error);
+    return c.json(createErrorResponse('SERVER_ERROR', 'Failed to update card metadata'), 500);
   }
 }
 

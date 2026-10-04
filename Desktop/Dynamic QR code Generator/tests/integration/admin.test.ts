@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { env } from 'cloudflare:test';
 import type { Env } from '../../src/server/types';
 import app from '../../src/server/index';
@@ -484,7 +484,145 @@ describe('Admin Operations, Lifecycle & Provisioning Engine (/api/admin/*)', () 
     });
   });
 
-  describe('6. Public Redirect Invariant Regression Test', () => {
+  describe('6. Non-Routing Card Metadata Updates (PATCH /api/admin/cards/:id)', () => {
+    const META_CARD_ID = 'c_meta_active_01';
+    const META_PUBLIC_ID = 'META7K2M9Q4X8P6V';
+    const META_DEST =
+      'https://search.google.com/local/writereview?placeid=ChIJ_META_ACTIVE_INITIAL';
+    const DUMMY_HASH = '1111111111111111111111111111111111111111111111111111111111111111';
+
+    beforeEach(async () => {
+      await env.DB.prepare('DELETE FROM audit_logs WHERE card_id = ?').bind(META_CARD_ID).run();
+      await env.DB.prepare('DELETE FROM cards WHERE id = ?').bind(META_CARD_ID).run();
+      await env.DB.prepare(
+        `INSERT INTO cards (id, public_id, batch_id, status, activation_code_hash, business_name, destination_url)
+         VALUES (?, ?, 'batch_admin_ops', 'ACTIVE', ?, 'Initial Coffee', ?)`
+      )
+        .bind(META_CARD_ID, META_PUBLIC_ID, DUMMY_HASH, META_DEST)
+        .run();
+    });
+
+    it('updates business_name metadata successfully without altering destination or routing', async () => {
+      const res = await app.request(
+        `/api/admin/cards/${META_CARD_ID}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'cf-access-authenticated-user-email': ADMIN_EMAIL,
+          },
+          body: JSON.stringify({ businessName: 'Updated Roastery' }),
+        },
+        env
+      );
+
+      expect(res.status).toBe(200);
+      const json = await res.json<{
+        success: boolean;
+        data: { id: string; publicId: string; businessName: string; status: string };
+      }>();
+      expect(json.success).toBe(true);
+      expect(json.data.businessName).toBe('Updated Roastery');
+      expect(json.data.publicId).toBe(META_PUBLIC_ID);
+
+      // Verify database state: destination_url remains strictly untouched
+      const d1Card = await env.DB.prepare(
+        'SELECT business_name, destination_url, status FROM cards WHERE id = ?'
+      )
+        .bind(META_CARD_ID)
+        .first<{ business_name: string; destination_url: string; status: string }>();
+      expect(d1Card?.business_name).toBe('Updated Roastery');
+      expect(d1Card?.destination_url).toBe(META_DEST);
+      expect(d1Card?.status).toBe('ACTIVE');
+
+      // Verify immutable audit log recorded CARD_METADATA_UPDATED
+      const auditLog = await env.DB.prepare(
+        "SELECT action, actor_identifier, new_state FROM audit_logs WHERE card_id = ? AND action = 'CARD_METADATA_UPDATED'"
+      )
+        .bind(META_CARD_ID)
+        .first<{ action: string; actor_identifier: string; new_state: string }>();
+      expect(auditLog?.action).toBe('CARD_METADATA_UPDATED');
+      expect(auditLog?.actor_identifier).toBe(ADMIN_EMAIL);
+      expect(auditLog?.new_state).toContain('Updated Roastery');
+
+      // Verify routing invariant: customer scan redirect still reaches original destination
+      const redirectRes = await app.request(`/c/${META_PUBLIC_ID}`, {}, env);
+      expect(redirectRes.status).toBe(302);
+      expect(redirectRes.headers.get('Location')).toBe(META_DEST);
+    });
+
+    it('strictly rejects any destinationUrl in PATCH payload with 400 DESTINATION_LOCKED', async () => {
+      const res = await app.request(
+        `/api/admin/cards/${META_CARD_ID}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'cf-access-authenticated-user-email': ADMIN_EMAIL,
+          },
+          body: JSON.stringify({
+            businessName: 'Hacker Cafe',
+            destinationUrl: 'https://evil.com/redirect',
+          }),
+        },
+        env
+      );
+
+      expect(res.status).toBe(400);
+      const json = await res.json<{ success: boolean; error: { code: string; message: string } }>();
+      expect(json.success).toBe(false);
+      expect(json.error.code).toBe('DESTINATION_LOCKED');
+
+      // Verify database destination remained completely unchanged
+      const d1Card = await env.DB.prepare('SELECT destination_url FROM cards WHERE id = ?')
+        .bind(META_CARD_ID)
+        .first<{ destination_url: string }>();
+      expect(d1Card?.destination_url).toBe(META_DEST);
+    });
+
+    it('strictly rejects status or publicId in PATCH payload with 400 FORBIDDEN_MUTATION', async () => {
+      const res = await app.request(
+        `/api/admin/cards/${META_CARD_ID}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'cf-access-authenticated-user-email': ADMIN_EMAIL,
+          },
+          body: JSON.stringify({ status: 'DISABLED' }),
+        },
+        env
+      );
+
+      expect(res.status).toBe(400);
+      const json = await res.json<{ success: boolean; error: { code: string } }>();
+      expect(json.success).toBe(false);
+      expect(json.error.code).toBe('FORBIDDEN_MUTATION');
+    });
+
+    it('rejects metadata edits on RETIRED card with 400 INVALID_STATE', async () => {
+      // ACTIVE_CARD_ID was retired in step 5
+      const res = await app.request(
+        `/api/admin/cards/${ACTIVE_CARD_ID}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'cf-access-authenticated-user-email': ADMIN_EMAIL,
+          },
+          body: JSON.stringify({ businessName: 'Should Fail' }),
+        },
+        env
+      );
+
+      expect(res.status).toBe(400);
+      const json = await res.json<{ success: boolean; error: { code: string } }>();
+      expect(json.success).toBe(false);
+      expect(json.error.code).toBe('INVALID_STATE');
+    });
+  });
+
+  describe('7. Public Redirect Invariant Regression Test', () => {
     it('customer scan redirect GET /c/:publicId remains unauthenticated, does zero writes and zero fetches', async () => {
       // 1. Seed brand new active card
       const regressionPublicId = 'REGR7K2M9Q4X8P6V';

@@ -48,7 +48,9 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     await expect(kpiSection.getByText('Unactivated', { exact: true })).toBeVisible();
   });
 
-  test('3. Card inventory search and detail inspection modal', async ({ page }) => {
+  test('3. Card inventory search, compact details modal, and edit metadata modal', async ({
+    page,
+  }) => {
     await page.route('/api/admin/**', async (route) => {
       await route.continue({
         headers: {
@@ -71,23 +73,48 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     await expect(page.getByText('Admin Test Boutique')).toBeVisible();
     await expect(page.getByText('ADMN7K2M9Q4X8P6V')).toBeVisible();
 
-    // Click Inspect to open detail modal
-    const inspectBtn = page.getByRole('button', { name: /^Inspect$/i }).first();
-    await inspectBtn.click();
+    // Click Public ID button to open compact detail modal
+    const publicIdBtn = page.getByRole('button', { name: 'ADMN7K2M9Q4X8P6V', exact: true });
+    await publicIdBtn.click();
 
-    // Verify modal elements
-    await expect(
-      page.getByRole('heading', { name: /Card Detail & Audit Timeline/i })
-    ).toBeVisible();
-    await expect(page.getByText('PUBLIC ID:')).toBeVisible();
-    await expect(page.getByText('DESTINATION URL:')).toBeVisible();
+    // Verify compact modal elements
+    await expect(page.getByRole('heading', { name: /^Card Details$/i })).toBeVisible();
+    await expect(page.getByText('STATUS')).toBeVisible();
+    await expect(page.getByText('GOOGLE REVIEW URL')).toBeVisible();
+    await expect(page.getByText(/System Record ID/i)).not.toBeVisible();
 
     // Close modal
     const closeBtn = page.getByRole('button', { name: /^Close$/i });
     await closeBtn.click();
-    await expect(
-      page.getByRole('heading', { name: /Card Detail & Audit Timeline/i })
-    ).not.toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Card Details$/i })).not.toBeVisible();
+
+    // Click Edit button to open Edit Card modal
+    const editBtn = page.getByRole('button', { name: /Edit card ADMN7K2M9Q4X8P6V/i });
+    await editBtn.click();
+
+    // Verify Edit Card modal
+    await expect(page.getByRole('heading', { name: /^Edit Card$/i })).toBeVisible();
+    await expect(page.getByText('Public ID (Immutable)')).toBeVisible();
+    await expect(page.getByText('Permanently Locked')).toBeVisible();
+
+    // Edit non-routing business name
+    const businessNameInput = page.locator('input[placeholder*="Acme Coffee"]');
+    await expect(businessNameInput).toBeVisible();
+    await businessNameInput.fill('Admin Test Boutique Edited');
+
+    // Save Changes
+    const saveBtn = page.getByRole('button', { name: /^Save Changes$/i });
+    await saveBtn.click();
+
+    // Verify success toast and row update
+    await expect(page.getByText(/updated successfully/i)).toBeVisible();
+    await expect(page.getByText('Admin Test Boutique Edited')).toBeVisible();
+
+    // Revert business name to maintain baseline
+    await editBtn.click();
+    await businessNameInput.fill('Admin Test Boutique');
+    await saveBtn.click();
+    await expect(page.getByText(/updated successfully/i)).toBeVisible();
   });
 
   test('4. Full lifecycle journey: Disable -> Verify Inactive Redirect -> Restore -> Verify Locked Destination (No Change URL) -> Retire', async ({
@@ -114,7 +141,8 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     await expect(page.getByText('Admin Test Boutique')).toBeVisible();
 
     // --- STEP A: DISABLE CARD ---
-    const disableBtn = page.getByRole('button', { name: /^Disable$/i }).first();
+    await page.getByRole('button', { name: /More actions for card ADMN7K2M9Q4X8P6V/i }).click();
+    const disableBtn = page.getByRole('button', { name: /^Disable Card$/i });
     await disableBtn.click();
 
     // Confirmation modal appears
@@ -135,7 +163,8 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
 
     // --- STEP B: RESTORE CARD ---
     await searchInput.fill('ADMN7K2M9Q4X8P6V');
-    const restoreBtn = page.getByRole('button', { name: /^Restore$/i }).first();
+    await page.getByRole('button', { name: /More actions for card ADMN7K2M9Q4X8P6V/i }).click();
+    const restoreBtn = page.getByRole('button', { name: /^Restore Card$/i });
     await restoreBtn.click();
 
     await expect(
@@ -157,6 +186,16 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     await searchInput.fill('ADMN7K2M9Q4X8P6V');
     // Verify "Edit URL" button does NOT exist on the active card row
     await expect(page.getByRole('button', { name: /^Edit URL$/i })).not.toBeVisible();
+
+    // Verify Edit Card modal shows locked destination and no URL input field
+    const editBtn = page.getByRole('button', { name: /Edit card ADMN7K2M9Q4X8P6V/i });
+    await editBtn.click();
+    await expect(page.getByText('Permanently Locked')).toBeVisible();
+    await expect(
+      page.locator('input[name="destinationUrl"], input[placeholder*="google.com"]')
+    ).toHaveCount(0);
+    const cancelEditBtn = page.getByRole('button', { name: /^Cancel$/i });
+    await cancelEditBtn.click();
 
     // Verify backend rejects attempts to change destination with 404 (endpoint removed)
     const changeAttempt = await request.post(
@@ -183,7 +222,8 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
 
     // --- STEP D: PERMANENT RETIREMENT (* -> RETIRED) ---
     await searchInput.fill('ADMN7K2M9Q4X8P6V');
-    const retireBtn = page.getByRole('button', { name: /^Retire$/i }).first();
+    await page.getByRole('button', { name: /More actions for card ADMN7K2M9Q4X8P6V/i }).click();
+    const retireBtn = page.getByRole('button', { name: /^Retire Card$/i });
     await retireBtn.click();
 
     await expect(
