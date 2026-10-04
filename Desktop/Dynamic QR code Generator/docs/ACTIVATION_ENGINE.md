@@ -23,8 +23,8 @@ Merchant Device (Web Browser)
                 │
                 ├── 1. In-Memory Crockford Base32 ID Validation
                 ├── 2. Input Sanitization (XSS mitigation on business_name)
-                ├── 3. Centralized Google Review URL Validation (No network calls)
-                ├── 4. Optional Turnstile Challenge Verification (POST /siteverify)
+                ├── 3. Centralized Google Review URL Validation (No network calls to destination URLs)
+                ├── 4. Turnstile Challenge Verification (Server-Side POST /siteverify)
                 ├── 5. Fail-Closed ACTIVATION_SECRET Check
                 ├── 6. Web Crypto HMAC-SHA256 Derivation
                 ├── 7. Indexed Point Lookup in Cloudflare D1
@@ -92,7 +92,7 @@ export function timingSafeEqualHex(a: string, b: string): boolean {
 
 ## 3. Centralized Google Review Destination Validation
 
-Destination validation is encapsulated in `src/shared/google-url-validator.ts`. It is deterministic, side-effect free, and makes **zero network requests** (eliminating server-side request forgery risks).
+Destination validation is encapsulated in `src/shared/google-url-validator.ts`. It is deterministic, side-effect free, and makes **zero network requests** (eliminating server-side request forgery risks). Customer redirect requests make no outbound requests. The activation flow performs the required server-side Cloudflare Turnstile Siteverify request (and never initiates outbound fetches to destination URLs).
 
 ### 3.1 Validation Rules
 1. **Scheme:** Must strictly be `https:`.

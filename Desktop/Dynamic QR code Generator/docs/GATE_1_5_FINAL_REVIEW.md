@@ -54,7 +54,7 @@ Gate 1.5 serves as the formal design reconciliation gate between initial researc
   - GBP short links (`g.page/r/.../review`)
   - Google Maps mobile app share links (`maps.app.goo.gl/...`)
   - Desktop Maps links (`maps.google.com/maps?...`)
-- Enforced via exact hostname allowlists and URL parsing; zero substring matching (`url.includes("google.com")` is banned); zero server-side fetches (zero SSRF).
+- Enforced via exact hostname allowlists and URL parsing; zero substring matching (`url.includes("google.com")` is banned); zero server-side fetches to destination URLs (zero SSRF). Customer redirect requests make no outbound requests. The activation flow performs the required server-side Cloudflare Turnstile Siteverify request (and never initiates outbound fetches to destination URLs).
 
 ### 6. Sacred Redirect Path Invariant
 The redirect path (`GET /c/:publicId`) is frozen:

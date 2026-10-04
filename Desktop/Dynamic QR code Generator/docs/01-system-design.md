@@ -67,7 +67,7 @@ sequenceDiagram
 ### Invariant Rules in the Critical Path:
 1. **NO Scan Writes in Critical Path:** D1 write queries acquire write locks on SQLite. Incrementing scan counters during customer redirect would block concurrent reads and exhaust the 100k daily write quota. Scan counters are **NOT** updated during the 302 redirect.
 2. **NO Analytics Engine / KV:** Zero external dependencies in the redirect flow.
-3. **NO Outbound HTTP Requests:** Worker does not call Google or any external service.
+3. **NO Outbound HTTP Requests on Customer Redirect:** Customer redirect requests make no outbound requests (Worker does not call Google or any external service). The activation flow performs the required server-side Cloudflare Turnstile Siteverify request (and never initiates outbound fetches to destination URLs).
 4. **Latency Target:** Global p99 edge processing time $< 25$ ms.
 
 ---

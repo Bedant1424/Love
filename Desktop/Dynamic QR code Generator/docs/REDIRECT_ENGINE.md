@@ -25,7 +25,7 @@ Customer Scan ──► Cloudflare Edge Worker ──► Exactly ONE Indexed D1 
    - ❌ No Cloudflare Turnstile
    - ❌ No Analytics Engine / telemetry writes
    - ❌ No external Google API calls
-   - ❌ No outbound HTTP `fetch()` requests (Zero SSRF risk)
+   - ❌ No outbound HTTP `fetch()` requests on the redirect path (Zero SSRF risk). Customer redirect requests make no outbound requests. The activation flow performs the required server-side Cloudflare Turnstile Siteverify request (and never initiates outbound fetches to destination URLs).
    - ❌ No AI / LLM invocations
    - ❌ No email / notification dispatches
    - ❌ No Workers KV or Queues

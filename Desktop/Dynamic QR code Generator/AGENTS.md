@@ -40,7 +40,7 @@ Customer Scan -> Cloudflare Worker -> Single Indexed D1 Query -> State Resolutio
    - ❌ No Analytics Engine / analytics writes
    - ❌ No D1 scan-count increment writes (write transactions block the single-threaded D1 engine)
    - ❌ No Google Business Profile or external Google API calls
-   - ❌ No outbound network `fetch()` requests
+   - ❌ No outbound network `fetch()` requests (Customer redirect requests make no outbound requests)
    - ❌ No AI / LLM invocations
    - ❌ No email / notification dispatches
    - ❌ No Cloudflare Queues
@@ -62,7 +62,7 @@ Customer Scan -> Cloudflare Worker -> Single Indexed D1 Query -> State Resolutio
 4. ❌ **No Supabase as Production Core:** Avoid non-edge latency and vendor dependency for the core redirect.
 5. ❌ **No Third-Party Dynamic QR Providers:** Do not proxy or wrap external services like Bitly, Uniqode, or QR Code Generator.
 6. ❌ **No Google Business Profile APIs in v1:** Destination URLs are validated purely via structural syntax, hostname exact matching, and URL parser allowlists.
-7. ❌ **No Outbound Network Sockets on Activation:** Never initiate server-side `fetch()` requests to destination URLs (zero SSRF risk).
+7. ❌ **No Outbound Network Sockets to Destination URLs:** Never initiate server-side `fetch()` requests to destination URLs (zero SSRF risk). Customer redirect requests make no outbound requests. The activation flow performs the required server-side Cloudflare Turnstile Siteverify request (and never initiates outbound fetches to destination URLs).
 8. ❌ **No Review Gating or Screening:** Never filter or intercept negative reviews. All visitors are directed straight to Google's official review form.
 9. ❌ **No Destination in Printed QR:** The physical QR or NFC tag must **never** encode the Google destination directly. It must encode only the permanent public card identifier URL (`/c/:publicId`).
 
