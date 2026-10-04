@@ -10,9 +10,13 @@ export interface CardUrlOptions {
 }
 
 /**
- * Default hostnames per environment
+ * Centralized Canonical Public Host
+ * The production pilot URL is https://go.taprevieww.workers.dev.
+ * All QR and NFC payloads consume this single source of truth.
  */
-export const DEFAULT_PILOT_HOST = 'qroute.workers.dev';
+export const CANONICAL_PUBLIC_HOST = 'go.taprevieww.workers.dev';
+export const CANONICAL_PUBLIC_ORIGIN = `https://${CANONICAL_PUBLIC_HOST}`;
+export const DEFAULT_PILOT_HOST = CANONICAL_PUBLIC_HOST;
 export const DEFAULT_DEV_HOST = 'localhost:8787';
 
 /**

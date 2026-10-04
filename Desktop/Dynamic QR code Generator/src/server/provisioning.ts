@@ -7,6 +7,7 @@ import type {
 } from '../shared/types';
 import { generateRandomPublicId, PUBLIC_ID_LENGTH } from '../shared/public-id';
 import { generateActivationCode, hashActivationCode } from '../shared/activation-crypto';
+import { CANONICAL_PUBLIC_ORIGIN } from '../shared/url';
 
 export interface CardInsertData {
   id: string;
@@ -192,7 +193,7 @@ export async function insertCardWithRetry(
   const rawCode = generateActivationCode();
   const codeHash = await hashActivationCode(rawCode, cardData.secret);
   const nowIso = new Date().toISOString();
-  const origin = cardData.originUrl ?? 'https://go.taprevieww.workers.dev';
+  const origin = cardData.originUrl ?? CANONICAL_PUBLIC_ORIGIN;
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const publicId = generateRandomPublicId(PUBLIC_ID_LENGTH);
