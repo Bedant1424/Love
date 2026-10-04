@@ -9,7 +9,7 @@
 
 ### The Two Realities
 1. **Pilot Phase (\$0 Budget):**
-   - **`workers.dev`** (`go.tapreview.workers.dev` / `go.<account>.workers.dev`) is fully functional, free, and approved for **development, staging, pilot validation, and small zero-dollar physical-card testing**.
+   - **`workers.dev`** (`go.taprevieww.workers.dev` / `go.<account>.workers.dev`) is fully functional, free, and approved for **development, staging, pilot validation, and small zero-dollar physical-card testing**.
    - Cloudflare explicitly classifies `workers.dev` as intended for personal or hobby projects and recommends custom domains or Worker routes for business-critical production.
 2. **Permanent Commercial Reality:**
    - **A provider-controlled free subdomain is NOT the preferred long-term strategy for a commercial, business-critical physical product.**

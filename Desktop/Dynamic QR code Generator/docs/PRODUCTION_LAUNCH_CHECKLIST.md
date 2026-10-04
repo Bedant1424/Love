@@ -84,7 +84,7 @@ npx wrangler secret put ADMIN_ALLOWED_EMAILS --env production
 ### Step 2.4: Cloudflare Turnstile Setup
 1. In Cloudflare Dashboard, navigate to **Turnstile** $\rightarrow$ **Add Widget**.
 2. **Widget Name:** `QRoute Card Activation`.
-3. **Domain:** Add both `workers.dev` subdomain and custom domain (e.g., `tapreview.workers.dev`, `go.tapreview.workers.dev`, `qr.yourbrand.com`).
+3. **Domain:** Add both `workers.dev` subdomain and pilot hostname (e.g., `taprevieww.workers.dev`, `go.taprevieww.workers.dev`), and any future custom domain (no `https://` prefix).
 4. **Widget Mode:** *Managed* (or *Non-interactive*).
 5. Copy the **Sitekey** and insert it into client configuration (`VITE_TURNSTILE_SITE_KEY`).
 6. Copy the **Secret Key** and save via `wrangler secret put TURNSTILE_SECRET_KEY --env production`.
@@ -161,7 +161,7 @@ curl -I https://qr.yourbrand.com/healthz
 
 ### 2. Multi-Hostname Pilot Verification
 ```bash
-curl -I https://go.tapreview.workers.dev/healthz
+curl -I https://go.taprevieww.workers.dev/healthz
 # Expected: HTTP 200 OK
 ```
 

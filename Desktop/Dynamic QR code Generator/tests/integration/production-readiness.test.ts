@@ -165,8 +165,8 @@ describe('Production Deployment & Launch Readiness (/healthz, /c/:id, /api/publi
 
       // 2. Scan via workers.dev pilot domain
       const workersDevRes = await app.request(
-        `https://go.tapreview.workers.dev/c/${PROD_ACTIVE_PUBLIC_ID}`,
-        { headers: { Host: 'go.tapreview.workers.dev' } },
+        `https://go.taprevieww.workers.dev/c/${PROD_ACTIVE_PUBLIC_ID}`,
+        { headers: { Host: 'go.taprevieww.workers.dev' } },
         prodEnv
       );
       expect(workersDevRes.status).toBe(302);

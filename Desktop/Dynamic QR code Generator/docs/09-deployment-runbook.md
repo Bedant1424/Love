@@ -77,7 +77,7 @@ The production configuration separates local development defaults from the produ
 To support multiple concurrent hostnames on the same Worker:
 1. Navigate to **Workers & Pages** $\rightarrow$ `go` $\rightarrow$ **Settings** $\rightarrow$ **Triggers**.
 2. Under **Custom Domains**, add:
-   - Development/Pilot domain: `go.tapreview.workers.dev` (built-in).
+   - Development/Pilot domain: `go.taprevieww.workers.dev` (built-in).
    - Owned production domain: `qr.yourbrand.com` (verified zone).
 3. **Co-Existence Invariant:** Both hostnames route to the same Worker instance and single indexed D1 query simultaneously. Physical cards printed with either hostname never break.
 
