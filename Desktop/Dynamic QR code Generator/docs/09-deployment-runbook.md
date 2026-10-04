@@ -13,7 +13,7 @@ The production configuration separates local development defaults from the produ
 ```jsonc
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "qroute-platform",
+  "name": "go",
   "main": "src/server/index.ts",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
@@ -48,7 +48,7 @@ The production configuration separates local development defaults from the produ
   // Production Environment Definition
   "env": {
     "production": {
-      "name": "qroute-platform",
+      "name": "go",
       "vars": {
         "ENVIRONMENT": "production"
       },
@@ -76,9 +76,9 @@ The production configuration separates local development defaults from the produ
 ## 2. Multi-Domain Routing & Co-Existence Architecture
 
 To support multiple concurrent hostnames on the same Worker:
-1. Navigate to **Workers & Pages** $\rightarrow$ `qroute-platform` $\rightarrow$ **Settings** $\rightarrow$ **Triggers**.
+1. Navigate to **Workers & Pages** $\rightarrow$ `go` $\rightarrow$ **Settings** $\rightarrow$ **Triggers**.
 2. Under **Custom Domains**, add:
-   - Development/Pilot domain: `qroute.workers.dev` (built-in).
+   - Development/Pilot domain: `go.tapreview.workers.dev` (built-in).
    - Owned production domain: `qr.yourbrand.com` (verified zone).
 3. **Co-Existence Invariant:** Both hostnames route to the same Worker instance and single indexed D1 query simultaneously. Physical cards printed with either hostname never break.
 

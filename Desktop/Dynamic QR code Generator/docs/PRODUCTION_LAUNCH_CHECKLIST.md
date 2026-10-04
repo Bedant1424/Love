@@ -102,7 +102,7 @@ npx wrangler secret put ADMIN_ALLOWED_EMAILS --env production
 7. Under Zero Trust Free Tier, up to 50 administrative seats are included at \$0 cost.
 
 ### Step 2.6: Custom Domain Attachment
-1. In Cloudflare Dashboard, navigate to **Workers & Pages** $\rightarrow$ `qroute-platform` $\rightarrow$ **Settings** $\rightarrow$ **Triggers**.
+1. In Cloudflare Dashboard, navigate to **Workers & Pages** $\rightarrow$ `go` $\rightarrow$ **Settings** $\rightarrow$ **Triggers**.
 2. Click **Add Custom Domain**.
 3. Enter `qr.yourbrand.com` (DNS zone managed in Cloudflare).
 4. Cloudflare automatically issues universal SSL certificates and provisions the edge route.
@@ -161,7 +161,7 @@ curl -I https://qr.yourbrand.com/healthz
 
 ### 2. Multi-Hostname Pilot Verification
 ```bash
-curl -I https://qroute-platform.<your-subdomain>.workers.dev/healthz
+curl -I https://go.tapreview.workers.dev/healthz
 # Expected: HTTP 200 OK
 ```
 

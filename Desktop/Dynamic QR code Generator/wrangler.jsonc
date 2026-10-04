@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "qroute-platform",
+  "name": "go",
   "main": "src/server/index.ts",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
@@ -27,7 +27,7 @@
   },
   "env": {
     "production": {
-      "name": "qroute-platform",
+      "name": "go",
       "vars": {
         "ENVIRONMENT": "production",
       },
