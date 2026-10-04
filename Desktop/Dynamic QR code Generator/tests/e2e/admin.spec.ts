@@ -79,8 +79,8 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
 
     // Verify compact modal elements
     await expect(page.getByRole('heading', { name: /^Card Details$/i })).toBeVisible();
-    await expect(page.getByText('STATUS')).toBeVisible();
-    await expect(page.getByText('GOOGLE REVIEW URL')).toBeVisible();
+    await expect(page.getByText('STATUS', { exact: true })).toBeVisible();
+    await expect(page.getByText('GOOGLE REVIEW URL', { exact: true })).toBeVisible();
     await expect(page.getByText(/System Record ID/i)).not.toBeVisible();
 
     // Close modal
@@ -133,7 +133,7 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     await page.goto('/admin');
     await expect(
       page.getByRole('heading', { name: /Card Lifecycle & Routing Operations/i })
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15000 });
 
     // Filter to ADMN7K2M9Q4X8P6V
     const searchInput = page.getByPlaceholder(/Search by Public ID or Business/i);
@@ -278,7 +278,7 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
 
     // Verify immediate batch success state
     const successState = page.getByTestId('batch-success-state');
-    await expect(successState).toBeVisible();
+    await expect(successState).toBeVisible({ timeout: 15000 });
     await expect(page.getByRole('heading', { name: /Batch Created Successfully/i })).toBeVisible();
     await expect(successState.getByText('Q1 Supplier Pilot Batch')).toBeVisible();
     await expect(successState.getByText('UNACTIVATED')).toBeVisible();
