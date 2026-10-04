@@ -33,6 +33,24 @@ VALUES (
     'c9c25e6fdf8a013039bf7993472ca8cc2daee082eb136f5ba7d6a1d978ec31b3'
 );
 
+INSERT OR REPLACE INTO cards (id, public_id, batch_id, status, activation_code_hash)
+VALUES (
+    'card_local_turnstile_1',
+    'TRNS123456',
+    'batch_local_001',
+    'UNACTIVATED',
+    'c9c25e6fdf8a013039bf7993472ca8cc2daee082eb136f5ba7d6a1d978ec31b3'
+);
+
+INSERT OR REPLACE INTO cards (id, public_id, batch_id, status, activation_code_hash)
+VALUES (
+    'card_local_turnstile_2',
+    'TRNS654321',
+    'batch_local_001',
+    'UNACTIVATED',
+    'c9c25e6fdf8a013039bf7993472ca8cc2daee082eb136f5ba7d6a1d978ec31b3'
+);
+
 INSERT OR REPLACE INTO cards (id, public_id, batch_id, status, activation_code_hash, business_name, destination_url)
 VALUES (
     'card_local_disa',

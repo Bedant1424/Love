@@ -1,3 +1,4 @@
+/// <reference lib="dom" />
 import { test, expect } from '@playwright/test';
 
 test.describe('QRoute Merchant Activation Flow E2E', () => {
@@ -5,6 +6,8 @@ test.describe('QRoute Merchant Activation Flow E2E', () => {
   const DISABLED_ID = 'DACT123456';
   const RETIRED_ID = 'RETR123456';
   const UNACTIVATED_ID = 'PEND654321';
+  const UNACTIVATED_TURNSTILE_ID = 'TRNS123456';
+  const UNACTIVATED_RESET_ID = 'TRNS654321';
   const VALID_CODE = 'K7XM-92PR-V8Q2';
   const VALID_REVIEW_URL =
     'https://search.google.com/local/writereview?placeid=ChIJN1t_tDeuEmsRUsoyG83frY4';
@@ -122,5 +125,217 @@ test.describe('QRoute Merchant Activation Flow E2E', () => {
     if (box) {
       expect(box.height).toBeGreaterThanOrEqual(44); // WCAG 2.1 touch target guideline
     }
+  });
+
+  test('6. Turnstile client challenge flow (widget render, token capture, submit validation, expiration)', async ({
+    page,
+  }) => {
+    // Inject Turnstile test environment and mock window.turnstile
+    await page.addInitScript(() => {
+      (window as unknown as { __TURNSTILE_TEST_SITE_KEY__: string }).__TURNSTILE_TEST_SITE_KEY__ =
+        '0x4AAAAAAATestKey';
+
+      let callbacks: {
+        callback?: (token: string) => void;
+        'error-callback'?: (err: unknown) => void;
+        'expired-callback'?: () => void;
+      } = {};
+      let resetCount = 0;
+
+      (
+        window as unknown as {
+          __turnstileMock: {
+            solve: (t: string) => void;
+            expire: () => void;
+            error: () => void;
+            getResetCount: () => number;
+          };
+        }
+      ).__turnstileMock = {
+        solve: (token: string) => callbacks.callback?.(token),
+        expire: () => callbacks['expired-callback']?.(),
+        error: () => callbacks['error-callback']?.('challenge_error'),
+        getResetCount: () => resetCount,
+      };
+
+      (
+        window as unknown as {
+          turnstile: {
+            render: (c: HTMLElement, opts: unknown) => string;
+            reset: () => void;
+            remove: () => void;
+          };
+        }
+      ).turnstile = {
+        render: (container: HTMLElement, opts: unknown) => {
+          callbacks = opts as typeof callbacks;
+          const widget = document.createElement('div');
+          widget.setAttribute('data-testid', 'mock-turnstile-element');
+          widget.textContent = 'Cloudflare Turnstile Verified';
+          container.appendChild(widget);
+          return 'mock-widget-id-1';
+        },
+        reset: () => {
+          resetCount++;
+        },
+        remove: () => {},
+      };
+    });
+
+    await page.goto(`/activate/${UNACTIVATED_TURNSTILE_ID}`);
+
+    // Wait for form to appear
+    const form = page.getByTestId('activation-form');
+    await expect(form).toBeVisible({ timeout: 15000 });
+
+    // Verify Turnstile widget container is rendered
+    await expect(page.getByTestId('turnstile-widget')).toBeVisible();
+    await expect(page.getByTestId('mock-turnstile-element')).toBeVisible();
+
+    // Fill valid form details
+    await page.fill('#businessName', 'Sunrise Cafe');
+    await page.fill('#reviewUrl', VALID_REVIEW_URL);
+    await page.fill('#activationCode', VALID_CODE);
+
+    // Verify submit button is disabled before challenge completion
+    const submitBtn = page.getByRole('button', { name: /Activate Review Card/i });
+    await expect(submitBtn).toBeDisabled();
+
+    // Simulate successful challenge resolution
+    await page.evaluate(() => {
+      (
+        window as unknown as { __turnstileMock: { solve: (t: string) => void } }
+      ).__turnstileMock.solve('test-valid-turnstile-token');
+    });
+
+    // Verify submit button becomes enabled after challenge solved
+    await expect(submitBtn).toBeEnabled();
+
+    // Simulate token expiration
+    await page.evaluate(() => {
+      (window as unknown as { __turnstileMock: { expire: () => void } }).__turnstileMock.expire();
+    });
+
+    // Verify submit button becomes disabled again upon token expiry
+    await expect(submitBtn).toBeDisabled();
+
+    // Re-solve challenge
+    await page.evaluate(() => {
+      (
+        window as unknown as { __turnstileMock: { solve: (t: string) => void } }
+      ).__turnstileMock.solve('test-fresh-turnstile-token');
+    });
+    await expect(submitBtn).toBeEnabled();
+
+    // Intercept network call to verify turnstileToken reaches POST /api/public/activate
+    let interceptedToken: string | undefined;
+    await page.route('/api/public/activate', async (route) => {
+      const postData = route.request().postDataJSON();
+      interceptedToken = postData.turnstileToken;
+      await route.continue();
+    });
+
+    await submitBtn.click();
+
+    // Confirm the token was transmitted
+    expect(interceptedToken).toBe('test-fresh-turnstile-token');
+  });
+
+  test('7. Turnstile error callback displays user message and failure resets widget', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      (window as unknown as { __TURNSTILE_TEST_SITE_KEY__: string }).__TURNSTILE_TEST_SITE_KEY__ =
+        '0x4AAAAAAATestKey';
+
+      let callbacks: {
+        callback?: (token: string) => void;
+        'error-callback'?: (err: unknown) => void;
+      } = {};
+      let resetCount = 0;
+
+      (
+        window as unknown as {
+          __turnstileMock: {
+            solve: (t: string) => void;
+            error: () => void;
+            getResetCount: () => number;
+          };
+        }
+      ).__turnstileMock = {
+        solve: (token: string) => callbacks.callback?.(token),
+        error: () => callbacks['error-callback']?.('network_error'),
+        getResetCount: () => resetCount,
+      };
+
+      (
+        window as unknown as {
+          turnstile: {
+            render: (c: HTMLElement, opts: unknown) => string;
+            reset: () => void;
+            remove: () => void;
+          };
+        }
+      ).turnstile = {
+        render: (container: HTMLElement, opts: unknown) => {
+          callbacks = opts as typeof callbacks;
+          return 'mock-widget-id-2';
+        },
+        reset: () => {
+          resetCount++;
+        },
+        remove: () => {},
+      };
+    });
+
+    await page.goto(`/activate/${UNACTIVATED_RESET_ID}`);
+    await expect(page.getByTestId('activation-form')).toBeVisible({ timeout: 15000 });
+
+    // Trigger challenge error
+    await page.evaluate(() => {
+      (window as unknown as { __turnstileMock: { error: () => void } }).__turnstileMock.error();
+    });
+
+    // Check error message displayed
+    await expect(page.getByText(/Security verification failed. Please try again./i)).toBeVisible();
+
+    // Solve and submit invalid activation code to verify reset is triggered
+    await page.evaluate(() => {
+      (
+        window as unknown as { __turnstileMock: { solve: (t: string) => void } }
+      ).__turnstileMock.solve('token-for-failed-request');
+    });
+
+    await page.fill('#businessName', 'Sunrise Cafe');
+    await page.fill('#reviewUrl', VALID_REVIEW_URL);
+    await page.fill('#activationCode', 'WRNG-TEST-1234');
+
+    const submitBtn = page.getByRole('button', { name: /Activate Review Card/i });
+    await expect(submitBtn).toBeEnabled();
+
+    // Mock API 400 error response
+    await page.route('/api/public/activate', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: false,
+          error: { code: 'INVALID_CODE', message: 'Invalid activation code' },
+        }),
+      });
+    });
+
+    await submitBtn.click();
+
+    // Error banner should be visible
+    await expect(page.getByTestId('error-banner')).toBeVisible();
+
+    // Verify widget was reset
+    const resetCalls = await page.evaluate(() => {
+      return (
+        window as unknown as { __turnstileMock: { getResetCount: () => number } }
+      ).__turnstileMock.getResetCount();
+    });
+    expect(resetCalls).toBeGreaterThan(0);
   });
 });

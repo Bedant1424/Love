@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { PageContainer } from '../components/ui/PageContainer';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Badge } from '../components/ui/Badge';
+import { Turnstile, type TurnstileRef } from '../components/ui/Turnstile';
 import { validatePublicId } from '../shared/utils';
 import { formatActivationCode, validateActivationCodeFormat } from '../shared/activation-crypto';
 import { validateGoogleReviewUrl } from '../shared/google-url-validator';
@@ -12,18 +13,43 @@ import type {
   ActivationResponseData,
   CardPublicStatusData,
   CardStatus,
+  ActivationRequest,
 } from '../shared/types';
 
 interface ActivationPageProps {
   initialPublicId?: string;
+  turnstileSiteKey?: string;
 }
 
-export const ActivationPage: React.FC<ActivationPageProps> = ({ initialPublicId = '' }) => {
+export const ActivationPage: React.FC<ActivationPageProps> = ({
+  initialPublicId = '',
+  turnstileSiteKey,
+}) => {
   const [publicId, setPublicId] = useState<string>(initialPublicId.toUpperCase());
   const [cardStatus, setCardStatus] = useState<CardStatus | 'NOT_FOUND' | 'INVALID_ID' | null>(
     null
   );
   const [initialLoading, setInitialLoading] = useState<boolean>(Boolean(initialPublicId));
+
+  // Determine Turnstile configuration and environment
+  const siteKey =
+    turnstileSiteKey ??
+    (typeof window !== 'undefined'
+      ? (window as unknown as { __TURNSTILE_TEST_SITE_KEY__?: string }).__TURNSTILE_TEST_SITE_KEY__
+      : undefined) ??
+    import.meta.env.VITE_TURNSTILE_SITE_KEY;
+  const isLocalhost =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.hostname.endsWith('.local'));
+  const isProductionDomain = typeof window !== 'undefined' && !isLocalhost;
+  const isTurnstileRequired = Boolean(siteKey) || isProductionDomain;
+
+  // Turnstile state
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileError, setTurnstileError] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileRef>(null);
 
   // Form states
   const [businessName, setBusinessName] = useState<string>('');
@@ -132,6 +158,20 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({ initialPublicId 
       errors.activationCode = codeValidation.error ?? 'Please enter a 12-character activation code';
     }
 
+    // Validate Turnstile Bot Defense if required
+    if (isTurnstileRequired) {
+      if (!siteKey) {
+        setErrorMessage(
+          'Security verification is not configured for this domain. Card activation is temporarily unavailable.'
+        );
+        return;
+      }
+      if (!turnstileToken) {
+        setErrorMessage('Please complete the security challenge before activating your card.');
+        return;
+      }
+    }
+
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
@@ -141,15 +181,18 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({ initialPublicId 
     setSubmitting(true);
 
     try {
+      const payload: ActivationRequest = {
+        publicId,
+        businessName: cleanName,
+        reviewUrl: urlValidation.normalizedUrl ?? reviewUrl.trim(),
+        activationCode: codeValidation.normalizedCode ?? activationCode.trim(),
+        ...(turnstileToken ? { turnstileToken } : {}),
+      };
+
       const response = await fetch('/api/public/activate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          publicId,
-          businessName: cleanName,
-          reviewUrl: urlValidation.normalizedUrl ?? reviewUrl.trim(),
-          activationCode: codeValidation.normalizedCode,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const result: ApiResponse<ActivationResponseData> = await response.json();
@@ -163,9 +206,18 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({ initialPublicId 
             ? result.error.message
             : 'Activation failed. Please check your code and link and try again.';
         setErrorMessage(errorText);
+        // Reset single-use Turnstile challenge on failure
+        if (isTurnstileRequired && turnstileRef.current) {
+          turnstileRef.current.reset();
+        }
+        setTurnstileToken(null);
       }
     } catch {
       setErrorMessage('Network error occurred during activation. Please try again.');
+      if (isTurnstileRequired && turnstileRef.current) {
+        turnstileRef.current.reset();
+      }
+      setTurnstileToken(null);
     } finally {
       setSubmitting(false);
     }
@@ -451,6 +503,44 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({ initialPublicId 
                   </p>
                 </div>
 
+                {/* Cloudflare Turnstile Bot Defense */}
+                {isTurnstileRequired && (
+                  <div className="pt-2">
+                    {siteKey ? (
+                      <div className="space-y-1">
+                        <Turnstile
+                          ref={turnstileRef}
+                          siteKey={siteKey}
+                          onSuccess={(token) => {
+                            setTurnstileToken(token);
+                            setTurnstileError(null);
+                          }}
+                          onExpire={() => {
+                            setTurnstileToken(null);
+                          }}
+                          onError={() => {
+                            setTurnstileToken(null);
+                            setTurnstileError('Security verification failed. Please try again.');
+                          }}
+                        />
+                        {turnstileError && (
+                          <p className="text-xs text-red-600 text-center font-medium">
+                            {turnstileError}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div
+                        className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 text-center font-medium"
+                        role="alert"
+                      >
+                        Security verification challenge is required but not configured for this
+                        domain.
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="pt-2">
                   <Button
                     type="submit"
@@ -458,7 +548,7 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({ initialPublicId 
                     size="md"
                     className="w-full"
                     isLoading={submitting}
-                    disabled={submitting}
+                    disabled={submitting || (isTurnstileRequired && (!siteKey || !turnstileToken))}
                   >
                     Activate Review Card &rarr;
                   </Button>
