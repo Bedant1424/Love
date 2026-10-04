@@ -14,7 +14,6 @@ import {
   handleAdminDisableCard,
   handleAdminRestoreCard,
   handleAdminRetireCard,
-  handleAdminChangeDestination,
   handleAdminListAuditLogs,
 } from './admin';
 
@@ -132,11 +131,20 @@ app.get('/api/admin/cards/:id', handleAdminGetCard);
 app.post('/api/admin/cards/:id/disable', handleAdminDisableCard);
 app.post('/api/admin/cards/:id/restore', handleAdminRestoreCard);
 app.post('/api/admin/cards/:id/retire', handleAdminRetireCard);
-app.post('/api/admin/cards/:id/change-destination', handleAdminChangeDestination);
-app.post('/api/admin/cards/:id/destination', handleAdminChangeDestination);
 app.get('/api/admin/batches', handleAdminListBatches);
 app.post('/api/admin/batches', handleAdminCreateBatch);
 app.get('/api/admin/audit', handleAdminListAuditLogs);
+
+/**
+ * Unmatched API routes handler -> 404 JSON
+ * Guarantees that SPA fallback does not swallow non-existent API routes.
+ */
+app.all('/api/*', (c) => {
+  return c.json(
+    createErrorResponse('NOT_FOUND', 'API endpoint not found. Verify request URL and method.'),
+    404
+  );
+});
 
 /**
  * Fallback to Workers Static Assets for frontend routes

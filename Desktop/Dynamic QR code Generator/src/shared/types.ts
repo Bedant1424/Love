@@ -218,13 +218,6 @@ export interface CreateBatchResponse {
   cards: ProvisionedCard[];
 }
 
-/**
- * Update Destination Request
- */
-export interface ChangeDestinationRequest {
-  destinationUrl: string;
-}
-
 export type { CardEnvironment, CardUrlOptions } from './url';
 export type { NfcPayloadInfo } from './nfc';
 export type { BatchPackageOptions } from './fulfillment';

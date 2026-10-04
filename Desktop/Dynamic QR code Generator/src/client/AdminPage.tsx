@@ -5,7 +5,6 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Badge } from '../components/ui/Badge';
-import { validateGoogleReviewUrl } from '../shared/google-url-validator';
 import type {
   AdminCardSummary,
   AdminCardDetail,
@@ -62,16 +61,9 @@ export const AdminPage: React.FC = () => {
 
   // Modals & Confirmation States
   const [actionTarget, setActionTarget] = useState<AdminCardSummary | null>(null);
-  const [actionType, setActionType] = useState<
-    'disable' | 'restore' | 'retire' | 'change_dest' | null
-  >(null);
+  const [actionType, setActionType] = useState<'disable' | 'restore' | 'retire' | null>(null);
   const [actionSubmitting, setActionSubmitting] = useState<boolean>(false);
   const [actionError, setActionError] = useState<string | null>(null);
-
-  // Change Destination Form State
-  const [newDestinationUrl, setNewDestinationUrl] = useState<string>('');
-  const [destValidationMessage, setDestValidationMessage] = useState<string | null>(null);
-  const [isDestValid, setIsDestValid] = useState<boolean>(false);
 
   // Batch Provisioning Form State
   const [batchName, setBatchName] = useState<string>('');
@@ -256,23 +248,6 @@ export const AdminPage: React.FC = () => {
     }
   };
 
-  // Live Destination URL Validator
-  useEffect(() => {
-    if (!newDestinationUrl) {
-      setDestValidationMessage(null);
-      setIsDestValid(false);
-      return;
-    }
-    const val = validateGoogleReviewUrl(newDestinationUrl);
-    if (val.isValid) {
-      setDestValidationMessage('Valid Google Business Review Destination');
-      setIsDestValid(true);
-    } else {
-      setDestValidationMessage(val.error || 'Invalid Google Review link');
-      setIsDestValid(false);
-    }
-  }, [newDestinationUrl]);
-
   // Execute Card Lifecycle Action
   const handleExecuteAction = async () => {
     if (!actionTarget || !actionType) return;
@@ -281,9 +256,6 @@ export const AdminPage: React.FC = () => {
 
     try {
       let endpoint = '';
-      const method = 'POST';
-      let body: string | undefined = undefined;
-
       switch (actionType) {
         case 'disable':
           endpoint = `/api/admin/cards/${actionTarget.id}/disable`;
@@ -294,21 +266,10 @@ export const AdminPage: React.FC = () => {
         case 'retire':
           endpoint = `/api/admin/cards/${actionTarget.id}/retire`;
           break;
-        case 'change_dest':
-          if (!isDestValid) {
-            setActionError('Please provide a valid Google Review URL.');
-            setActionSubmitting(false);
-            return;
-          }
-          endpoint = `/api/admin/cards/${actionTarget.id}/destination`;
-          body = JSON.stringify({ destinationUrl: newDestinationUrl });
-          break;
       }
 
       const res = await adminFetch(endpoint, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body,
+        method: 'POST',
       });
 
       if (!res.ok) {
@@ -828,31 +789,17 @@ export const AdminPage: React.FC = () => {
                               </Button>
 
                               {card.status === 'ACTIVE' && (
-                                <>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                      setActionTarget(card);
-                                      setActionType('change_dest');
-                                      setNewDestinationUrl(card.destinationUrl || '');
-                                    }}
-                                    className="h-7 px-2 text-xs"
-                                  >
-                                    Edit URL
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                      setActionTarget(card);
-                                      setActionType('disable');
-                                    }}
-                                    className="h-7 px-2 text-xs text-red-600 hover:bg-red-50"
-                                  >
-                                    Disable
-                                  </Button>
-                                </>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setActionTarget(card);
+                                    setActionType('disable');
+                                  }}
+                                  className="h-7 px-2 text-xs text-red-600 hover:bg-red-50"
+                                >
+                                  Disable
+                                </Button>
                               )}
 
                               {card.status === 'DISABLED' && (
@@ -1259,7 +1206,6 @@ export const AdminPage: React.FC = () => {
               {actionType === 'disable' && `Disable Card ${actionTarget.publicId}`}
               {actionType === 'restore' && `Restore Card ${actionTarget.publicId}`}
               {actionType === 'retire' && `Permanently Retire Card ${actionTarget.publicId}`}
-              {actionType === 'change_dest' && `Update Destination for ${actionTarget.publicId}`}
             </h3>
 
             {actionError && (
@@ -1292,30 +1238,6 @@ export const AdminPage: React.FC = () => {
               </div>
             )}
 
-            {actionType === 'change_dest' && (
-              <div className="space-y-3">
-                <p className="text-xs text-zinc-500">
-                  Enter a verified Google Business Review URL. Only official Google hostnames and
-                  syntaxes are permitted.
-                </p>
-                <Input
-                  type="url"
-                  placeholder="https://search.google.com/local/writereview?placeid=..."
-                  value={newDestinationUrl}
-                  onChange={(e) => setNewDestinationUrl(e.target.value)}
-                />
-                {destValidationMessage && (
-                  <p
-                    className={`text-xs font-medium ${
-                      isDestValid ? 'text-emerald-700' : 'text-red-600'
-                    }`}
-                  >
-                    {destValidationMessage}
-                  </p>
-                )}
-              </div>
-            )}
-
             <div className="flex justify-end gap-2 pt-3 border-t border-zinc-200">
               <Button
                 variant="outline"
@@ -1334,12 +1256,10 @@ export const AdminPage: React.FC = () => {
                 size="sm"
                 onClick={handleExecuteAction}
                 isLoading={actionSubmitting}
-                disabled={actionType === 'change_dest' && !isDestValid}
               >
                 {actionType === 'disable' && 'Confirm Disable'}
                 {actionType === 'restore' && 'Confirm Restore'}
                 {actionType === 'retire' && 'Permanently Retire'}
-                {actionType === 'change_dest' && 'Save Destination'}
               </Button>
             </div>
           </div>

@@ -236,13 +236,11 @@ export function validateGoogleReviewUrl(inputUrl: string): ValidationResult {
 ### 4.7 POST `/api/admin/cards/:id/retire`
 - **Behavior:** Permanently transitions any non-retired card to `RETIRED` (terminal). Records `CARD_RETIRED` audit log. Subsequent restoration attempts return `400 Bad Request`.
 
-### 4.8 POST `/api/admin/cards/:id/change-destination` (Alias: `/destination`)
-- **Request Body:** `{ "destinationUrl": "https://search.google.com/local/writereview?placeid=..." }`
-- **Behavior:** Validates destination via `validateGoogleReviewUrl`. Updates destination on `ACTIVE` card and records `DESTINATION_CHANGED` audit log.
-
-### 4.9 GET `/api/admin/audit` (Alias: `/audit-logs`)
+### 4.8 GET `/api/admin/audit` (Alias: `/audit-logs`)
 - **Query Parameters:** `page`, `limit`, `cardId`, `action`.
 - **Response `200 OK`:** Paginated platform audit trail with joined card public IDs.
+
+> **Note on Destination Immutability:** Destinations on `ACTIVE` cards are permanently locked. There is NO endpoint to change an active card's destination. If a different destination is needed, a replacement card or batch is provisioned.
 
 ---
 

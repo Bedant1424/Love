@@ -90,7 +90,7 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     ).not.toBeVisible();
   });
 
-  test('4. Full lifecycle journey: Disable -> Verify Inactive Redirect -> Restore -> Change URL -> Retire', async ({
+  test('4. Full lifecycle journey: Disable -> Verify Inactive Redirect -> Restore -> Verify Locked Destination (No Change URL) -> Retire', async ({
     page,
     request,
   }) => {
@@ -153,29 +153,33 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
       'https://search.google.com/local/writereview?placeid=ChIJ_TEST_ADMIN_ACTIVE'
     );
 
-    // --- STEP C: UPDATE DESTINATION URL ---
-    const newGoogleUrl =
-      'https://search.google.com/local/writereview?placeid=ChIJ_UPDATED_ADMIN_URL_999';
+    // --- STEP C: VERIFY DESTINATION IS LOCKED (NO CHANGE URL CAPABILITY) ---
     await searchInput.fill('ADMN7K2M9Q4X8P6V');
-    const editUrlBtn = page.getByRole('button', { name: /^Edit URL$/i }).first();
-    await editUrlBtn.click();
+    // Verify "Edit URL" button does NOT exist on the active card row
+    await expect(page.getByRole('button', { name: /^Edit URL$/i })).not.toBeVisible();
 
-    await expect(
-      page.getByRole('heading', { name: /Update Destination for ADMN7K2M9Q4X8P6V/i })
-    ).toBeVisible();
-    const destInput = page.getByPlaceholder(/https:\/\/search\.google\.com\/local\/writereview/i);
-    await destInput.fill(newGoogleUrl);
-    await expect(page.getByText(/Valid Google Business Review Destination/i)).toBeVisible();
+    // Verify backend rejects attempts to change destination with 404 (endpoint removed)
+    const changeAttempt = await request.post(
+      '/api/admin/cards/ADMN7K2M9Q4X8P6V/change-destination',
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          ...ADMIN_HEADERS,
+        },
+        data: JSON.stringify({
+          destinationUrl:
+            'https://search.google.com/local/writereview?placeid=ChIJ_UNAUTHORIZED_MUTATION',
+        }),
+      }
+    );
+    expect(changeAttempt.status()).toBe(404);
 
-    const saveDestBtn = page.getByRole('button', { name: /^Save Destination$/i });
-    await saveDestBtn.click();
-
-    await expect(page.getByText(/successfully updated \(CHANGE_DEST\)/i)).toBeVisible();
-
-    // Customer redirect reflects new target
-    const scanUpdated = await request.get('/c/ADMN7K2M9Q4X8P6V', { maxRedirects: 0 });
-    expect(scanUpdated.status()).toBe(302);
-    expect(scanUpdated.headers()['location']).toBe(newGoogleUrl);
+    // Verify customer redirect continues to point to original destination
+    const scanStillActive = await request.get('/c/ADMN7K2M9Q4X8P6V', { maxRedirects: 0 });
+    expect(scanStillActive.status()).toBe(302);
+    expect(scanStillActive.headers()['location']).toBe(
+      'https://search.google.com/local/writereview?placeid=ChIJ_TEST_ADMIN_ACTIVE'
+    );
 
     // --- STEP D: PERMANENT RETIREMENT (* -> RETIRED) ---
     await searchInput.fill('ADMN7K2M9Q4X8P6V');

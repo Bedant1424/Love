@@ -5,12 +5,10 @@ import type {
   AdminCardDetail,
   AdminCardSummary,
   AdminDashboardStats,
-  ChangeDestinationRequest,
   CreateBatchRequest,
   PaginatedResult,
 } from '../shared/types';
 import { createErrorResponse, createSuccessResponse, parsePagination } from '../shared/utils';
-import { validateGoogleReviewUrl } from '../shared/google-url-validator';
 import { provisionCardBatch } from './provisioning';
 
 type AdminContext = Context<{ Bindings: Env; Variables: AppVariables }>;
@@ -556,96 +554,6 @@ export async function handleAdminRetireCard(c: AdminContext) {
   } catch (error) {
     console.error('[Admin Retire Error]', error instanceof Error ? error.message : error);
     return c.json(createErrorResponse('SERVER_ERROR', 'Failed to retire card'), 500);
-  }
-}
-
-/**
- * POST /api/admin/cards/:id/change-destination
- * Atomic update of destination URL on an ACTIVE card
- */
-export async function handleAdminChangeDestination(c: AdminContext) {
-  const cardIdOrPublicId = c.req.param('id');
-  const adminEmail = c.get('adminEmail') ?? 'admin@system';
-  const nowIso = new Date().toISOString();
-
-  let body: Partial<ChangeDestinationRequest>;
-  try {
-    body = await c.req.json();
-  } catch {
-    return c.json(createErrorResponse('INVALID_BODY', 'Invalid JSON body'), 400);
-  }
-
-  const { destinationUrl } = body;
-  if (!destinationUrl || typeof destinationUrl !== 'string') {
-    return c.json(createErrorResponse('INVALID_URL', 'destinationUrl is required'), 400);
-  }
-
-  const urlValidation = validateGoogleReviewUrl(destinationUrl);
-  if (!urlValidation.isValid || !urlValidation.normalizedUrl) {
-    return c.json(
-      createErrorResponse('INVALID_URL', urlValidation.error ?? 'Invalid Google review URL'),
-      400
-    );
-  }
-
-  try {
-    const card = await c.env.DB.prepare(
-      'SELECT id, status, destination_url FROM cards WHERE id = ? OR public_id = ?'
-    )
-      .bind(cardIdOrPublicId, cardIdOrPublicId)
-      .first<{ id: string; status: string; destination_url: string | null }>();
-
-    if (!card) {
-      return c.json(createErrorResponse('NOT_FOUND', 'Card not found'), 404);
-    }
-
-    if (card.status !== 'ACTIVE') {
-      return c.json(
-        createErrorResponse('INVALID_STATE', 'Only ACTIVE cards can have destination modified'),
-        400
-      );
-    }
-
-    // Atomic conditional update
-    const res = await c.env.DB.prepare(
-      "UPDATE cards SET destination_url = ?, updated_at = ? WHERE id = ? AND status = 'ACTIVE'"
-    )
-      .bind(urlValidation.normalizedUrl, nowIso, card.id)
-      .run();
-
-    if (res.meta.changes !== 1) {
-      return c.json(createErrorResponse('CONFLICT', 'Card state changed concurrently'), 409);
-    }
-
-    // Immutable audit log
-    await c.env.DB.prepare(
-      `INSERT INTO audit_logs (id, card_id, action, actor_type, actor_identifier, previous_state, new_state, created_at)
-         VALUES (?, ?, 'DESTINATION_CHANGED', 'ADMIN', ?, ?, ?, ?)`
-    )
-      .bind(
-        crypto.randomUUID(),
-        card.id,
-        adminEmail,
-        JSON.stringify({ destinationUrl: card.destination_url }),
-        JSON.stringify({ destinationUrl: urlValidation.normalizedUrl }),
-        nowIso
-      )
-      .run();
-
-    return c.json(
-      createSuccessResponse({
-        id: card.id,
-        destinationUrl: urlValidation.normalizedUrl,
-        updatedAt: nowIso,
-      }),
-      200
-    );
-  } catch (error) {
-    console.error(
-      '[Admin Change Destination Error]',
-      error instanceof Error ? error.message : error
-    );
-    return c.json(createErrorResponse('SERVER_ERROR', 'Failed to update destination'), 500);
   }
 }
 

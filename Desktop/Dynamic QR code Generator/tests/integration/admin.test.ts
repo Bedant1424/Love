@@ -394,8 +394,9 @@ describe('Admin Operations, Lifecycle & Provisioning Engine (/api/admin/*)', () 
       expect(redirectRes.headers.get('Location')).toBe(INITIAL_GOOGLE_URL);
     });
 
-    it('updates destination URL on an ACTIVE card (DESTINATION_CHANGED)', async () => {
-      const res = await app.request(
+    it('strictly rejects any destination URL mutation on an ACTIVE card (endpoint removed / immutable destination)', async () => {
+      // 1. Verify /change-destination endpoint returns 404
+      const resChange = await app.request(
         `/api/admin/cards/${ACTIVE_CARD_ID}/change-destination`,
         {
           method: 'POST',
@@ -407,13 +408,33 @@ describe('Admin Operations, Lifecycle & Provisioning Engine (/api/admin/*)', () 
         },
         env
       );
+      expect(resChange.status).toBe(404);
 
-      expect(res.status).toBe(200);
+      // 2. Verify legacy /destination alias endpoint returns 404
+      const resDest = await app.request(
+        `/api/admin/cards/${ACTIVE_CARD_ID}/destination`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'cf-access-authenticated-user-email': ADMIN_EMAIL,
+          },
+          body: JSON.stringify({ destinationUrl: UPDATED_GOOGLE_URL }),
+        },
+        env
+      );
+      expect(resDest.status).toBe(404);
 
-      // Verify redirect target changed immediately
+      // 3. Verify destination URL in D1 remains unchanged
+      const d1Card = await env.DB.prepare('SELECT destination_url FROM cards WHERE id = ?')
+        .bind(ACTIVE_CARD_ID)
+        .first<{ destination_url: string }>();
+      expect(d1Card?.destination_url).toBe(INITIAL_GOOGLE_URL);
+
+      // 4. Verify public redirect path still points strictly to the immutable initial destination
       const redirectRes = await app.request(`/c/${ACTIVE_PUBLIC_ID}`, {}, env);
       expect(redirectRes.status).toBe(302);
-      expect(redirectRes.headers.get('Location')).toBe(UPDATED_GOOGLE_URL);
+      expect(redirectRes.headers.get('Location')).toBe(INITIAL_GOOGLE_URL);
     });
 
     it('retires a card permanently (* -> RETIRED) and blocks subsequent restoration', async () => {

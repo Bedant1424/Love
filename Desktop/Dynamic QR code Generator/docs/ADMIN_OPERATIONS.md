@@ -59,7 +59,6 @@ In production, Cloudflare Access intercepts requests to administrative routes be
 | `UNACTIVATED` | `ACTIVE` | Merchant Card Activation | `POST /api/public/activate` | `CARD_ACTIVATED` |
 | `ACTIVE` | `DISABLED` | Operator Disable | `POST /api/admin/cards/:id/disable` | `CARD_DISABLED` |
 | `DISABLED` | `ACTIVE` | Operator Restore | `POST /api/admin/cards/:id/restore` | `CARD_RESTORED` |
-| `ACTIVE` | `ACTIVE` | Change Destination URL | `POST /api/admin/cards/:id/change-destination` | `DESTINATION_CHANGED` |
 | `*` (Any Non-Retired) | `RETIRED` | Operator Permanent Retire | `POST /api/admin/cards/:id/retire` | `CARD_RETIRED` |
 
 ### Critical Invariants:
@@ -72,6 +71,8 @@ In production, Cloudflare Access intercepts requests to administrative routes be
    - `UNACTIVATED`: `HTTP 302 Found` redirecting to `/activate/:publicId`.
    - `DISABLED`: `HTTP 200 OK` serving accessible "Review Card Temporarily Inactive" notice.
    - `RETIRED`: `HTTP 200 OK` serving accessible "Card Retired" notice.
+4. **Locked Destination Invariant:**
+   Once a card enters `ACTIVE`, its Google Review destination is permanently locked. There is NO self-service or admin destination mutation endpoint (`POST /api/admin/cards/:id/change-destination` is removed). If a merchant requires a different destination URL, a replacement card or batch must be provisioned.
 
 ---
 
@@ -111,7 +112,6 @@ All endpoints require authentication via Cloudflare Access identity headers.
 | `POST` | `/api/admin/cards/:id/disable` | Transitions `ACTIVE` card to `DISABLED`. |
 | `POST` | `/api/admin/cards/:id/restore` | Transitions `DISABLED` card back to `ACTIVE`. |
 | `POST` | `/api/admin/cards/:id/retire` | Permanently retires a card (terminal). |
-| `POST` | `/api/admin/cards/:id/change-destination` | Updates Google Review destination URL for `ACTIVE` cards with full syntax and Place ID validation. (Alias: `/destination`). |
 | `GET` | `/api/admin/batches` | Lists provisioned card batches. |
 | `POST` | `/api/admin/batches` | Provisions $N$ cards atomically and returns one-time activation codes. |
 | `GET` | `/api/admin/audit` | Global platform audit trail with filtering by `action` and `cardId`. (Alias: `/audit-logs`). |
