@@ -54,7 +54,9 @@ export const ActivationPage: React.FC<ActivationPageProps> = ({
   const siteKey =
     turnstileSiteKey ??
     testSiteKey ??
-    (isProductionDomain ? import.meta.env.VITE_TURNSTILE_SITE_KEY : undefined);
+    (isProductionDomain
+      ? import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAAFNSTzU9erQakQC-'
+      : undefined);
   const isTurnstileRequired = isProductionDomain || Boolean(turnstileSiteKey || testSiteKey);
 
   // Turnstile state
