@@ -4,7 +4,6 @@ import {
   FileSpreadsheet,
   RefreshCw,
   CheckCircle2,
-  Lock,
   MoreHorizontal,
   History,
   Eye,
@@ -132,6 +131,7 @@ export const AdminPage: React.FC = () => {
   const [vaultError, setVaultError] = useState<string | null>(null);
   const [revealedKeys, setRevealedKeys] = useState<Set<string>>(new Set());
   const [copiedPublicId, setCopiedPublicId] = useState<string | null>(null);
+  const [copiedDestination, setCopiedDestination] = useState<boolean>(false);
 
   // Platform Audit Logs
   const [auditLogs, setAuditLogs] = useState<AdminAuditLogEntry[]>([]);
@@ -654,6 +654,25 @@ export const AdminPage: React.FC = () => {
     }
   };
 
+  const copyDestinationToClipboard = (url: string) => {
+    const applyCopiedState = () => {
+      setCopiedDestination(true);
+      showToast('success', 'Destination URL copied to clipboard');
+      setTimeout(() => setCopiedDestination(false), 2500);
+    };
+
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard
+        .writeText(url)
+        .then(applyCopiedState)
+        .catch(() => {
+          applyCopiedState();
+        });
+    } else {
+      applyCopiedState();
+    }
+  };
+
   const handleExportVaultKeysCsv = () => {
     if (vaultKeys.length === 0) return;
     const bName =
@@ -1091,6 +1110,19 @@ export const AdminPage: React.FC = () => {
                                 <Eye className="h-3 w-3 text-zinc-500" />
                                 Details
                               </Button>
+                              {card.status === 'ACTIVE' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleOpenEditRouting(card)}
+                                  className="h-7 px-2 text-xs inline-flex items-center gap-1 text-zinc-700 hover:text-zinc-900"
+                                  title="Edit Google Routing URL"
+                                  aria-label={`Edit routing URL for card ${card.publicId}`}
+                                >
+                                  <Pencil className="h-3 w-3 text-zinc-500" />
+                                  Edit Routing URL
+                                </Button>
+                              )}
 
                               <div className="relative">
                                 <button
@@ -1401,7 +1433,7 @@ export const AdminPage: React.FC = () => {
                                   </div>
                                 ) : (
                                   <span className="text-zinc-400 italic">
-                                    Unassigned (Unactivated)
+                                    Not Activated — Destination not configured
                                   </span>
                                 )}
                               </td>
@@ -1417,7 +1449,7 @@ export const AdminPage: React.FC = () => {
                                     className="h-7 px-2 text-xs"
                                   >
                                     <Eye className="h-3 w-3 mr-1" />
-                                    Inspect
+                                    View Details
                                   </Button>
                                   {c.status === 'ACTIVE' && (
                                     <Button
@@ -1885,47 +1917,101 @@ export const AdminPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <span className="text-zinc-500 font-semibold block mb-0.5">
-                      GOOGLE REVIEW URL
+                    <span className="text-zinc-500 font-semibold block mb-1">
+                      GOOGLE REVIEW DESTINATION
                     </span>
-                    {cardDetail.destinationUrl ? (
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="inline-flex items-center gap-1 text-[10px] text-amber-700 font-semibold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                            <Lock className="h-2.5 w-2.5" />
-                            Permanently Locked
-                          </span>
-                          {cardDetail.status === 'ACTIVE' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                handleOpenEditRouting(cardDetail);
-                              }}
-                              className="h-6 px-2 text-[11px] inline-flex items-center gap-1 text-zinc-700"
-                            >
-                              <Pencil className="h-2.5 w-2.5" />
-                              Edit Routing URL
-                            </Button>
-                          )}
+                    {cardDetail.status === 'ACTIVE' && cardDetail.destinationUrl ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 p-2 rounded-lg border border-zinc-200 bg-zinc-100/60">
+                          <a
+                            href={cardDetail.destinationUrl}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            className="font-mono text-[11px] text-blue-600 hover:underline truncate flex-1 block"
+                            title={cardDetail.destinationUrl}
+                          >
+                            {cardDetail.destinationUrl}
+                          </a>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => copyDestinationToClipboard(cardDetail.destinationUrl!)}
+                            className="h-6 px-2 text-[11px] shrink-0 inline-flex items-center gap-1 text-zinc-700 hover:text-zinc-900"
+                            title="Copy Google Review destination URL"
+                          >
+                            {copiedDestination ? (
+                              <>
+                                <Check className="h-3 w-3 text-emerald-600" />
+                                <span>Copied</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-3 w-3 text-zinc-500" />
+                                <span>Copy</span>
+                              </>
+                            )}
+                          </Button>
                         </div>
-                        <a
-                          href={cardDetail.destinationUrl}
-                          target="_blank"
-                          rel="noreferrer noopener"
-                          className="block font-mono text-[11px] break-all text-blue-600 hover:underline"
-                        >
-                          {cardDetail.destinationUrl}
-                        </a>
+
+                        <div className="pt-0.5">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              handleOpenEditRouting(cardDetail);
+                            }}
+                            className="h-7 px-2.5 text-xs inline-flex items-center gap-1.5 text-zinc-800 font-medium hover:bg-zinc-100"
+                            title="Edit Google Routing URL"
+                          >
+                            <Pencil className="h-3 w-3 text-zinc-600" />
+                            Edit Google Routing URL
+                          </Button>
+                        </div>
+
                         <p className="text-[10px] text-zinc-400">
                           Physical QR/NFC routing URL (https://{CANONICAL_PUBLIC_HOST}/c/
-                          {cardDetail.publicId}) remains unchanged.
+                          {cardDetail.publicId}) remains permanent and unchanged.
+                        </p>
+                      </div>
+                    ) : cardDetail.status === 'UNACTIVATED' ? (
+                      <div className="p-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-xs">
+                        <p className="text-zinc-500 italic">
+                          Not Activated — Destination not configured
+                        </p>
+                        <p className="text-[10px] text-zinc-400 mt-1">
+                          Destination will be configured when merchant activates this card.
+                        </p>
+                      </div>
+                    ) : cardDetail.status === 'DISABLED' ? (
+                      <div className="space-y-1.5">
+                        {cardDetail.destinationUrl && (
+                          <div
+                            className="font-mono text-[11px] text-zinc-500 truncate p-2 rounded bg-zinc-100/50 border border-zinc-200"
+                            title={cardDetail.destinationUrl}
+                          >
+                            {cardDetail.destinationUrl}
+                          </div>
+                        )}
+                        <p className="text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
+                          Card is disabled. Routing is suspended. Only ACTIVE cards can have their
+                          routing destination updated.
                         </p>
                       </div>
                     ) : (
-                      <p className="text-zinc-400 italic">
-                        Not activated (configured upon customer activation)
-                      </p>
+                      <div className="space-y-1.5">
+                        {cardDetail.destinationUrl && (
+                          <div
+                            className="font-mono text-[11px] text-zinc-500 truncate p-2 rounded bg-zinc-100/50 border border-zinc-200"
+                            title={cardDetail.destinationUrl}
+                          >
+                            {cardDetail.destinationUrl}
+                          </div>
+                        )}
+                        <p className="text-xs text-zinc-500 bg-zinc-100 p-2 rounded border border-zinc-200">
+                          Card is permanently retired. Destination routing cannot be modified.
+                        </p>
+                      </div>
                     )}
                   </div>
 
@@ -2344,9 +2430,8 @@ export const AdminPage: React.FC = () => {
             <div className="rounded-lg border border-blue-200 bg-blue-50/70 p-3 text-xs text-blue-900 space-y-1">
               <p className="font-semibold">⚡ Immediate Redirect Update</p>
               <p>
-                Updating this URL will immediately redirect all future scans of this physical
-                card/QR/NFC to the new Google destination. The physical QR code and NFC tag do NOT
-                need to be changed.
+                This changes where this existing QR/NFC card redirects. The physical QR/NFC card
+                does not need to be reprinted.
               </p>
             </div>
 
@@ -2368,7 +2453,7 @@ export const AdminPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1">
-                  New Google Review URL
+                  Google Review URL
                 </label>
                 <Input
                   type="url"

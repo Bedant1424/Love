@@ -970,6 +970,73 @@ describe('Admin Operations, Lifecycle & Provisioning Engine (/api/admin/*)', () 
       expect(json.error.code).toBe('INVALID_STATE');
     });
 
+    it('rejects destination update on RETIRED card with 400 INVALID_STATE', async () => {
+      const RETIRED_CARD_ID = 'RETIRED_ADMIN_DEST_01';
+      const dummyHash = '0000000000000000000000000000000000000000000000000000000000000000';
+      await env.DB.prepare(
+        `INSERT OR IGNORE INTO cards (id, public_id, batch_id, status, activation_code_hash, business_name, destination_url)
+         VALUES (?, 'RETIRED7K2M9Q4X', 'batch_admin_ops', 'RETIRED', ?, 'Retired Cafe', ?)`
+      )
+        .bind(RETIRED_CARD_ID, dummyHash, INITIAL_URL)
+        .run();
+
+      const updateRes = await app.request(
+        `/api/admin/cards/${RETIRED_CARD_ID}/destination`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'cf-access-authenticated-user-email': ADMIN_EMAIL,
+          },
+          body: JSON.stringify({ destinationUrl: UPDATED_URL }),
+        },
+        env
+      );
+
+      expect(updateRes.status).toBe(400);
+      const json = await updateRes.json<{ success: boolean; error: { code: string } }>();
+      expect(json.success).toBe(false);
+      expect(json.error.code).toBe('INVALID_STATE');
+    });
+
+    it('verifies public_id and activation credentials remain strictly immutable after destination update', async () => {
+      // 1. Fetch initial card state from D1
+      const preCard = await env.DB.prepare(
+        'SELECT public_id, activation_code_hash FROM cards WHERE id = ?'
+      )
+        .bind(DEST_CARD_ID)
+        .first<{ public_id: string; activation_code_hash: string }>();
+
+      expect(preCard).toBeDefined();
+      expect(preCard?.public_id).toBe(DEST_PUBLIC_ID);
+
+      // 2. Perform destination update
+      const updateRes = await app.request(
+        `/api/admin/cards/${DEST_CARD_ID}/destination`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'cf-access-authenticated-user-email': ADMIN_EMAIL,
+          },
+          body: JSON.stringify({ destinationUrl: UPDATED_URL }),
+        },
+        env
+      );
+      expect(updateRes.status).toBe(200);
+
+      // 3. Verify card in D1: public_id and activation_code_hash remain strictly identical
+      const postCard = await env.DB.prepare(
+        'SELECT public_id, activation_code_hash, destination_url FROM cards WHERE id = ?'
+      )
+        .bind(DEST_CARD_ID)
+        .first<{ public_id: string; activation_code_hash: string; destination_url: string }>();
+
+      expect(postCard?.public_id).toBe(preCard?.public_id);
+      expect(postCard?.activation_code_hash).toBe(preCard?.activation_code_hash);
+      expect(postCard?.destination_url).toBe(UPDATED_URL);
+    });
+
     it('rejects destination update without authentication with 401', async () => {
       const updateRes = await app.request(
         `/api/admin/cards/${DEST_CARD_ID}/destination`,
@@ -993,6 +1060,26 @@ describe('Admin Operations, Lifecycle & Provisioning Engine (/api/admin/*)', () 
             'cf-access-authenticated-user-email': ADMIN_EMAIL,
           },
           body: JSON.stringify({ destinationUrl: UPDATED_URL }),
+        },
+        env
+      );
+
+      expect(res.status).toBe(400);
+      const json = await res.json<{ success: boolean; error: { code: string } }>();
+      expect(json.success).toBe(false);
+      expect(json.error.code).toBe('DESTINATION_LOCKED');
+    });
+
+    it('verifies generic PATCH /api/admin/cards/:id STILL strictly rejects destination_url (DESTINATION_LOCKED)', async () => {
+      const res = await app.request(
+        `/api/admin/cards/${DEST_CARD_ID}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'cf-access-authenticated-user-email': ADMIN_EMAIL,
+          },
+          body: JSON.stringify({ destination_url: UPDATED_URL }),
         },
         env
       );

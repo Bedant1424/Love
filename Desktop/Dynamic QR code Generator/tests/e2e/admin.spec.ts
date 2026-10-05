@@ -98,8 +98,9 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     // Verify compact modal elements
     await expect(page.getByRole('heading', { name: /^Card Details$/i })).toBeVisible();
     await expect(page.getByText('STATUS', { exact: true })).toBeVisible();
-    await expect(page.getByText('GOOGLE REVIEW URL', { exact: true })).toBeVisible();
-    await expect(page.getByText('Permanently Locked')).toBeVisible();
+    await expect(page.getByText(/GOOGLE REVIEW DESTINATION/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /Edit Google Routing URL/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Copy/i })).toBeVisible();
     await expect(page.getByText(/System Record ID/i)).not.toBeVisible();
 
     // Invariant: Modal does NOT contain an Edit Card button
@@ -375,17 +376,34 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     const detailsDialog = page.getByRole('dialog');
     await expect(detailsDialog).toBeVisible();
 
-    // Click Edit Routing URL button
-    const editRoutingBtn = detailsDialog.getByRole('button', { name: /Edit Routing URL/i });
+    // Verify current destination is visible and copy button exists
+    await expect(detailsDialog.getByText(/GOOGLE REVIEW DESTINATION/i)).toBeVisible();
+    await expect(detailsDialog.getByRole('button', { name: /Copy/i })).toBeVisible();
+
+    // Click Edit Google Routing URL button
+    const editRoutingBtn = detailsDialog.getByRole('button', { name: /Edit Google Routing URL/i });
     await expect(editRoutingBtn).toBeVisible();
     await editRoutingBtn.click();
 
     // Edit Routing URL modal opens
     await expect(page.getByRole('heading', { name: /Edit Google Routing URL/i })).toBeVisible();
     await expect(page.getByText(/Immediate Redirect Update/i)).toBeVisible();
+    await expect(
+      page.getByText(/This changes where this existing QR\/NFC card redirects/i)
+    ).toBeVisible();
 
-    // Enter new valid destination URL
+    // Verify input contains current URL prefilled
     const newUrlInput = page.getByPlaceholder(/https:\/\/search\.google\.com\/local\/writereview/i);
+    await expect(newUrlInput).not.toHaveValue('');
+
+    // Test rejection of invalid non-Google destination URL
+    await newUrlInput.fill('https://malicious-phishing-site.com/steal');
+    await page.getByRole('button', { name: /Save Routing URL/i }).click();
+    await expect(
+      page.getByText(/Destination must be an approved Google Review domain/i)
+    ).toBeVisible();
+
+    // Enter valid Google Review destination URL
     await newUrlInput.fill(
       'https://search.google.com/local/writereview?placeid=ChIJNewDestinationEmsR'
     );
@@ -393,8 +411,27 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     // Save
     await page.getByRole('button', { name: /Save Routing URL/i }).click();
 
-    // Verify modal closes
+    // Verify edit modal closes
     await expect(page.getByRole('heading', { name: /Edit Google Routing URL/i })).not.toBeVisible();
+
+    // Close details modal
+    await page.getByRole('button', { name: /^Close$/i }).click();
+
+    // Verify UNACTIVATED card state in details modal
+    await page.getByRole('button', { name: /^UNACTIVATED$/i }).click();
+    const unactivatedDetailsBtn = page
+      .getByRole('button', { name: /View details for card/i })
+      .first();
+    await unactivatedDetailsBtn.click();
+    await expect(page.getByText(/Not Activated — Destination not configured/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /Edit Google Routing URL/i })).not.toBeVisible();
+    await page.getByRole('button', { name: /^Close$/i }).click();
+
+    // Verify Batch Details exposes per-card details
+    await page.getByRole('button', { name: /^Batch History$/i }).click();
+    const viewCardsBtn = page.getByRole('button', { name: /^View Cards$/i }).first();
+    await viewCardsBtn.click();
+    await expect(page.getByRole('button', { name: /^View Details$/i }).first()).toBeVisible();
   });
 
   test('8. Full Operator Pre-Deploy Verification: Batch A & B persistence, ZIP export, Vault extraction, activation, destination update, 302 redirect & Audit Trail', async ({
