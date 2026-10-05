@@ -7,6 +7,7 @@ declare namespace Cloudflare {
     DB: D1Database;
     ASSETS: Fetcher;
     ACTIVATION_SECRET?: string;
+    ACTIVATION_ENCRYPTION_KEY?: string;
     TURNSTILE_SECRET_KEY?: string;
     ENVIRONMENT?: 'development' | 'staging' | 'production';
   }

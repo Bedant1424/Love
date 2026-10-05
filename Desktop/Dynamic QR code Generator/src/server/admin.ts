@@ -292,7 +292,14 @@ export async function handleAdminCreateBatch(c: AdminContext) {
     );
   }
 
-  const encryptionSecret = c.env.ACTIVATION_ENCRYPTION_KEY || secret;
+  const encryptionKey = c.env.ACTIVATION_ENCRYPTION_KEY;
+  if (!encryptionKey) {
+    return c.json(
+      createErrorResponse('CONFIGURATION_ERROR', 'ACTIVATION_ENCRYPTION_KEY not configured'),
+      500
+    );
+  }
+
   const adminEmail = c.get('adminEmail') ?? 'admin@system';
   const url = new URL(c.req.url);
   const originUrl = `${url.protocol}//${url.host}`;
@@ -304,7 +311,7 @@ export async function handleAdminCreateBatch(c: AdminContext) {
       { name, cardCount, notes },
       adminEmail,
       originUrl,
-      encryptionSecret
+      encryptionKey
     );
 
     return c.json(createSuccessResponse(result), 201);
@@ -746,11 +753,11 @@ export async function handleAdminListAuditLogs(c: AdminContext) {
  */
 export async function handleAdminGetBatchKeys(c: AdminContext) {
   const batchId = c.req.param('id');
-  const secret = c.env.ACTIVATION_ENCRYPTION_KEY || c.env.ACTIVATION_SECRET;
+  const encryptionKey = c.env.ACTIVATION_ENCRYPTION_KEY;
 
-  if (!secret) {
+  if (!encryptionKey) {
     return c.json(
-      createErrorResponse('CONFIGURATION_ERROR', 'Encryption secret not configured'),
+      createErrorResponse('CONFIGURATION_ERROR', 'ACTIVATION_ENCRYPTION_KEY not configured'),
       500
     );
   }
@@ -783,7 +790,7 @@ export async function handleAdminGetBatchKeys(c: AdminContext) {
       let code = '[Not vaulted]';
       if (card.encrypted_activation_code) {
         try {
-          code = await decryptActivationCode(card.encrypted_activation_code, secret);
+          code = await decryptActivationCode(card.encrypted_activation_code, encryptionKey);
         } catch {
           code = '[Decryption error]';
         }

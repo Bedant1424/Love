@@ -20,8 +20,10 @@ describe('Admin Operations, Lifecycle & Provisioning Engine (/api/admin/*)', () 
   const UPDATED_GOOGLE_URL = 'https://g.page/r/Cb7_EXAMPLE_REVIEW/review';
 
   beforeAll(async () => {
-    // 1. Configure environment secret
+    // 1. Configure environment secrets
     (env as unknown as Env).ACTIVATION_SECRET = TEST_SECRET;
+    (env as unknown as Env).ACTIVATION_ENCRYPTION_KEY =
+      'admin_test_vault_encryption_key_32bytes_minimum!';
 
     // 2. Initialize schema tables
     await env.DB.prepare(
@@ -368,6 +370,45 @@ describe('Admin Operations, Lifecycle & Provisioning Engine (/api/admin/*)', () 
         env
       );
       expect(res.status).toBe(404);
+    });
+
+    it('fails closed (500) on batch creation if ACTIVATION_ENCRYPTION_KEY is missing (no silent fallback)', async () => {
+      const mockEnv = { ...env, ACTIVATION_ENCRYPTION_KEY: undefined };
+      const res = await app.request(
+        '/api/admin/batches',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'cf-access-authenticated-user-email': ADMIN_EMAIL,
+          },
+          body: JSON.stringify({ name: 'Fail Closed Batch', cardCount: 1 }),
+        },
+        mockEnv
+      );
+
+      expect(res.status).toBe(500);
+      const json = await res.json<{ success: boolean; error: { code: string; message: string } }>();
+      expect(json.success).toBe(false);
+      expect(json.error.code).toBe('CONFIGURATION_ERROR');
+      expect(json.error.message).toContain('ACTIVATION_ENCRYPTION_KEY not configured');
+    });
+
+    it('fails closed (500) on batch keys retrieval if ACTIVATION_ENCRYPTION_KEY is missing (no silent fallback)', async () => {
+      const mockEnv = { ...env, ACTIVATION_ENCRYPTION_KEY: undefined };
+      const res = await app.request(
+        '/api/admin/batches/batch_admin_ops/keys',
+        {
+          headers: { 'cf-access-authenticated-user-email': ADMIN_EMAIL },
+        },
+        mockEnv
+      );
+
+      expect(res.status).toBe(500);
+      const json = await res.json<{ success: boolean; error: { code: string; message: string } }>();
+      expect(json.success).toBe(false);
+      expect(json.error.code).toBe('CONFIGURATION_ERROR');
+      expect(json.error.message).toContain('ACTIVATION_ENCRYPTION_KEY not configured');
     });
 
     it('rejects batch creation with invalid count or missing name', async () => {

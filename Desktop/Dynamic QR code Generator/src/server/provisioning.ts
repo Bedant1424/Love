@@ -64,7 +64,10 @@ export async function provisionCardBatch(
     throw new Error('ACTIVATION_SECRET is required for card provisioning');
   }
 
-  const encSecret = encryptionSecret || secret;
+  if (!encryptionSecret || encryptionSecret.trim().length === 0) {
+    throw new Error('ACTIVATION_ENCRYPTION_KEY is required for card provisioning');
+  }
+
   const batchId = `batch_${crypto.randomUUID()}`;
   const nowIso = new Date().toISOString();
 
@@ -84,7 +87,10 @@ export async function provisionCardBatch(
       // Generate secure random activation code and derive HMAC digest + encrypted vault code
       const rawActivationCode = generateActivationCode();
       const codeHash = await hashActivationCode(rawActivationCode, secret);
-      const encryptedActivationCode = await encryptActivationCode(rawActivationCode, encSecret);
+      const encryptedActivationCode = await encryptActivationCode(
+        rawActivationCode,
+        encryptionSecret
+      );
       const nfcUrl = `${originUrl}/c/${publicId}`;
 
       cardsToInsert.push({
@@ -210,8 +216,10 @@ export async function insertCardWithRetry(
   const cardId = cardData.id ?? crypto.randomUUID();
   const rawCode = generateActivationCode();
   const codeHash = await hashActivationCode(rawCode, cardData.secret);
-  const encSecret = cardData.encryptionSecret || cardData.secret;
-  const encryptedCode = await encryptActivationCode(rawCode, encSecret);
+  if (!cardData.encryptionSecret || cardData.encryptionSecret.trim().length === 0) {
+    throw new Error('ACTIVATION_ENCRYPTION_KEY is required for card provisioning');
+  }
+  const encryptedCode = await encryptActivationCode(rawCode, cardData.encryptionSecret);
   const nowIso = new Date().toISOString();
   const origin = cardData.originUrl ?? CANONICAL_PUBLIC_ORIGIN;
 
