@@ -150,7 +150,7 @@ export async function generateBatchZipPackage(
     const svgContent = await generateCardQrSvg(card.publicId, options.urlOptions);
     svgFolder.file(`${assetId}.svg`, svgContent);
 
-    // High resolution PNG (1024x1024 raster, QR only, no card mockup, no credentials)
+    // High resolution PNG (1127x1127 px raster at 23 px/module integer scale, QR only, no credentials)
     const pngBuffer = await generateCardQrPngBuffer(card.publicId, options.urlOptions, {
       width: 1024,
     });

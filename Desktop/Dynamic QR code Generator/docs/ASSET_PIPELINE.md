@@ -63,7 +63,7 @@ export const MASTER_QR_OPTIONS = {
 To ensure compatibility across Cloudflare Workers (`workerd`), Node.js, and browser runtimes without requiring native canvas libraries, QRoute includes a standalone pure TypeScript PNG encoder:
 - Builds RFC 2083 compliant 8-bit grayscale PNGs directly from QR matrix modules.
 - Emits RFC 1951 uncompressed zlib deflate blocks and calculates Adler-32 / CRC-32 checksums.
-- Generates high-resolution raster previews (1024×1024) for screen inspection and legacy print machinery.
+- Generates high-resolution raster previews ($1127 \times 1127$ px at 23 px/module integer scale) for screen inspection and legacy print machinery.
 
 ---
 
