@@ -2,6 +2,8 @@ import type { Context } from 'hono';
 import type { Env, AppVariables } from './types';
 import type {
   AdminAuditLogEntry,
+  AdminBatchDetail,
+  AdminBatchSummary,
   AdminCardDetail,
   AdminCardSummary,
   AdminDashboardStats,
@@ -10,10 +12,12 @@ import type {
   AdminBatchKeysResponse,
   AdminVaultKeyEntry,
   CardStatus,
+  UpdateCardDestinationResponse,
 } from '../shared/types';
 import { createErrorResponse, createSuccessResponse, parsePagination } from '../shared/utils';
 import { provisionCardBatch } from './provisioning';
 import { decryptActivationCode } from '../shared/activation-crypto';
+import { validateGoogleReviewUrl } from '../shared/google-url-validator';
 
 type AdminContext = Context<{ Bindings: Env; Variables: AppVariables }>;
 
@@ -329,7 +333,7 @@ export async function handleAdminCreateBatch(c: AdminContext) {
 
 /**
  * GET /api/admin/batches
- * List batches
+ * List batches with card status aggregation summaries
  */
 export async function handleAdminListBatches(c: AdminContext) {
   const query = c.req.query();
@@ -342,7 +346,17 @@ export async function handleAdminListBatches(c: AdminContext) {
     const total = countRes?.count ?? 0;
 
     const rows = await c.env.DB.prepare(
-      'SELECT id, name, card_count, notes, created_at FROM batches ORDER BY created_at DESC LIMIT ? OFFSET ?'
+      `SELECT b.id, b.name, b.card_count, b.notes, b.created_at,
+              COUNT(c.id) as actual_card_count,
+              SUM(CASE WHEN c.status = 'ACTIVE' THEN 1 ELSE 0 END) as active_count,
+              SUM(CASE WHEN c.status = 'UNACTIVATED' THEN 1 ELSE 0 END) as unactivated_count,
+              SUM(CASE WHEN c.status = 'DISABLED' THEN 1 ELSE 0 END) as disabled_count,
+              SUM(CASE WHEN c.status = 'RETIRED' THEN 1 ELSE 0 END) as retired_count
+       FROM batches b
+       LEFT JOIN cards c ON c.batch_id = b.id
+       GROUP BY b.id, b.name, b.card_count, b.notes, b.created_at
+       ORDER BY b.created_at DESC
+       LIMIT ? OFFSET ?`
     )
       .bind(limit, offset)
       .all<{
@@ -351,15 +365,45 @@ export async function handleAdminListBatches(c: AdminContext) {
         card_count: number;
         notes: string | null;
         created_at: string;
+        actual_card_count: number;
+        active_count: number;
+        unactivated_count: number;
+        disabled_count: number;
+        retired_count: number;
       }>();
 
-    const items = (rows.results ?? []).map((b) => ({
-      id: b.id,
-      name: b.name,
-      cardCount: b.card_count,
-      notes: b.notes,
-      createdAt: b.created_at,
-    }));
+    const items: AdminBatchSummary[] = (rows.results ?? []).map((b) => {
+      const cardCount = b.card_count;
+      const activeCount = Number(b.active_count || 0);
+      const unactivatedCount = Number(b.unactivated_count || 0);
+      const disabledCount = Number(b.disabled_count || 0);
+      const retiredCount = Number(b.retired_count || 0);
+
+      let batchStatus = 'UNACTIVATED';
+      if (retiredCount === cardCount && cardCount > 0) {
+        batchStatus = 'RETIRED';
+      } else if (activeCount === cardCount && cardCount > 0) {
+        batchStatus = 'ACTIVE';
+      } else if (activeCount > 0) {
+        batchStatus = 'MIXED';
+      } else if (disabledCount > 0) {
+        batchStatus = 'DISABLED';
+      }
+
+      return {
+        id: b.id,
+        name: b.name,
+        cardCount,
+        notes: b.notes,
+        createdAt: b.created_at,
+        activeCount,
+        unactivatedCount,
+        disabledCount,
+        retiredCount,
+        statusSummary: `${activeCount} Active · ${unactivatedCount} Unactivated`,
+        status: batchStatus,
+      };
+    });
 
     return c.json(
       createSuccessResponse({
@@ -376,6 +420,101 @@ export async function handleAdminListBatches(c: AdminContext) {
   } catch (error) {
     console.error('[Admin List Batches Error]', error instanceof Error ? error.message : error);
     return c.json(createErrorResponse('SERVER_ERROR', 'Failed to retrieve batches'), 500);
+  }
+}
+
+/**
+ * GET /api/admin/batches/:id
+ * Retrieve details for a single batch including summary stats and cards list
+ */
+export async function handleAdminGetBatch(c: AdminContext) {
+  const batchId = c.req.param('id');
+
+  try {
+    const b = await c.env.DB.prepare(
+      `SELECT b.id, b.name, b.card_count, b.notes, b.created_at,
+              COUNT(c.id) as actual_card_count,
+              SUM(CASE WHEN c.status = 'ACTIVE' THEN 1 ELSE 0 END) as active_count,
+              SUM(CASE WHEN c.status = 'UNACTIVATED' THEN 1 ELSE 0 END) as unactivated_count,
+              SUM(CASE WHEN c.status = 'DISABLED' THEN 1 ELSE 0 END) as disabled_count,
+              SUM(CASE WHEN c.status = 'RETIRED' THEN 1 ELSE 0 END) as retired_count
+       FROM batches b
+       LEFT JOIN cards c ON c.batch_id = b.id
+       WHERE b.id = ?
+       GROUP BY b.id, b.name, b.card_count, b.notes, b.created_at`
+    )
+      .bind(batchId)
+      .first<{
+        id: string;
+        name: string;
+        card_count: number;
+        notes: string | null;
+        created_at: string;
+        actual_card_count: number;
+        active_count: number;
+        unactivated_count: number;
+        disabled_count: number;
+        retired_count: number;
+      }>();
+
+    if (!b) {
+      return c.json(createErrorResponse('NOT_FOUND', 'Batch not found'), 404);
+    }
+
+    const cardCount = b.card_count;
+    const activeCount = Number(b.active_count || 0);
+    const unactivatedCount = Number(b.unactivated_count || 0);
+    const disabledCount = Number(b.disabled_count || 0);
+    const retiredCount = Number(b.retired_count || 0);
+
+    let batchStatus = 'UNACTIVATED';
+    if (retiredCount === cardCount && cardCount > 0) {
+      batchStatus = 'RETIRED';
+    } else if (activeCount === cardCount && cardCount > 0) {
+      batchStatus = 'ACTIVE';
+    } else if (activeCount > 0) {
+      batchStatus = 'MIXED';
+    } else if (disabledCount > 0) {
+      batchStatus = 'DISABLED';
+    }
+
+    const batchSummary: AdminBatchSummary = {
+      id: b.id,
+      name: b.name,
+      cardCount,
+      notes: b.notes,
+      createdAt: b.created_at,
+      activeCount,
+      unactivatedCount,
+      disabledCount,
+      retiredCount,
+      statusSummary: `${activeCount} Active · ${unactivatedCount} Unactivated`,
+      status: batchStatus,
+    };
+
+    // Fetch cards belonging to this batch
+    const cardRows = await c.env.DB.prepare(
+      `SELECT c.id, c.public_id, c.batch_id, c.status, c.business_name, c.destination_url,
+              c.code_rotation_counter, c.activated_at, c.created_at, c.updated_at,
+              ? as batch_name
+       FROM cards c
+       WHERE c.batch_id = ?
+       ORDER BY c.created_at ASC`
+    )
+      .bind(b.name, batchId)
+      .all<RawCardRow>();
+
+    const cards = (cardRows.results ?? []).map(mapCardRow);
+
+    const detail: AdminBatchDetail = {
+      batch: batchSummary,
+      cards,
+    };
+
+    return c.json(createSuccessResponse(detail), 200);
+  } catch (error) {
+    console.error('[Admin Get Batch Error]', error instanceof Error ? error.message : error);
+    return c.json(createErrorResponse('SERVER_ERROR', 'Failed to retrieve batch details'), 500);
   }
 }
 
@@ -814,5 +953,127 @@ export async function handleAdminGetBatchKeys(c: AdminContext) {
   } catch (error) {
     console.error('[Admin Batch Keys Error]', error instanceof Error ? error.message : error);
     return c.json(createErrorResponse('SERVER_ERROR', 'Failed to retrieve batch keys'), 500);
+  }
+}
+
+/**
+ * PATCH /api/admin/cards/:id/destination
+ * PUT   /api/admin/cards/:id/destination
+ *
+ * Allows an authenticated Cloudflare Access admin to update the Google review destination
+ * of an ACTIVE card.
+ *
+ * Security & Architectural Invariants:
+ * - Strictly protected by Cloudflare Access Zero Trust authentication.
+ * - Card must currently be ACTIVE (unactivated, disabled, and retired cards cannot have routing updated).
+ * - Public routing identifier (public_id) and database id are immutable and never modified.
+ * - Physical QR and NFC tags remain completely unchanged and continue to work.
+ * - Server-side validation via validateGoogleReviewUrl() enforces exact hostname allowlist and syntax.
+ * - Atomic SQLite update: WHERE id = ? AND status = 'ACTIVE' (verifies changes === 1).
+ * - Creates an immutable audit log entry with action: 'DESTINATION_CHANGED', recording both previous
+ *   and new destinations alongside actor email and timestamp.
+ */
+export async function handleAdminUpdateCardDestination(c: AdminContext) {
+  const cardIdOrPublicId = c.req.param('id');
+  let body: Record<string, unknown>;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json(createErrorResponse('INVALID_BODY', 'Invalid JSON body'), 400);
+  }
+
+  const rawDestination = body.destinationUrl ?? body.destination_url ?? body.reviewUrl ?? body.url;
+  if (typeof rawDestination !== 'string' || !rawDestination.trim()) {
+    return c.json(
+      createErrorResponse('INVALID_PARAM', 'A valid Google Review destination URL is required'),
+      400
+    );
+  }
+
+  const urlValidation = validateGoogleReviewUrl(rawDestination);
+  if (!urlValidation.isValid || !urlValidation.normalizedUrl) {
+    return c.json(
+      createErrorResponse(
+        'INVALID_DESTINATION_URL',
+        urlValidation.error || 'Destination must be a valid Google Review URL'
+      ),
+      400
+    );
+  }
+
+  const adminEmail = c.get('adminEmail') ?? 'admin@system';
+  const nowIso = new Date().toISOString();
+
+  try {
+    const card = await c.env.DB.prepare(
+      'SELECT id, public_id, status, destination_url FROM cards WHERE id = ? OR public_id = ?'
+    )
+      .bind(cardIdOrPublicId, cardIdOrPublicId)
+      .first<RawCardRow>();
+
+    if (!card) {
+      return c.json(createErrorResponse('NOT_FOUND', 'Card not found'), 404);
+    }
+
+    if (card.status !== 'ACTIVE') {
+      return c.json(
+        createErrorResponse(
+          'INVALID_STATE',
+          `Only ACTIVE cards can have their routing destination updated (current status: ${card.status})`
+        ),
+        400
+      );
+    }
+
+    const previousDestination = card.destination_url;
+    const newDestination = urlValidation.normalizedUrl;
+
+    // Atomic conditional state update
+    const updateRes = await c.env.DB.prepare(
+      "UPDATE cards SET destination_url = ?, updated_at = ? WHERE id = ? AND status = 'ACTIVE'"
+    )
+      .bind(newDestination, nowIso, card.id)
+      .run();
+
+    if (updateRes.meta.changes !== 1) {
+      return c.json(createErrorResponse('CONFLICT', 'Card state was concurrently modified'), 409);
+    }
+
+    // Immutable audit log: DESTINATION_CHANGED
+    await c.env.DB.prepare(
+      `INSERT INTO audit_logs (id, card_id, action, actor_type, actor_identifier, previous_state, new_state, metadata, created_at)
+       VALUES (?, ?, 'DESTINATION_CHANGED', 'ADMIN', ?, ?, ?, ?, ?)`
+    )
+      .bind(
+        crypto.randomUUID(),
+        card.id,
+        adminEmail,
+        JSON.stringify({ destinationUrl: previousDestination }),
+        JSON.stringify({ destinationUrl: newDestination }),
+        JSON.stringify({
+          previousDestination,
+          newDestination,
+          publicId: card.public_id,
+        }),
+        nowIso
+      )
+      .run();
+
+    const responseData: UpdateCardDestinationResponse = {
+      id: card.id,
+      publicId: card.public_id,
+      status: 'ACTIVE',
+      destinationUrl: newDestination,
+      previousDestinationUrl: previousDestination,
+      updatedAt: nowIso,
+    };
+
+    return c.json(createSuccessResponse(responseData), 200);
+  } catch (error) {
+    console.error(
+      '[Admin Update Destination Error]',
+      error instanceof Error ? error.message : error
+    );
+    return c.json(createErrorResponse('SERVER_ERROR', 'Failed to update routing destination'), 500);
   }
 }

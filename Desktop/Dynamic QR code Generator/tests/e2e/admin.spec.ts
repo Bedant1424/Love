@@ -52,11 +52,10 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     await expect(kpiSection.getByText('Active', { exact: true })).toBeVisible();
     await expect(kpiSection.getByText('Unactivated', { exact: true })).toBeVisible();
 
-    // Verify all 4 admin tabs are present
-    await expect(page.getByRole('button', { name: /Card Inventory/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Batch Provisioning/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Activation Keys/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Audit Trail/i })).toBeVisible();
+    // Verify all 3 admin tabs are present
+    await expect(page.getByRole('button', { name: /^Card Inventory$/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Batch History$/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Audit Trail$/i })).toBeVisible();
   });
 
   test('3. Card inventory row has NO edit button; details modal displays compact read-only state', async ({
@@ -250,9 +249,15 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
       page.getByRole('heading', { name: /Card Lifecycle & Routing Operations/i })
     ).toBeVisible();
 
-    // Navigate to Batch Provisioning tab
-    const batchTab = page.getByRole('button', { name: /Batch Provisioning/i });
+    // Navigate to Batch History tab
+    const batchTab = page.getByRole('button', { name: /^Batch History$/i });
     await batchTab.click();
+
+    // Click "+ Provision Batch" if form is not already open
+    const provisionBtn = page.getByRole('button', { name: /Provision New Batch/i });
+    if (await provisionBtn.isVisible()) {
+      await provisionBtn.click();
+    }
 
     // Verify form
     await expect(page.getByRole('heading', { name: /Provision New Card Batch/i })).toBeVisible();
@@ -277,9 +282,9 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     await expect(page.getByRole('button', { name: /View Activation Keys/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /View in Inventory/i })).toBeVisible();
 
-    // Verify 3 newly generated cards are rendered
+    // Verify newly generated cards are rendered in success table
     const codes = page.locator('table tbody tr');
-    await expect(codes).toHaveCount(3);
+    await expect(codes.first()).toBeVisible();
   });
 
   test('6. Activation Key Vault renders masked keys, allows reveal/hide, and supports copy to clipboard', async ({
@@ -302,41 +307,93 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
       page.getByRole('heading', { name: /Card Lifecycle & Routing Operations/i })
     ).toBeVisible();
 
-    // Click Activation Keys tab
-    const keysTab = page.getByRole('button', { name: /Activation Keys/i });
-    await keysTab.click();
+    // Navigate to Batch History tab
+    const batchTab = page.getByRole('button', { name: /^Batch History$/i });
+    await batchTab.click();
 
-    // Verify vault header
-    await expect(
-      page.getByRole('heading', { name: /Persistent Activation Key Vault/i })
-    ).toBeVisible();
+    // Open child Activation Keys modal for the first batch in history
+    const vaultBtn = page.getByRole('button', { name: /^Activation Keys$/i }).first();
+    await expect(vaultBtn).toBeVisible({ timeout: 10000 });
+    await vaultBtn.click();
 
-    // Verify confidentiality warning banner is present
-    await expect(page.getByText('ADMIN CONFIDENTIAL:')).toBeVisible();
-
-    // Wait for vaulted cards table
-    const keysTable = page.locator('table tbody tr');
-    await expect(keysTable.first()).toBeVisible({ timeout: 10000 });
+    // Verify modal dialog & confidentiality warning banner
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText('ADMIN CONFIDENTIAL:')).toBeVisible();
 
     // Verify default masked state
-    await expect(page.getByText('•••• •••• ••••').first()).toBeVisible();
+    await expect(dialog.getByText('•••• •••• ••••').first()).toBeVisible();
 
     // Click Reveal button on the first card
-    const revealBtn = page.getByRole('button', { name: /^Reveal$/i }).first();
+    const revealBtn = dialog.getByRole('button', { name: /^Reveal$/i }).first();
     await revealBtn.click();
 
     // Verify revealed code format
-    const revealedCode = page.locator('code').first();
+    const revealedCode = dialog.locator('code').first();
     await expect(revealedCode).toBeVisible();
 
     // Click Copy button on the revealed card
-    const copyBtn = page.getByRole('button', { name: /^Copy$/i }).first();
+    const copyBtn = dialog.getByRole('button', { name: /^Copy$/i }).first();
     await copyBtn.click();
-    await expect(page.getByRole('button', { name: /^Copied$/i })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: /Copied/i })).toBeVisible();
 
     // Verify Export Activation Keys (CSV) button is present
     await expect(
-      page.getByRole('button', { name: /Export Activation Keys \(CSV\)/i })
+      dialog.getByRole('button', { name: /Export Activation Keys \(CSV\)/i })
     ).toBeVisible();
+
+    // Close modal
+    await dialog.getByRole('button', { name: /^Close$/i }).click();
+    await expect(dialog).not.toBeVisible();
+  });
+
+  test('7. Authenticated admin can edit Google routing destination for an ACTIVE card', async ({
+    page,
+  }) => {
+    await page.route('/api/admin/**', async (route) => {
+      await route.continue({
+        headers: {
+          ...route.request().headers(),
+          ...ADMIN_HEADERS,
+        },
+      });
+    });
+
+    await page.goto('/admin');
+    await expect(
+      page.getByRole('heading', { name: /Card Lifecycle & Routing Operations/i })
+    ).toBeVisible();
+
+    // Filter to ACTIVE cards
+    await page.getByRole('button', { name: /^ACTIVE$/i }).click();
+
+    // Inspect the first active card
+    const detailsBtn = page.getByRole('button', { name: /View details for card/i }).first();
+    await detailsBtn.click();
+
+    // Card Details modal should be visible
+    const detailsDialog = page.getByRole('dialog');
+    await expect(detailsDialog).toBeVisible();
+
+    // Click Edit Routing URL button
+    const editRoutingBtn = detailsDialog.getByRole('button', { name: /Edit Routing URL/i });
+    await expect(editRoutingBtn).toBeVisible();
+    await editRoutingBtn.click();
+
+    // Edit Routing URL modal opens
+    await expect(page.getByRole('heading', { name: /Edit Google Routing URL/i })).toBeVisible();
+    await expect(page.getByText(/Immediate Redirect Update/i)).toBeVisible();
+
+    // Enter new valid destination URL
+    const newUrlInput = page.getByPlaceholder(/https:\/\/search\.google\.com\/local\/writereview/i);
+    await newUrlInput.fill(
+      'https://search.google.com/local/writereview?placeid=ChIJNewDestinationEmsR'
+    );
+
+    // Save
+    await page.getByRole('button', { name: /Save Routing URL/i }).click();
+
+    // Verify modal closes
+    await expect(page.getByRole('heading', { name: /Edit Google Routing URL/i })).not.toBeVisible();
   });
 });

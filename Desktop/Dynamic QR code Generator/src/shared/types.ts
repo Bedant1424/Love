@@ -172,6 +172,36 @@ export interface AdminBatchSummary {
   cardCount: number;
   notes: string | null;
   createdAt: string;
+  activeCount?: number;
+  unactivatedCount?: number;
+  disabledCount?: number;
+  retiredCount?: number;
+  statusSummary?: string;
+  status?: string;
+}
+
+/**
+ * Admin Detailed Batch with associated Cards
+ */
+export interface AdminBatchDetail {
+  batch: AdminBatchSummary;
+  cards: AdminCardSummary[];
+}
+
+/**
+ * Admin Card Routing Destination Update Request & Response
+ */
+export interface UpdateCardDestinationRequest {
+  destinationUrl: string;
+}
+
+export interface UpdateCardDestinationResponse {
+  id: string;
+  publicId: string;
+  status: CardStatus;
+  destinationUrl: string;
+  previousDestinationUrl: string | null;
+  updatedAt: string;
 }
 
 /**

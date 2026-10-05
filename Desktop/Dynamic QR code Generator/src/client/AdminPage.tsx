@@ -14,6 +14,9 @@ import {
   LogOut,
   KeyRound,
   ShieldCheck,
+  ArrowLeft,
+  Plus,
+  Pencil,
 } from 'lucide-react';
 import { PageContainer } from '../components/ui/PageContainer';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
@@ -25,6 +28,7 @@ import type {
   AdminCardDetail,
   AdminDashboardStats,
   AdminBatchSummary,
+  AdminBatchDetail,
   AdminAuditLogEntry,
   AdminVaultKeyEntry,
   AdminBatchKeysResponse,
@@ -33,6 +37,7 @@ import type {
   PaginatedResult,
   ApiResponse,
   CardStatus,
+  UpdateCardDestinationResponse,
 } from '../shared/types';
 import {
   generateBatchZipPackage,
@@ -42,12 +47,31 @@ import {
   formatActivationKeysCsvFilename,
 } from '../shared/fulfillment';
 import { CANONICAL_PUBLIC_HOST } from '../shared/url';
+import { validateGoogleReviewUrl } from '../shared/google-url-validator';
 
-type ActiveTab = 'inventory' | 'provisioning' | 'keys' | 'audit';
+type ActiveTab = 'inventory' | 'batches' | 'audit';
 
 export const AdminPage: React.FC = () => {
   // Navigation & Tabs
   const [activeTab, setActiveTab] = useState<ActiveTab>('inventory');
+
+  // Batch History & Inspection
+  const [selectedBatchDetail, setSelectedBatchDetail] = useState<AdminBatchDetail | null>(null);
+  const [batchDetailLoading, setBatchDetailLoading] = useState<boolean>(false);
+  const [isProvisionFormOpen, setIsProvisionFormOpen] = useState<boolean>(false);
+
+  // Child Vault Modal for specific batch
+  const [vaultModalBatch, setVaultModalBatch] = useState<AdminBatchSummary | null>(null);
+
+  // Edit Routing URL Modal
+  const [editingRoutingCard, setEditingRoutingCard] = useState<{
+    id: string;
+    publicId: string;
+    destinationUrl?: string | null;
+  } | null>(null);
+  const [newRoutingUrl, setNewRoutingUrl] = useState<string>('');
+  const [routingUrlError, setRoutingUrlError] = useState<string | null>(null);
+  const [routingUrlSaving, setRoutingUrlSaving] = useState<boolean>(false);
 
   // Authentication & Identity
   const [adminEmail, setAdminEmail] = useState<string>(
@@ -270,7 +294,22 @@ export const AdminPage: React.FC = () => {
     [adminFetch]
   );
 
-  // 4. Fetch Platform Audit Logs
+  // 4. Fetch Batches List
+  const loadBatches = useCallback(async () => {
+    try {
+      const res = await adminFetch('/api/admin/batches?limit=100');
+      if (res.ok) {
+        const batchData: ApiResponse<PaginatedResult<AdminBatchSummary>> = await res.json();
+        if (batchData.success) {
+          setBatches(batchData.data.items);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load batches:', err);
+    }
+  }, [adminFetch]);
+
+  // 5. Fetch Platform Audit Logs
   const loadAuditLogs = useCallback(async () => {
     setAuditLoading(true);
     try {
@@ -300,18 +339,106 @@ export const AdminPage: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'inventory') {
       loadCards();
-    } else if (activeTab === 'keys') {
-      if (vaultBatchId) {
-        loadVaultKeys(vaultBatchId);
-      } else if (batches.length > 0) {
-        const firstId = batches[0]!.id;
-        setVaultBatchId(firstId);
-        loadVaultKeys(firstId);
-      }
+    } else if (activeTab === 'batches') {
+      loadBatches();
     } else if (activeTab === 'audit') {
       loadAuditLogs();
     }
-  }, [activeTab, loadCards, loadVaultKeys, loadAuditLogs, vaultBatchId, batches]);
+  }, [activeTab, loadCards, loadBatches, loadAuditLogs]);
+
+  // Inspect specific batch details & its cards
+  const handleInspectBatch = async (batchId: string) => {
+    setBatchDetailLoading(true);
+    try {
+      const res = await adminFetch(`/api/admin/batches/${batchId}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data: ApiResponse<AdminBatchDetail> = await res.json();
+      if (data.success) {
+        setSelectedBatchDetail(data.data);
+      }
+    } catch {
+      showToast('error', 'Failed to retrieve batch details.');
+    } finally {
+      setBatchDetailLoading(false);
+    }
+  };
+
+  // Open child Activation Keys vault for a specific batch
+  const handleOpenBatchVault = (batch: AdminBatchSummary) => {
+    setVaultModalBatch(batch);
+    setVaultBatchId(batch.id);
+    loadVaultKeys(batch.id);
+  };
+
+  // Open Edit Routing URL modal for ACTIVE card
+  const handleOpenEditRouting = (card: {
+    id: string;
+    publicId: string;
+    destinationUrl?: string | null;
+  }) => {
+    setEditingRoutingCard(card);
+    setNewRoutingUrl(card.destinationUrl || '');
+    setRoutingUrlError(null);
+  };
+
+  // Save new routing URL for ACTIVE card
+  const handleSaveRoutingUrl = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingRoutingCard) return;
+
+    const validation = validateGoogleReviewUrl(newRoutingUrl);
+    if (!validation.isValid || !validation.normalizedUrl) {
+      setRoutingUrlError(validation.error || 'Please enter a valid Google Review destination URL.');
+      return;
+    }
+
+    const normalizedUrl = validation.normalizedUrl;
+    setRoutingUrlSaving(true);
+    setRoutingUrlError(null);
+
+    try {
+      const res = await adminFetch(`/api/admin/cards/${editingRoutingCard.id}/destination`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ destinationUrl: normalizedUrl }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        throw new Error(
+          errJson?.error?.message || `HTTP ${res.status}: Failed to update destination`
+        );
+      }
+
+      const data: ApiResponse<UpdateCardDestinationResponse> = await res.json();
+      if (data.success) {
+        showToast(
+          'success',
+          `Routing URL for card ${editingRoutingCard.publicId} updated successfully.`
+        );
+        if (cardDetail && cardDetail.id === editingRoutingCard.id) {
+          setCardDetail({ ...cardDetail, destinationUrl: normalizedUrl });
+        }
+        if (selectedBatchDetail) {
+          setSelectedBatchDetail({
+            ...selectedBatchDetail,
+            cards: selectedBatchDetail.cards.map((c) =>
+              c.id === editingRoutingCard.id ? { ...c, destinationUrl: normalizedUrl } : c
+            ),
+          });
+        }
+        setEditingRoutingCard(null);
+        loadCards();
+        loadBatches();
+      }
+    } catch (err) {
+      setRoutingUrlError(
+        err instanceof Error ? err.message : 'Failed to update routing destination'
+      );
+    } finally {
+      setRoutingUrlSaving(false);
+    }
+  };
 
   // Handle Card Detail Inspection
   const handleInspectCard = async (cardId: string) => {
@@ -529,8 +656,8 @@ export const AdminPage: React.FC = () => {
 
   const handleExportVaultKeysCsv = () => {
     if (vaultKeys.length === 0) return;
-    const currentBatch = batches.find((b) => b.id === vaultBatchId);
-    const bName = currentBatch ? currentBatch.name : 'batch';
+    const bName =
+      vaultModalBatch?.name || batches.find((b) => b.id === vaultBatchId)?.name || 'batch';
     const csv = generateActivationKeysCsv(vaultKeys, bName);
     const filename = formatActivationKeysCsvFilename(bName);
     downloadFile(csv, filename, 'text/csv;charset=utf-8;');
@@ -556,10 +683,6 @@ export const AdminPage: React.FC = () => {
   const selectedBatchObj = useMemo(() => {
     return batches.find((b) => b.id === selectedBatchId);
   }, [batches, selectedBatchId]);
-
-  const vaultBatchObj = useMemo(() => {
-    return batches.find((b) => b.id === vaultBatchId);
-  }, [batches, vaultBatchId]);
 
   // Render Authentication Gate if 401
   if (!isAuthenticated) {
@@ -698,7 +821,7 @@ export const AdminPage: React.FC = () => {
                 onClick={() => {
                   loadDashboard();
                   if (activeTab === 'inventory') loadCards();
-                  if (activeTab === 'keys' && vaultBatchId) loadVaultKeys(vaultBatchId);
+                  if (activeTab === 'batches') loadBatches();
                   if (activeTab === 'audit') loadAuditLogs();
                 }}
                 isLoading={statsLoading || inventoryLoading || vaultLoading}
@@ -764,12 +887,15 @@ export const AdminPage: React.FC = () => {
             </div>
           </section>
 
-          {/* Tab Navigation: Card Inventory, Batch Provisioning, Activation Keys, Audit Trail */}
+          {/* Tab Navigation: Card Inventory, Batch History, Audit Trail */}
           <nav aria-label="Admin Navigation Tabs" className="border-b border-zinc-200">
             <div className="flex gap-6">
               <button
                 type="button"
-                onClick={() => setActiveTab('inventory')}
+                onClick={() => {
+                  setActiveTab('inventory');
+                  setSelectedBatchDetail(null);
+                }}
                 className={`border-b-2 pb-3 text-sm font-medium transition-colors ${
                   activeTab === 'inventory'
                     ? 'border-zinc-950 text-zinc-950 font-semibold'
@@ -780,30 +906,23 @@ export const AdminPage: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab('provisioning')}
+                onClick={() => {
+                  setActiveTab('batches');
+                }}
                 className={`border-b-2 pb-3 text-sm font-medium transition-colors ${
-                  activeTab === 'provisioning'
+                  activeTab === 'batches'
                     ? 'border-zinc-950 text-zinc-950 font-semibold'
                     : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700'
                 }`}
               >
-                Batch Provisioning
+                Batch History
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab('keys')}
-                className={`border-b-2 pb-3 text-sm font-medium transition-colors inline-flex items-center gap-1.5 ${
-                  activeTab === 'keys'
-                    ? 'border-zinc-950 text-zinc-950 font-semibold'
-                    : 'border-transparent text-zinc-500 hover:border-zinc-300 hover:text-zinc-700'
-                }`}
-              >
-                <KeyRound className="h-4 w-4" />
-                Activation Keys
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('audit')}
+                onClick={() => {
+                  setActiveTab('audit');
+                  setSelectedBatchDetail(null);
+                }}
                 className={`border-b-2 pb-3 text-sm font-medium transition-colors ${
                   activeTab === 'audit'
                     ? 'border-zinc-950 text-zinc-950 font-semibold'
@@ -1018,6 +1137,20 @@ export const AdminPage: React.FC = () => {
                                           type="button"
                                           onClick={() => {
                                             setActiveDropdownCardId(null);
+                                            handleOpenEditRouting(card);
+                                          }}
+                                          className="w-full text-left px-2.5 py-1.5 rounded hover:bg-zinc-100 flex items-center gap-2 text-zinc-700"
+                                        >
+                                          <Pencil className="h-3.5 w-3.5 text-zinc-400" />
+                                          Edit Routing URL
+                                        </button>
+                                      )}
+
+                                      {card.status === 'ACTIVE' && (
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setActiveDropdownCardId(null);
                                             setActionTarget(card);
                                             setActionType('disable');
                                           }}
@@ -1095,170 +1228,210 @@ export const AdminPage: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 2: BATCH PROVISIONING */}
-          {activeTab === 'provisioning' && (
+          {/* TAB 2: BATCH HISTORY */}
+          {activeTab === 'batches' && (
             <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Provision New Card Batch</CardTitle>
-                  <CardDescription>
-                    Create a new production batch of dynamic review cards. Each card receives a
-                    cryptographically random 16-character Crockford Base32 public ID and an AES-GCM
-                    encrypted activation key vaulted securely at rest.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleProvisionBatch} className="space-y-4 max-w-lg">
-                    {provisionError && (
-                      <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                        {provisionError}
-                      </div>
-                    )}
-                    <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1">
-                        Batch Name / Description
-                      </label>
-                      <Input
-                        value={batchName}
-                        onChange={(e) => setBatchName(e.target.value)}
-                        placeholder="e.g. Batch 2026-A (50 Cards)"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1">
-                        Number of Cards (1 - 500)
-                      </label>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={500}
-                        value={batchCount}
-                        onChange={(e) => setBatchCount(parseInt(e.target.value, 10) || 1)}
-                        required
-                      />
-                    </div>
-                    <Button type="submit" isLoading={provisioningLoading}>
-                      Generate Batch
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
+              {batchDetailLoading ? (
+                <div className="rounded-xl border border-zinc-200 bg-white p-12 text-center text-zinc-500 text-xs shadow-xs">
+                  Loading batch details and constituent cards...
+                </div>
+              ) : selectedBatchDetail ? (
+                <div className="space-y-6" data-testid="batch-detail-view">
+                  {/* Breadcrumbs / Back button & Quick CTAs */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedBatchDetail(null)}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-600 hover:text-zinc-950 transition-colors"
+                    >
+                      <ArrowLeft className="h-3.5 w-3.5" />
+                      Back to Batch History
+                    </button>
 
-              {/* Immediate Batch Success State */}
-              {provisionResult && (
-                <div className="space-y-5" data-testid="batch-success-state">
-                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-5 shadow-xs">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                          <h3 className="text-base font-bold text-zinc-950">
-                            Batch Created Successfully
-                          </h3>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-3 pt-1 text-sm text-zinc-700 font-mono-tabular">
-                          <span>
-                            Batch:{' '}
-                            <strong className="text-zinc-950 font-sans">
-                              {provisionResult.batch.name}
-                            </strong>
-                          </span>
-                          <span className="text-zinc-300">&bull;</span>
-                          <span>
-                            Cards:{' '}
-                            <strong className="text-zinc-950">
-                              {provisionResult.batch.cardCount}
-                            </strong>
-                          </span>
-                          <span className="text-zinc-300">&bull;</span>
-                          <span className="flex items-center gap-1">
-                            Status: <Badge variant="unactivated">UNACTIVATED</Badge>
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Primary, Secondary, and Tertiary CTAs */}
-                      <div className="flex flex-wrap items-center gap-2.5">
-                        <Button
-                          variant="primary"
-                          size="md"
-                          onClick={handleExportProvisionedBatch}
-                          isLoading={isExportingBatch}
-                          data-testid="export-batch-cta"
-                        >
-                          <Download className="h-4 w-4 mr-2" />
-                          Export Supplier Package
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="md"
-                          onClick={() => {
-                            setVaultBatchId(provisionResult.batch.id);
-                            setActiveTab('keys');
-                          }}
-                          className="inline-flex items-center gap-1.5"
-                        >
-                          <KeyRound className="h-4 w-4 text-zinc-500" />
-                          View Activation Keys
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="md"
-                          onClick={() => {
-                            setSelectedBatchId(provisionResult.batch.id);
-                            setActiveTab('inventory');
-                            loadCards();
-                          }}
-                        >
-                          View in Inventory
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="md"
-                          onClick={handleDownloadAdminMapping}
-                          title="Internal admin backup only. Never send to suppliers."
-                          className="text-xs text-zinc-600"
-                        >
-                          <FileSpreadsheet className="h-4 w-4 mr-1.5 text-zinc-500" />
-                          Download Admin Keys (CSV)
-                        </Button>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          handleExportExistingBatch(
+                            selectedBatchDetail.batch.id,
+                            selectedBatchDetail.batch.name
+                          )
+                        }
+                        isLoading={exportingBatchId === selectedBatchDetail.batch.id}
+                        className="text-xs h-8 inline-flex items-center gap-1.5"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        Export Supplier Package
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleOpenBatchVault(selectedBatchDetail.batch)}
+                        className="text-xs h-8 inline-flex items-center gap-1.5"
+                      >
+                        <KeyRound className="h-3.5 w-3.5 text-zinc-500" />
+                        Activation Keys
+                      </Button>
                     </div>
                   </div>
 
-                  {/* Summary of Cards in Batch */}
+                  {/* Batch Overview Card */}
+                  <Card className="border-zinc-200 shadow-xs">
+                    <CardHeader className="pb-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-2.5">
+                            <CardTitle className="text-xl text-zinc-950">
+                              {selectedBatchDetail.batch.name}
+                            </CardTitle>
+                            <Badge
+                              variant={
+                                selectedBatchDetail.batch.status === 'ACTIVE'
+                                  ? 'active'
+                                  : 'unactivated'
+                              }
+                            >
+                              {selectedBatchDetail.batch.status || 'UNACTIVATED'}
+                            </Badge>
+                          </div>
+                          <CardDescription className="text-xs font-mono pt-1 text-zinc-500">
+                            Batch ID: {selectedBatchDetail.batch.id} &bull; Created:{' '}
+                            {new Date(selectedBatchDetail.batch.createdAt).toLocaleString()}
+                          </CardDescription>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400 block">
+                            Total Cards
+                          </span>
+                          <span className="text-2xl font-bold font-mono-tabular text-zinc-950">
+                            {selectedBatchDetail.batch.cardCount}
+                          </span>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-600 pt-2 border-t border-zinc-100">
+                        <span>
+                          Active:{' '}
+                          <strong className="text-emerald-700">
+                            {selectedBatchDetail.batch.activeCount ?? 0}
+                          </strong>
+                        </span>
+                        <span className="text-zinc-300">&bull;</span>
+                        <span>
+                          Unactivated:{' '}
+                          <strong className="text-amber-700">
+                            {selectedBatchDetail.batch.unactivatedCount ??
+                              selectedBatchDetail.batch.cardCount}
+                          </strong>
+                        </span>
+                        {Number(selectedBatchDetail.batch.disabledCount || 0) > 0 && (
+                          <>
+                            <span className="text-zinc-300">&bull;</span>
+                            <span>
+                              Disabled:{' '}
+                              <strong className="text-red-700">
+                                {selectedBatchDetail.batch.disabledCount}
+                              </strong>
+                            </span>
+                          </>
+                        )}
+                        {Number(selectedBatchDetail.batch.retiredCount || 0) > 0 && (
+                          <>
+                            <span className="text-zinc-300">&bull;</span>
+                            <span>
+                              Retired:{' '}
+                              <strong className="text-zinc-700">
+                                {selectedBatchDetail.batch.retiredCount}
+                              </strong>
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Batch Cards Table */}
                   <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden shadow-xs">
                     <div className="px-4 py-3 bg-zinc-50 border-b border-zinc-200 flex items-center justify-between">
                       <span className="text-xs font-semibold uppercase tracking-wider text-zinc-600">
-                        Generated Cards ({provisionResult.cards.length})
+                        Batch Cards ({selectedBatchDetail.cards.length})
                       </span>
                       <span className="text-xs text-zinc-500">
-                        Ready for supplier export (SVG + PNG + PDF)
+                        Physical identifiers & routing assignments
                       </span>
                     </div>
-                    <div className="overflow-x-auto max-h-80 overflow-y-auto">
+                    <div className="overflow-x-auto">
                       <table className="w-full text-left text-sm">
                         <thead>
                           <tr className="border-b border-zinc-200 bg-zinc-50/50 text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                            <th className="px-4 py-2.5">#</th>
+                            <th className="px-4 py-2.5 w-12">#</th>
                             <th className="px-4 py-2.5">Public ID</th>
-                            <th className="px-4 py-2.5">One-Time Activation Code</th>
-                            <th className="px-4 py-2.5">Routing URL</th>
+                            <th className="px-4 py-2.5">Status</th>
+                            <th className="px-4 py-2.5">Business / Destination</th>
+                            <th className="px-4 py-2.5">Created</th>
+                            <th className="px-4 py-2.5 text-right">Actions</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-zinc-200 font-mono text-xs">
-                          {provisionResult.cards.map((c: ProvisionedCard, idx: number) => (
-                            <tr key={c.publicId} className="hover:bg-zinc-50/50">
-                              <td className="px-4 py-2 text-zinc-400 font-mono-tabular">
+                        <tbody className="divide-y divide-zinc-200 text-xs">
+                          {selectedBatchDetail.cards.map((c, idx) => (
+                            <tr key={c.id} className="hover:bg-zinc-50/50">
+                              <td className="px-4 py-2.5 text-zinc-400 font-mono-tabular">
                                 {idx + 1}
                               </td>
-                              <td className="px-4 py-2 font-bold text-zinc-900">{c.publicId}</td>
-                              <td className="px-4 py-2 font-semibold text-emerald-700">
-                                {c.activationCode}
+                              <td className="px-4 py-2.5 font-mono font-bold text-zinc-900">
+                                {c.publicId}
                               </td>
-                              <td className="px-4 py-2 text-zinc-500">
-                                https://{CANONICAL_PUBLIC_HOST}/c/{c.publicId}
+                              <td className="px-4 py-2.5">{getStatusBadge(c.status)}</td>
+                              <td className="px-4 py-2.5">
+                                {c.destinationUrl ? (
+                                  <div className="max-w-xs">
+                                    <p className="font-semibold text-zinc-900 truncate">
+                                      {c.businessName || 'Configured Destination'}
+                                    </p>
+                                    <a
+                                      href={c.destinationUrl}
+                                      target="_blank"
+                                      rel="noreferrer noopener"
+                                      className="text-[11px] font-mono text-blue-600 truncate block hover:underline"
+                                    >
+                                      {c.destinationUrl}
+                                    </a>
+                                  </div>
+                                ) : (
+                                  <span className="text-zinc-400 italic">
+                                    Unassigned (Unactivated)
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-4 py-2.5 font-mono-tabular text-zinc-500">
+                                {new Date(c.createdAt).toLocaleDateString()}
+                              </td>
+                              <td className="px-4 py-2.5 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleInspectCard(c.id)}
+                                    className="h-7 px-2 text-xs"
+                                  >
+                                    <Eye className="h-3 w-3 mr-1" />
+                                    Inspect
+                                  </Button>
+                                  {c.status === 'ACTIVE' && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleOpenEditRouting(c)}
+                                      className="h-7 px-2 text-xs"
+                                      title="Edit Google Routing URL"
+                                    >
+                                      <Pencil className="h-3 w-3 mr-1" />
+                                      Edit Routing URL
+                                    </Button>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -1267,230 +1440,342 @@ export const AdminPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* TAB 3: ACTIVATION KEY VAULT */}
-          {activeTab === 'keys' && (
-            <div className="space-y-6">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 className="text-lg font-bold text-zinc-950 flex items-center gap-2">
-                    <KeyRound className="h-5 w-5 text-zinc-700" />
-                    Persistent Activation Key Vault
-                  </h2>
-                  <p className="text-xs text-zinc-500">
-                    Encrypted at rest with AES-GCM. Retrieved on demand strictly within
-                    authenticated administrator sessions.
-                  </p>
-                </div>
-
-                {/* Batch Selector */}
-                <div className="flex items-center gap-2">
-                  <select
-                    value={vaultBatchId}
-                    onChange={(e) => {
-                      setVaultBatchId(e.target.value);
-                      loadVaultKeys(e.target.value);
-                    }}
-                    className="h-9 rounded-lg border border-zinc-200 bg-white px-3 text-xs font-medium text-zinc-800 focus:outline-hidden focus:ring-2 focus:ring-zinc-950"
-                    aria-label="Select batch to inspect activation keys"
-                  >
-                    <option value="" disabled>
-                      Select a Batch
-                    </option>
-                    {batches.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.name} ({b.cardCount} cards)
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {vaultError && (
-                <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-xs text-red-700">
-                  {vaultError}
-                </div>
-              )}
-
-              {vaultBatchObj ? (
-                <div className="space-y-4">
-                  {/* Vault Header Controls */}
-                  <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-zinc-950">
-                          {vaultBatchObj.name}
-                        </span>
-                        <span className="text-xs text-zinc-400">&bull;</span>
-                        <span className="text-xs text-zinc-600 font-mono-tabular">
-                          {vaultKeys.length} vaulted cards
-                        </span>
-                        <Badge variant="active" className="text-[10px] ml-1">
-                          <ShieldCheck className="h-3 w-3 mr-1" />
-                          AES-GCM Encrypted
-                        </Badge>
-                      </div>
+              ) : (
+                /* Batch History List View */
+                <div className="space-y-6">
+                  {/* Header bar with + Provision Batch button */}
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div>
+                      <h2 className="text-lg font-bold text-zinc-950">Card Batch History</h2>
                       <p className="text-xs text-zinc-500">
-                        Default state is masked. Reveal keys individually or export confidentially.
+                        Permanent records of manufactured batches. Export supplier packages and
+                        access encrypted activation keys.
                       </p>
                     </div>
-
-                    <div className="flex items-center gap-2">
+                    <div>
                       <Button
-                        variant="outline"
+                        variant={isProvisionFormOpen ? 'outline' : 'primary'}
                         size="sm"
-                        onClick={revealedKeys.size > 0 ? hideAllKeys : revealAllKeys}
-                        className="text-xs h-8"
-                        disabled={vaultLoading || vaultKeys.length === 0}
+                        onClick={() => setIsProvisionFormOpen(!isProvisionFormOpen)}
+                        className="text-xs"
                       >
-                        {revealedKeys.size > 0 ? (
-                          <>
-                            <EyeOff className="h-3.5 w-3.5 mr-1" />
-                            Hide All
-                          </>
+                        {isProvisionFormOpen ? (
+                          'Close Form'
                         ) : (
                           <>
-                            <Eye className="h-3.5 w-3.5 mr-1" />
-                            Reveal All
+                            <Plus className="h-3.5 w-3.5 mr-1.5" />
+                            Provision New Batch
                           </>
                         )}
                       </Button>
-
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={handleExportVaultKeysCsv}
-                        disabled={vaultLoading || vaultKeys.length === 0}
-                        className="text-xs h-8 inline-flex items-center gap-1.5"
-                      >
-                        <Download className="h-3.5 w-3.5" />
-                        Export Activation Keys (CSV)
-                      </Button>
                     </div>
                   </div>
 
-                  {/* Confidentiality Warning */}
-                  <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-800 flex items-start gap-2">
-                    <span className="font-bold shrink-0">ADMIN CONFIDENTIAL:</span>
-                    <span>
-                      Do not send this file or exported credentials to suppliers. Activation keys
-                      must never appear on physical QR/NFC payloads or supplier archives.
-                    </span>
-                  </div>
+                  {/* Collapsible / Expandable Provisioning Form */}
+                  {isProvisionFormOpen && (
+                    <Card className="border-zinc-200 shadow-xs">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base">Provision New Card Batch</CardTitle>
+                        <CardDescription className="text-xs">
+                          Create a new production batch. Each card receives a random 16-char
+                          Crockford Base32 ID and AES-GCM encrypted activation key.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <form
+                          onSubmit={async (e) => {
+                            await handleProvisionBatch(e);
+                            loadBatches();
+                          }}
+                          className="space-y-4 max-w-lg"
+                        >
+                          {provisionError && (
+                            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                              {provisionError}
+                            </div>
+                          )}
+                          <div>
+                            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1">
+                              Batch Name / Description
+                            </label>
+                            <Input
+                              value={batchName}
+                              onChange={(e) => setBatchName(e.target.value)}
+                              placeholder="e.g. Batch 2026-A (50 Cards)"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1">
+                              Number of Cards (1 - 500)
+                            </label>
+                            <Input
+                              type="number"
+                              min={1}
+                              max={500}
+                              value={batchCount}
+                              onChange={(e) => setBatchCount(parseInt(e.target.value, 10) || 1)}
+                              required
+                            />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button type="submit" isLoading={provisioningLoading} size="sm">
+                              Generate Batch
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setIsProvisionFormOpen(false)}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </form>
+                      </CardContent>
+                    </Card>
+                  )}
 
-                  {/* Keys Table */}
+                  {/* Immediate Batch Success Banner (if provisionResult exists) */}
+                  {provisionResult && (
+                    <div className="space-y-4" data-testid="batch-success-state">
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-5 shadow-xs">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                              <h3 className="text-base font-bold text-zinc-950">
+                                Batch Created Successfully
+                              </h3>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-3 pt-1 text-sm text-zinc-700 font-mono-tabular">
+                              <span>
+                                Batch:{' '}
+                                <strong className="text-zinc-950 font-sans">
+                                  {provisionResult.batch.name}
+                                </strong>
+                              </span>
+                              <span className="text-zinc-300">&bull;</span>
+                              <span>
+                                Cards:{' '}
+                                <strong className="text-zinc-950">
+                                  {provisionResult.batch.cardCount}
+                                </strong>
+                              </span>
+                              <span className="text-zinc-300">&bull;</span>
+                              <span className="flex items-center gap-1">
+                                Status: <Badge variant="unactivated">UNACTIVATED</Badge>
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              onClick={handleExportProvisionedBatch}
+                              isLoading={isExportingBatch}
+                              data-testid="export-batch-cta"
+                            >
+                              <Download className="h-3.5 w-3.5 mr-1.5" />
+                              Export Supplier Package
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenBatchVault(provisionResult.batch)}
+                              className="inline-flex items-center gap-1.5"
+                            >
+                              <KeyRound className="h-3.5 w-3.5 text-zinc-500" />
+                              View Activation Keys
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleInspectBatch(provisionResult.batch.id)}
+                            >
+                              View Cards
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedBatchId(provisionResult.batch.id);
+                                setActiveTab('inventory');
+                                loadCards();
+                              }}
+                            >
+                              View in Inventory
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleDownloadAdminMapping}
+                              className="text-xs text-zinc-600"
+                            >
+                              <FileSpreadsheet className="h-3.5 w-3.5 mr-1 text-zinc-500" />
+                              Admin Keys (CSV)
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setProvisionResult(null)}
+                              className="text-zinc-500 hover:text-zinc-800"
+                            >
+                              Dismiss
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Summary Table of Generated Cards */}
+                      <div className="rounded-xl border border-zinc-200 bg-white overflow-hidden shadow-xs">
+                        <div className="px-4 py-2.5 bg-zinc-50 border-b border-zinc-200 flex items-center justify-between">
+                          <span className="text-xs font-semibold uppercase tracking-wider text-zinc-600">
+                            Generated Cards ({provisionResult.cards.length})
+                          </span>
+                          <span className="text-xs text-zinc-500">
+                            Ready for supplier export (SVG + PNG + PDF)
+                          </span>
+                        </div>
+                        <div className="overflow-x-auto max-h-64 overflow-y-auto">
+                          <table className="w-full text-left text-sm">
+                            <thead>
+                              <tr className="border-b border-zinc-200 bg-zinc-50/50 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                                <th className="px-4 py-2">#</th>
+                                <th className="px-4 py-2">Public ID</th>
+                                <th className="px-4 py-2">One-Time Activation Code</th>
+                                <th className="px-4 py-2">Routing URL</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-zinc-200 font-mono text-xs">
+                              {provisionResult.cards.map((c: ProvisionedCard, idx: number) => (
+                                <tr key={c.publicId} className="hover:bg-zinc-50/50">
+                                  <td className="px-4 py-1.5 text-zinc-400 font-mono-tabular">
+                                    {idx + 1}
+                                  </td>
+                                  <td className="px-4 py-1.5 font-bold text-zinc-900">
+                                    {c.publicId}
+                                  </td>
+                                  <td className="px-4 py-1.5 font-semibold text-emerald-700">
+                                    {c.activationCode}
+                                  </td>
+                                  <td className="px-4 py-1.5 text-zinc-500">
+                                    https://{CANONICAL_PUBLIC_HOST}/c/{c.publicId}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Persistent Batches Table */}
                   <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-xs">
+                    <div className="px-4 py-3 bg-zinc-50/75 border-b border-zinc-200 flex items-center justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-zinc-600">
+                        All Manufactured Batches ({batches.length})
+                      </span>
+                      <span className="text-xs text-zinc-400">
+                        Select any batch to inspect, export, or retrieve keys
+                      </span>
+                    </div>
                     <table className="w-full border-collapse text-left text-sm">
                       <thead>
-                        <tr className="border-b border-zinc-200 bg-zinc-50/75 text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                          <th className="px-4 py-3 w-12">#</th>
-                          <th className="px-4 py-3">Public ID</th>
+                        <tr className="border-b border-zinc-200 bg-zinc-50/50 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                          <th className="px-4 py-3">Batch Name</th>
+                          <th className="px-4 py-3">Created</th>
+                          <th className="px-4 py-3">Total Cards</th>
+                          <th className="px-4 py-3">Activation Summary</th>
                           <th className="px-4 py-3">Status</th>
-                          <th className="px-4 py-3">Activation Key</th>
                           <th className="px-4 py-3 text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-zinc-200">
-                        {vaultLoading ? (
+                        {batches.length === 0 ? (
                           <tr>
-                            <td colSpan={5} className="p-8 text-center text-zinc-500 text-xs">
-                              Decrypting vaulted keys for {vaultBatchObj?.name ?? 'selected batch'}
-                              ...
-                            </td>
-                          </tr>
-                        ) : vaultKeys.length === 0 ? (
-                          <tr>
-                            <td colSpan={5} className="p-8 text-center text-zinc-500 text-xs">
-                              No cards found in this batch.
+                            <td colSpan={6} className="p-8 text-center text-zinc-500 text-xs">
+                              No batches created yet. Click &quot;Provision New Batch&quot; to
+                              manufacture your first card batch.
                             </td>
                           </tr>
                         ) : (
-                          vaultKeys.map((item, idx) => {
-                            const isRevealed = revealedKeys.has(item.publicId);
-                            const isCopied = copiedPublicId === item.publicId;
-
-                            return (
-                              <tr
-                                key={item.publicId}
-                                className="hover:bg-zinc-50/50 transition-colors"
-                              >
-                                <td className="px-4 py-3 text-xs text-zinc-400 font-mono-tabular">
-                                  {idx + 1}
-                                </td>
-                                <td className="px-4 py-3 font-mono font-bold text-zinc-900">
-                                  {item.publicId}
-                                </td>
-                                <td className="px-4 py-3">{getStatusBadge(item.status)}</td>
-                                <td className="px-4 py-3">
-                                  {isRevealed ? (
-                                    <code className="font-mono text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 select-all">
-                                      {item.activationCode}
-                                    </code>
-                                  ) : (
-                                    <span className="font-mono text-zinc-400 select-none tracking-widest text-xs">
-                                      •••• •••• ••••
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="px-4 py-3 text-right">
-                                  <div className="flex items-center justify-end gap-1.5">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => toggleRevealKey(item.publicId)}
-                                      className="h-7 px-2 text-xs inline-flex items-center gap-1"
-                                      title={isRevealed ? 'Hide credential' : 'Reveal credential'}
-                                    >
-                                      {isRevealed ? (
-                                        <>
-                                          <EyeOff className="h-3 w-3 text-zinc-500" />
-                                          Hide
-                                        </>
-                                      ) : (
-                                        <>
-                                          <Eye className="h-3 w-3 text-zinc-500" />
-                                          Reveal
-                                        </>
-                                      )}
-                                    </Button>
-
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() =>
-                                        copyKeyToClipboard(item.publicId, item.activationCode)
-                                      }
-                                      className="h-7 px-2 text-xs inline-flex items-center gap-1"
-                                      title="Copy activation key to clipboard"
-                                    >
-                                      {isCopied ? (
-                                        <>
-                                          <Check className="h-3 w-3 text-emerald-600" />
-                                          Copied
-                                        </>
-                                      ) : (
-                                        <>
-                                          <Copy className="h-3 w-3 text-zinc-500" />
-                                          Copy
-                                        </>
-                                      )}
-                                    </Button>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })
+                          batches.map((b) => (
+                            <tr key={b.id} className="hover:bg-zinc-50/50 transition-colors">
+                              <td className="px-4 py-3 font-semibold text-zinc-950">
+                                <button
+                                  type="button"
+                                  onClick={() => handleInspectBatch(b.id)}
+                                  className="hover:underline text-left"
+                                >
+                                  {b.name}
+                                </button>
+                              </td>
+                              <td className="px-4 py-3 text-xs text-zinc-500 font-mono-tabular">
+                                {new Date(b.createdAt).toLocaleDateString()}
+                              </td>
+                              <td className="px-4 py-3 font-mono-tabular font-bold text-zinc-900">
+                                {b.cardCount}
+                              </td>
+                              <td className="px-4 py-3 text-xs text-zinc-600 font-mono-tabular">
+                                {b.statusSummary ||
+                                  `${b.activeCount || 0} Active · ${b.unactivatedCount || b.cardCount} Unactivated`}
+                              </td>
+                              <td className="px-4 py-3">
+                                <Badge
+                                  variant={
+                                    b.status === 'ACTIVE'
+                                      ? 'active'
+                                      : b.status === 'MIXED'
+                                        ? 'neutral'
+                                        : 'unactivated'
+                                  }
+                                >
+                                  {b.status || 'UNACTIVATED'}
+                                </Badge>
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleInspectBatch(b.id)}
+                                    className="h-7 px-2 text-xs"
+                                  >
+                                    <Eye className="h-3 w-3 mr-1" />
+                                    View Cards
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleExportExistingBatch(b.id, b.name)}
+                                    isLoading={exportingBatchId === b.id}
+                                    className="h-7 px-2 text-xs"
+                                    title="Export Supplier Package (ZIP)"
+                                  >
+                                    <Download className="h-3 w-3 mr-1" />
+                                    Export Supplier Package
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleOpenBatchVault(b)}
+                                    className="h-7 px-2 text-xs"
+                                    title="View Encrypted Activation Keys"
+                                  >
+                                    <KeyRound className="h-3 w-3 mr-1" />
+                                    Activation Keys
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
                         )}
                       </tbody>
                     </table>
                   </div>
-                </div>
-              ) : (
-                <div className="rounded-xl border border-zinc-200 bg-white p-12 text-center text-zinc-500 text-xs shadow-xs">
-                  Select a batch from the dropdown above to view its vaulted activation keys.
                 </div>
               )}
             </div>
@@ -1605,11 +1890,26 @@ export const AdminPage: React.FC = () => {
                       GOOGLE REVIEW URL
                     </span>
                     {cardDetail.destinationUrl ? (
-                      <div className="space-y-1">
-                        <span className="inline-flex items-center gap-1 text-[10px] text-amber-700 font-semibold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                          <Lock className="h-2.5 w-2.5" />
-                          Permanently Locked
-                        </span>
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="inline-flex items-center gap-1 text-[10px] text-amber-700 font-semibold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                            <Lock className="h-2.5 w-2.5" />
+                            Permanently Locked
+                          </span>
+                          {cardDetail.status === 'ACTIVE' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                handleOpenEditRouting(cardDetail);
+                              }}
+                              className="h-6 px-2 text-[11px] inline-flex items-center gap-1 text-zinc-700"
+                            >
+                              <Pencil className="h-2.5 w-2.5" />
+                              Edit Routing URL
+                            </Button>
+                          )}
+                        </div>
                         <a
                           href={cardDetail.destinationUrl}
                           target="_blank"
@@ -1618,6 +1918,10 @@ export const AdminPage: React.FC = () => {
                         >
                           {cardDetail.destinationUrl}
                         </a>
+                        <p className="text-[10px] text-zinc-400">
+                          Physical QR/NFC routing URL (https://{CANONICAL_PUBLIC_HOST}/c/
+                          {cardDetail.publicId}) remains unchanged.
+                        </p>
                       </div>
                     ) : (
                       <p className="text-zinc-400 italic">
@@ -1816,6 +2120,289 @@ export const AdminPage: React.FC = () => {
                 {actionType === 'retire' && 'Permanently Retire'}
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: CHILD ACTIVATION KEY VAULT MODAL */}
+      {vaultModalBatch && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 backdrop-blur-xs p-4"
+        >
+          <div className="w-full max-w-2xl rounded-xl border border-zinc-200 bg-white p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-zinc-950">
+                    Activation Keys &bull; {vaultModalBatch.name}
+                  </h3>
+                  <Badge variant="active" className="text-[10px]">
+                    <ShieldCheck className="h-3 w-3 mr-1" />
+                    AES-GCM Encrypted
+                  </Badge>
+                </div>
+                <p className="text-xs text-zinc-500 pt-0.5">
+                  Encrypted at rest with AES-GCM. Retrieved on demand strictly within authenticated
+                  sessions.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setVaultModalBatch(null)}
+                className="text-zinc-400 hover:text-zinc-700 text-lg font-bold"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Warning banner */}
+            <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-800 flex items-start gap-2">
+              <span className="font-bold shrink-0">ADMIN CONFIDENTIAL:</span>
+              <span>
+                Do not send this file or exported credentials to suppliers. Activation keys must
+                never appear on physical QR/NFC payloads or supplier archives.
+              </span>
+            </div>
+
+            {vaultError && (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                {vaultError}
+              </div>
+            )}
+
+            {/* Controls */}
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-zinc-500 font-mono-tabular">
+                {vaultKeys.length} vaulted cards
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={revealedKeys.size > 0 ? hideAllKeys : revealAllKeys}
+                  className="text-xs h-7"
+                  disabled={vaultLoading || vaultKeys.length === 0}
+                >
+                  {revealedKeys.size > 0 ? (
+                    <>
+                      <EyeOff className="h-3 w-3 mr-1" />
+                      Hide All
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="h-3 w-3 mr-1" />
+                      Reveal All
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleExportVaultKeysCsv}
+                  disabled={vaultLoading || vaultKeys.length === 0}
+                  className="text-xs h-7 inline-flex items-center gap-1"
+                >
+                  <Download className="h-3 w-3" />
+                  Export Activation Keys (CSV)
+                </Button>
+              </div>
+            </div>
+
+            {/* Keys Table */}
+            <div className="overflow-x-auto rounded-lg border border-zinc-200 flex-1 max-h-80 overflow-y-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-200 bg-zinc-50 text-xs font-semibold uppercase tracking-wider text-zinc-500 sticky top-0">
+                    <th className="px-4 py-2 w-12">#</th>
+                    <th className="px-4 py-2">Public ID</th>
+                    <th className="px-4 py-2">Status</th>
+                    <th className="px-4 py-2">Activation Key</th>
+                    <th className="px-4 py-2 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-200 text-xs">
+                  {vaultLoading ? (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-zinc-500">
+                        Decrypting vaulted keys for {vaultModalBatch.name}...
+                      </td>
+                    </tr>
+                  ) : vaultKeys.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-zinc-500">
+                        No cards found in this batch.
+                      </td>
+                    </tr>
+                  ) : (
+                    vaultKeys.map((item, idx) => {
+                      const isRevealed = revealedKeys.has(item.publicId);
+                      const isCopied = copiedPublicId === item.publicId;
+                      return (
+                        <tr key={item.publicId} className="hover:bg-zinc-50/50">
+                          <td className="px-4 py-2 text-zinc-400 font-mono-tabular">{idx + 1}</td>
+                          <td className="px-4 py-2 font-mono font-bold text-zinc-900">
+                            {item.publicId}
+                          </td>
+                          <td className="px-4 py-2">{getStatusBadge(item.status)}</td>
+                          <td className="px-4 py-2">
+                            {isRevealed ? (
+                              <code className="font-mono text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 select-all">
+                                {item.activationCode}
+                              </code>
+                            ) : (
+                              <span className="font-mono text-zinc-400 select-none tracking-widest text-xs">
+                                •••• •••• ••••
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => toggleRevealKey(item.publicId)}
+                                className="h-6 px-2 text-[11px]"
+                                title={isRevealed ? 'Hide credential' : 'Reveal credential'}
+                              >
+                                {isRevealed ? (
+                                  <>
+                                    <EyeOff className="h-3 w-3 mr-1" />
+                                    Hide
+                                  </>
+                                ) : (
+                                  <>
+                                    <Eye className="h-3 w-3 mr-1" />
+                                    Reveal
+                                  </>
+                                )}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  copyKeyToClipboard(item.publicId, item.activationCode)
+                                }
+                                className="h-6 px-2 text-[11px]"
+                                title="Copy activation key"
+                              >
+                                {isCopied ? (
+                                  <>
+                                    <Check className="h-3 w-3 text-emerald-600 mr-1" />
+                                    Copied
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="h-3 w-3 text-zinc-500 mr-1" />
+                                    Copy
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-zinc-200">
+              <Button variant="outline" size="sm" onClick={() => setVaultModalBatch(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 5: EDIT ROUTING URL MODAL */}
+      {editingRoutingCard && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/40 backdrop-blur-xs p-4"
+        >
+          <div className="w-full max-w-md rounded-xl border border-zinc-200 bg-white p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-zinc-200 pb-3">
+              <div>
+                <h3 className="text-lg font-bold text-zinc-950">Edit Google Routing URL</h3>
+                <p className="text-xs font-mono font-bold text-zinc-600">
+                  Card {editingRoutingCard.publicId}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingRoutingCard(null)}
+                className="text-zinc-400 hover:text-zinc-700 text-lg font-bold"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="rounded-lg border border-blue-200 bg-blue-50/70 p-3 text-xs text-blue-900 space-y-1">
+              <p className="font-semibold">⚡ Immediate Redirect Update</p>
+              <p>
+                Updating this URL will immediately redirect all future scans of this physical
+                card/QR/NFC to the new Google destination. The physical QR code and NFC tag do NOT
+                need to be changed.
+              </p>
+            </div>
+
+            <form onSubmit={handleSaveRoutingUrl} className="space-y-4">
+              {routingUrlError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                  {routingUrlError}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1">
+                  Current Destination
+                </label>
+                <div className="p-2 rounded bg-zinc-50 border border-zinc-200 font-mono text-[11px] text-zinc-600 break-all">
+                  {editingRoutingCard.destinationUrl || 'None configured'}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-700 mb-1">
+                  New Google Review URL
+                </label>
+                <Input
+                  type="url"
+                  value={newRoutingUrl}
+                  onChange={(e) => {
+                    setNewRoutingUrl(e.target.value);
+                    setRoutingUrlError(null);
+                  }}
+                  placeholder="https://search.google.com/local/writereview?placeid=..."
+                  required
+                  className="text-xs font-mono"
+                />
+                <p className="text-[11px] text-zinc-500 pt-1">
+                  Must be a valid Google Review destination URL (e.g.
+                  search.google.com/local/writereview or g.page).
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-zinc-200">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditingRoutingCard(null)}
+                  disabled={routingUrlSaving}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" variant="primary" size="sm" isLoading={routingUrlSaving}>
+                  Save Routing URL
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}

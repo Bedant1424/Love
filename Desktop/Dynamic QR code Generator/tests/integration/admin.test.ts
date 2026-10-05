@@ -740,4 +740,267 @@ describe('Admin Operations, Lifecycle & Provisioning Engine (/api/admin/*)', () 
       expect(res.headers.get('Referrer-Policy')).toBe('no-referrer');
     });
   });
+
+  describe('8. Batch History & Drilldown Engine (/api/admin/batches)', () => {
+    it('GET /api/admin/batches returns aggregated card counts and status summary', async () => {
+      const res = await app.request(
+        '/api/admin/batches',
+        {
+          headers: { 'cf-access-authenticated-user-email': ADMIN_EMAIL },
+        },
+        env
+      );
+      expect(res.status).toBe(200);
+      const json = await res.json<{
+        success: boolean;
+        data: {
+          items: Array<{
+            id: string;
+            name: string;
+            cardCount: number;
+            activeCount: number;
+            unactivatedCount: number;
+            statusSummary: string;
+            status: string;
+          }>;
+        };
+      }>();
+      expect(json.success).toBe(true);
+      expect(json.data.items.length).toBeGreaterThan(0);
+      const targetBatch = json.data.items.find((b) => b.id === 'batch_admin_ops');
+      expect(targetBatch).toBeDefined();
+      expect(targetBatch?.statusSummary).toBeDefined();
+      expect(typeof targetBatch?.activeCount).toBe('number');
+      expect(typeof targetBatch?.unactivatedCount).toBe('number');
+    });
+
+    it('GET /api/admin/batches/:id returns batch details and its constituent cards', async () => {
+      const res = await app.request(
+        '/api/admin/batches/batch_admin_ops',
+        {
+          headers: { 'cf-access-authenticated-user-email': ADMIN_EMAIL },
+        },
+        env
+      );
+      expect(res.status).toBe(200);
+      const json = await res.json<{
+        success: boolean;
+        data: {
+          batch: { id: string; name: string; cardCount: number };
+          cards: Array<{ id: string; publicId: string; status: string }>;
+        };
+      }>();
+      expect(json.success).toBe(true);
+      expect(json.data.batch.id).toBe('batch_admin_ops');
+      expect(json.data.cards.length).toBeGreaterThan(0);
+    });
+
+    it('GET /api/admin/batches/:id returns 404 for nonexistent batch', async () => {
+      const res = await app.request(
+        '/api/admin/batches/nonexistent_batch_id',
+        {
+          headers: { 'cf-access-authenticated-user-email': ADMIN_EMAIL },
+        },
+        env
+      );
+      expect(res.status).toBe(404);
+    });
+
+    it('GET /api/admin/batches/:id requires authentication (401)', async () => {
+      const res = await app.request('/api/admin/batches/batch_admin_ops', {}, env);
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe('9. Dedicated Google Review Destination Update (PATCH /api/admin/cards/:id/destination)', () => {
+    const DEST_CARD_ID = 'DEST_ADMIN_01';
+    const DEST_PUBLIC_ID = 'DEST7K2M9Q4X8P6V';
+    const INITIAL_URL = 'https://search.google.com/local/writereview?placeid=ChIJ_INITIAL_01';
+    const UPDATED_URL = 'https://search.google.com/local/writereview?placeid=ChIJ_UPDATED_02';
+
+    beforeEach(async () => {
+      const dummyHash = '0000000000000000000000000000000000000000000000000000000000000000';
+      await env.DB.prepare(
+        `INSERT OR IGNORE INTO cards (id, public_id, batch_id, status, activation_code_hash, business_name, destination_url, activated_at)
+         VALUES (?, ?, 'batch_admin_ops', 'ACTIVE', ?, 'Destination Test Bistro', ?, '2026-10-01T12:00:00.000Z')`
+      )
+        .bind(DEST_CARD_ID, DEST_PUBLIC_ID, dummyHash, INITIAL_URL)
+        .run();
+
+      await env.DB.prepare("UPDATE cards SET status = 'ACTIVE', destination_url = ? WHERE id = ?")
+        .bind(INITIAL_URL, DEST_CARD_ID)
+        .run();
+    });
+
+    it('updates destination of an ACTIVE card, logs DESTINATION_CHANGED audit log, and reflects immediately on public redirect', async () => {
+      // 1. Update destination via dedicated PATCH endpoint
+      const updateRes = await app.request(
+        `/api/admin/cards/${DEST_CARD_ID}/destination`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'cf-access-authenticated-user-email': ADMIN_EMAIL,
+          },
+          body: JSON.stringify({ destinationUrl: UPDATED_URL }),
+        },
+        env
+      );
+
+      expect(updateRes.status).toBe(200);
+      const updateJson = await updateRes.json<{
+        success: boolean;
+        data: {
+          id: string;
+          publicId: string;
+          status: string;
+          destinationUrl: string;
+          previousDestinationUrl: string;
+        };
+      }>();
+      expect(updateJson.success).toBe(true);
+      expect(updateJson.data.destinationUrl).toBe(UPDATED_URL);
+      expect(updateJson.data.previousDestinationUrl).toBe(INITIAL_URL);
+
+      // 2. Verify audit log entry
+      const auditRes = await env.DB.prepare(
+        "SELECT action, actor_type, actor_identifier, previous_state, new_state, metadata FROM audit_logs WHERE card_id = ? AND action = 'DESTINATION_CHANGED' ORDER BY created_at DESC"
+      )
+        .bind(DEST_CARD_ID)
+        .first<{
+          action: string;
+          actor_type: string;
+          actor_identifier: string;
+          previous_state: string;
+          new_state: string;
+          metadata: string;
+        }>();
+
+      expect(auditRes).toBeDefined();
+      expect(auditRes?.action).toBe('DESTINATION_CHANGED');
+      expect(auditRes?.actor_type).toBe('ADMIN');
+      expect(auditRes?.actor_identifier).toBe(ADMIN_EMAIL);
+      expect(auditRes?.previous_state).toContain(INITIAL_URL);
+      expect(auditRes?.new_state).toContain(UPDATED_URL);
+
+      // 3. Immediate public redirect verification (zero cache delay)
+      const redirectRes = await app.request(`/c/${DEST_PUBLIC_ID}`, {}, env);
+      expect(redirectRes.status).toBe(302);
+      expect(redirectRes.headers.get('Location')).toBe(UPDATED_URL);
+    });
+
+    it('allows lookups by public_id as route parameter', async () => {
+      const updateRes = await app.request(
+        `/api/admin/cards/${DEST_PUBLIC_ID}/destination`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'cf-access-authenticated-user-email': ADMIN_EMAIL,
+          },
+          body: JSON.stringify({ destinationUrl: UPDATED_URL }),
+        },
+        env
+      );
+      expect(updateRes.status).toBe(200);
+      const updateJson = await updateRes.json<{
+        success: boolean;
+        data: { destinationUrl: string };
+      }>();
+      expect(updateJson.data.destinationUrl).toBe(UPDATED_URL);
+    });
+
+    it('rejects invalid or non-Google destination URLs with 400 INVALID_DESTINATION_URL', async () => {
+      const updateRes = await app.request(
+        `/api/admin/cards/${DEST_CARD_ID}/destination`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'cf-access-authenticated-user-email': ADMIN_EMAIL,
+          },
+          body: JSON.stringify({ destinationUrl: 'https://evil-phishing-site.com/steal' }),
+        },
+        env
+      );
+
+      expect(updateRes.status).toBe(400);
+      const json = await updateRes.json<{ success: boolean; error: { code: string } }>();
+      expect(json.success).toBe(false);
+      expect(json.error.code).toBe('INVALID_DESTINATION_URL');
+    });
+
+    it('rejects destination update on UNACTIVATED card with 400 INVALID_STATE', async () => {
+      const updateRes = await app.request(
+        `/api/admin/cards/${UNACTIVATED_CARD_ID}/destination`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'cf-access-authenticated-user-email': ADMIN_EMAIL,
+          },
+          body: JSON.stringify({ destinationUrl: UPDATED_URL }),
+        },
+        env
+      );
+
+      expect(updateRes.status).toBe(400);
+      const json = await updateRes.json<{ success: boolean; error: { code: string } }>();
+      expect(json.success).toBe(false);
+      expect(json.error.code).toBe('INVALID_STATE');
+    });
+
+    it('rejects destination update on DISABLED card with 400 INVALID_STATE', async () => {
+      const updateRes = await app.request(
+        `/api/admin/cards/${DISABLED_CARD_ID}/destination`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'cf-access-authenticated-user-email': ADMIN_EMAIL,
+          },
+          body: JSON.stringify({ destinationUrl: UPDATED_URL }),
+        },
+        env
+      );
+
+      expect(updateRes.status).toBe(400);
+      const json = await updateRes.json<{ success: boolean; error: { code: string } }>();
+      expect(json.success).toBe(false);
+      expect(json.error.code).toBe('INVALID_STATE');
+    });
+
+    it('rejects destination update without authentication with 401', async () => {
+      const updateRes = await app.request(
+        `/api/admin/cards/${DEST_CARD_ID}/destination`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ destinationUrl: UPDATED_URL }),
+        },
+        env
+      );
+      expect(updateRes.status).toBe(401);
+    });
+
+    it('verifies generic PATCH /api/admin/cards/:id STILL strictly rejects destinationUrl (DESTINATION_LOCKED)', async () => {
+      const res = await app.request(
+        `/api/admin/cards/${DEST_CARD_ID}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'cf-access-authenticated-user-email': ADMIN_EMAIL,
+          },
+          body: JSON.stringify({ destinationUrl: UPDATED_URL }),
+        },
+        env
+      );
+
+      expect(res.status).toBe(400);
+      const json = await res.json<{ success: boolean; error: { code: string } }>();
+      expect(json.success).toBe(false);
+      expect(json.error.code).toBe('DESTINATION_LOCKED');
+    });
+  });
 });

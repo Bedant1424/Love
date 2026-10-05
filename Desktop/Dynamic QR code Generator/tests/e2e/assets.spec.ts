@@ -30,7 +30,7 @@ test.describe('QRoute Admin: Batch Provisioning & QR Export Workflow E2E', () =>
 
     // Expected tabs
     await expect(page.getByRole('button', { name: /^Card Inventory$/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /^Batch Provisioning$/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Batch History$/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /^Audit Trail$/i })).toBeVisible();
 
     // Obsolete Asset Pipeline tab must NOT exist
@@ -40,8 +40,12 @@ test.describe('QRoute Admin: Batch Provisioning & QR Export Workflow E2E', () =>
   test('2. Complete Batch Creation -> Success State -> Export Batch workflow', async ({ page }) => {
     await page.goto('/admin');
 
-    // 1. Open Batch Provisioning
-    await page.getByRole('button', { name: /^Batch Provisioning$/i }).click();
+    // 1. Open Batch History
+    await page.getByRole('button', { name: /^Batch History$/i }).click();
+    const provisionBtn = page.getByRole('button', { name: /Provision New Batch/i });
+    if (await provisionBtn.isVisible()) {
+      await provisionBtn.click();
+    }
     await expect(page.getByRole('heading', { name: /Provision New Card Batch/i })).toBeVisible();
 
     // 2. Fill batch details
@@ -139,7 +143,11 @@ test.describe('QRoute Admin: Batch Provisioning & QR Export Workflow E2E', () =>
 
   test('4. Admin Key Mapping CSV downloads separately from supplier package', async ({ page }) => {
     await page.goto('/admin');
-    await page.getByRole('button', { name: /^Batch Provisioning$/i }).click();
+    await page.getByRole('button', { name: /^Batch History$/i }).click();
+    const provisionBtn = page.getByRole('button', { name: /Provision New Batch/i });
+    if (await provisionBtn.isVisible()) {
+      await provisionBtn.click();
+    }
 
     // Generate quick 2-card batch
     await page.fill('input[placeholder*="Batch 2026-A"]', 'Key Backup Test Batch');
@@ -148,7 +156,7 @@ test.describe('QRoute Admin: Batch Provisioning & QR Export Workflow E2E', () =>
 
     // Download admin mapping CSV
     const downloadPromise = page.waitForEvent('download');
-    await page.getByRole('button', { name: /Download Admin Keys \(CSV\)/i }).click();
+    await page.getByRole('button', { name: /Admin Keys \(CSV\)/i }).click();
     const download = await downloadPromise;
 
     expect(download.suggestedFilename()).toContain('QRoute_Admin_Keys_');
