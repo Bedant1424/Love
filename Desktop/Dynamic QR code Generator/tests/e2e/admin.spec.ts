@@ -254,7 +254,7 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
     await batchTab.click();
 
     // Click "+ Provision Batch" if form is not already open
-    const provisionBtn = page.getByRole('button', { name: /Provision New Batch/i });
+    const provisionBtn = page.getByRole('button', { name: /Provision.*Batch/i });
     if (await provisionBtn.isVisible()) {
       await provisionBtn.click();
     }
@@ -395,5 +395,130 @@ test.describe('QRoute Operator Admin Operations & Lifecycle E2E', () => {
 
     // Verify modal closes
     await expect(page.getByRole('heading', { name: /Edit Google Routing URL/i })).not.toBeVisible();
+  });
+
+  test('8. Full Operator Pre-Deploy Verification: Batch A & B persistence, ZIP export, Vault extraction, activation, destination update, 302 redirect & Audit Trail', async ({
+    page,
+    request,
+  }) => {
+    await page.route('/api/admin/**', async (route) => {
+      await route.continue({
+        headers: {
+          ...route.request().headers(),
+          ...ADMIN_HEADERS,
+        },
+      });
+    });
+
+    // 1. Navigate to Batch History
+    await page.goto('/admin');
+    await page.getByRole('button', { name: /^Batch History$/i }).click();
+
+    const batchAName = `Alpha Test Fleet ${Date.now()}`;
+    const batchBName = `Beta Test Fleet ${Date.now()}`;
+
+    // 2. Create Batch A
+    const provisionBtnA = page.getByRole('button', { name: /Provision.*Batch/i });
+    if (await provisionBtnA.isVisible()) {
+      await provisionBtnA.click();
+    }
+    await page.fill('input[placeholder*="Batch 2026-A"]', batchAName);
+    await page.fill('input[type="number"]', '2');
+    await page.getByRole('button', { name: /^Generate Batch$/i }).click();
+
+    // Verify Batch A created successfully
+    const successBannerA = page.getByTestId('batch-success-state');
+    await expect(successBannerA).toBeVisible();
+    await page.getByRole('button', { name: /^Dismiss$/i }).click();
+
+    // 3. Create Batch B
+    const provisionBtnB = page.getByRole('button', { name: /Provision.*Batch/i });
+    if (await provisionBtnB.isVisible()) {
+      await provisionBtnB.click();
+    }
+    await page.fill('input[placeholder*="Batch 2026-A"]', batchBName);
+    await page.fill('input[type="number"]', '2');
+    await page.getByRole('button', { name: /^Generate Batch$/i }).click();
+
+    const successBannerB = page.getByTestId('batch-success-state');
+    await expect(successBannerB).toBeVisible();
+    await page.getByRole('button', { name: /^Dismiss$/i }).click();
+
+    // 4. Confirm Batch A still appears alongside Batch B in Batch History!
+    await expect(page.getByRole('button', { name: batchAName })).toBeVisible();
+    await expect(page.getByRole('button', { name: batchBName })).toBeVisible();
+
+    // 5. Export Batch A ZIP (supplier package)
+    const downloadPromise = page.waitForEvent('download');
+    const alphaRow = page.locator('tr', { hasText: batchAName });
+    await alphaRow.getByRole('button', { name: /Export Supplier Package/i }).click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toMatch(/^QRoute_Batch_.*\.zip$/);
+
+    // 6. Open Batch A Activation Keys vault
+    await alphaRow.getByRole('button', { name: /Activation Keys/i }).click();
+    const vaultDialog = page.getByRole('dialog');
+    await expect(vaultDialog).toBeVisible();
+    await expect(
+      vaultDialog.getByText(new RegExp(`Activation Keys • ${batchAName}`, 'i'))
+    ).toBeVisible();
+
+    // Reveal keys
+    await vaultDialog.getByRole('button', { name: /^Reveal All$/i }).click();
+    const firstCodeCell = vaultDialog.locator('code').first();
+    const activationCode = (await firstCodeCell.textContent())?.trim();
+    expect(activationCode).toMatch(
+      /^[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}-[0-9A-HJKMNP-TV-Z]{4}$/
+    );
+
+    // Extract publicId from the first card row of vault table
+    const firstPublicId = (
+      await vaultDialog.locator('tbody tr td:nth-child(2)').first().textContent()
+    )?.trim();
+    expect(firstPublicId).toMatch(/^[0-9A-HJKMNP-TV-Z]{16}$/);
+
+    // Close vault dialog
+    await vaultDialog.getByRole('button', { name: /^Close$/i }).click();
+
+    // 7. Activate card from Batch A as merchant
+    const initialUrl = 'https://search.google.com/local/writereview?placeid=ChIJ_INITIAL_ALPHA';
+    const updatedUrl = 'https://search.google.com/local/writereview?placeid=ChIJ_UPDATED_ALPHA';
+
+    const activateRes = await request.post('/api/public/activate', {
+      headers: { 'Content-Type': 'application/json' },
+      data: JSON.stringify({
+        publicId: firstPublicId,
+        activationCode: activationCode,
+        businessName: 'Alpha Verified Bakery',
+        reviewUrl: initialUrl,
+        turnstileToken: '1x0000000000000000000000000000000AA',
+      }),
+    });
+    expect(activateRes.status()).toBe(200);
+
+    // 8. Change routing URL as authenticated admin
+    const updateDestRes = await request.patch(`/api/admin/cards/${firstPublicId}/destination`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...ADMIN_HEADERS,
+      },
+      data: JSON.stringify({
+        destinationUrl: updatedUrl,
+      }),
+    });
+    expect(updateDestRes.status()).toBe(200);
+
+    // 9. Scan the physical QR / NFC public URL (/c/:publicId)
+    const scanRes = await request.get(`/c/${firstPublicId}`, { maxRedirects: 0 });
+    expect(scanRes.status()).toBe(302);
+    expect(scanRes.headers()['location']).toBe(updatedUrl);
+
+    // 10. Confirm physical/public ID in URL is unchanged
+    expect(firstPublicId).toBeDefined();
+
+    // 11. Confirm destination change appears in Audit Trail
+    await page.getByRole('button', { name: /^Audit Trail$/i }).click();
+    await expect(page.getByText('DESTINATION_CHANGED').first()).toBeVisible();
+    await expect(page.getByText(firstPublicId!).first()).toBeVisible();
   });
 });

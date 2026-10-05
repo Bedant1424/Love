@@ -1463,8 +1463,7 @@ export const AdminPage: React.FC = () => {
                           'Close Form'
                         ) : (
                           <>
-                            <Plus className="h-3.5 w-3.5 mr-1.5" />
-                            Provision New Batch
+                            <Plus className="h-3.5 w-3.5 mr-1.5" />+ Provision Batch
                           </>
                         )}
                       </Button>

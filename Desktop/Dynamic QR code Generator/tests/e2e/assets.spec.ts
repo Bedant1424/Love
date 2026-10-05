@@ -33,8 +33,10 @@ test.describe('QRoute Admin: Batch Provisioning & QR Export Workflow E2E', () =>
     await expect(page.getByRole('button', { name: /^Batch History$/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /^Audit Trail$/i })).toBeVisible();
 
-    // Obsolete Asset Pipeline tab must NOT exist
+    // Obsolete tabs must NOT exist
     await expect(page.getByRole('button', { name: /Asset Pipeline & Print/i })).not.toBeVisible();
+    await expect(page.getByRole('button', { name: /^Batch Provisioning$/i })).not.toBeVisible();
+    await expect(page.getByRole('button', { name: /^Activation Keys$/i })).not.toBeVisible();
   });
 
   test('2. Complete Batch Creation -> Success State -> Export Batch workflow', async ({ page }) => {
@@ -42,7 +44,7 @@ test.describe('QRoute Admin: Batch Provisioning & QR Export Workflow E2E', () =>
 
     // 1. Open Batch History
     await page.getByRole('button', { name: /^Batch History$/i }).click();
-    const provisionBtn = page.getByRole('button', { name: /Provision New Batch/i });
+    const provisionBtn = page.getByRole('button', { name: /Provision.*Batch/i });
     if (await provisionBtn.isVisible()) {
       await provisionBtn.click();
     }
@@ -144,7 +146,7 @@ test.describe('QRoute Admin: Batch Provisioning & QR Export Workflow E2E', () =>
   test('4. Admin Key Mapping CSV downloads separately from supplier package', async ({ page }) => {
     await page.goto('/admin');
     await page.getByRole('button', { name: /^Batch History$/i }).click();
-    const provisionBtn = page.getByRole('button', { name: /Provision New Batch/i });
+    const provisionBtn = page.getByRole('button', { name: /Provision.*Batch/i });
     if (await provisionBtn.isVisible()) {
       await provisionBtn.click();
     }
