@@ -246,19 +246,37 @@ describe('Supplier Fulfillment & QR Export Engine', () => {
       const pdfBytes = await generateQrSheetPdf(MOCK_CARDS);
       const pdfText = new TextDecoder().decode(pdfBytes);
 
-      // Must NOT contain activation credentials
+      // 1. Text Blocks & Text Operators: Must have ZERO PDF text blocks or font objects
+      const textBlocks = pdfText.match(/BT[\s\S]*?ET/g) || [];
+      expect(textBlocks.length).toBe(0);
+      expect(pdfText).not.toContain('/Font');
+      expect(pdfText).not.toContain('Tj');
+      expect(pdfText).not.toContain('TJ');
+      expect(pdfText).not.toContain('Tf');
+
+      // 2. Activation Credentials: Must NOT contain activation credentials
       expect(pdfText).not.toContain('K7XM-92PR-V8Q2');
       expect(pdfText).not.toContain('B4WT-81MK-P5Q9');
       expect(pdfText.toLowerCase()).not.toContain('activation');
       expect(pdfText.toLowerCase()).not.toContain('password');
 
-      // Must NOT print public IDs beneath or beside artwork
-      expect(pdfText).not.toContain('(8T2K9M4W1X7P3N5Q) Tj');
-      expect(pdfText).not.toContain('(3H5V7N2R9B4M6K8W) Tj');
+      // 3. Public IDs: Must NOT contain public IDs as text anywhere in PDF
+      expect(pdfText).not.toContain('8T2K9M4W1X7P3N5Q');
+      expect(pdfText).not.toContain('3H5V7N2R9B4M6K8W');
 
-      // Must NOT contain destination URLs
+      // 4. Routing & Canonical URLs: Must NOT contain URLs as text anywhere in PDF
+      expect(pdfText).not.toContain('https://');
+      expect(pdfText).not.toContain('http://');
+      expect(pdfText).not.toContain('go.taprevieww.workers.dev');
+
+      // 5. Destination URLs: Must NOT contain destination URLs
       expect(pdfText.toLowerCase()).not.toContain('google.com');
       expect(pdfText.toLowerCase()).not.toContain('writereview');
+      expect(pdfText.toLowerCase()).not.toContain('g.page');
+
+      // 6. Business/Customer details: Must NOT contain merchant details or labels
+      expect(pdfText.toLowerCase()).not.toContain('customer');
+      expect(pdfText.toLowerCase()).not.toContain('business');
     });
   });
 
