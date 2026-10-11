@@ -25,8 +25,8 @@ TOTAL ESTIMATED CALENDAR DURATION: 8 to 11 Working Days
 |---|---|---|:---:|---|
 | **Milestone 1** | **Repository & Product Specification** | Complete 20 docs, legal assessment, catalogue extraction, design review. | **Completed** | Full documentation approved. |
 | **Milestone 2** | **Core Customer Interface** | Responsive React 18 + TS + Vite app, authentic 6-category UI, paise cart engine, transient customer form, copy enquiry summary, 42 passing tests. | **Completed** | 100% tests pass (42/42), bundle < 65 KB gzip, zero lint/build errors, COMMERCE_CHECKOUT_ENABLED=false strictly enforced. |
-| **Milestone 3** | **Backend Edge API & Admin Console** | Cloudflare Workers API, D1 schema migrations, Turnstile verification, Cloudflare Access admin auth. | 2–3 Days | Auth enforced, D1 parameterised queries working. |
-| **Milestone 4** | **Payment Workflow & Verification** | Manual UPI QR + 12-digit UTR submission, UTR uniqueness constraint, admin reconciliation modal. | 1–2 Days | UTR replay rejected, payment audit logs recorded. |
+| **Milestone 3** | **Backend Edge API & Admin Console** | Cloudflare Workers API, D1 schema migrations, Turnstile verification, Cloudflare Access admin auth. | **Completed** | Auth enforced, D1 parameterised queries working. |
+| **Milestone 4** | **Payment Workflow & Verification** | Non-payable QR fixture, tiered tokens (< ₹200 $\rightarrow$ ₹50, $\ge$ ₹200 $\rightarrow$ ₹100), 12-digit string UTR validation, duplicate rejection (409), manual admin reconciliation. | **Completed** | 100% tests pass (66/66), clean production build. |
 | **Milestone 5** | **Security & Quality Hardening** | Vitest unit/integration suite, Playwright mobile E2E tests, Axe-core WCAG AA accessibility audit. | 2 Days | 100% tests pass, zero accessibility violations. |
 | **Milestone 6** | **Cloudflare Deployment & Launch Review** | Cloudflare Pages deployment, D1 remote migration, DNS setup, legal gate review before live toggle. | 1 Day | Legal sign-off before `COMMERCE_CHECKOUT_ENABLED=true`. |
 
@@ -43,10 +43,11 @@ To maintain repository safety and prevent accidental overrides:
 |---|---|---|---|
 | **M1** | `feature/nagarjuna-store-docs` | `HEAD` | `docs(spec): finalize master architecture and design system` |
 | **M2** | `feature/nagarjuna-customer-ui` | `main` (after M1 merge) | `feat(ui): implement responsive 6-category catalogue grid` |
-| **M3** | `feature/nagarjuna-edge-backend`| `main` (after M2 merge) | `feat(api): create d1 order management and admin routes` |
-| **M4** | `feature/nagarjuna-upi-payments`| `main` (after M3 merge) | `feat(pay): implement manual utr verification workflow` |
-| **M5** | `feature/nagarjuna-qa-hardening`| `main` (after M4 merge) | `test(e2e): add mobile touch target and axe-core audit` |
-| **M6** | `feature/nagarjuna-prod-deploy` | `main` (after M5 merge) | `chore(deploy): configure cloudflare pages and d1 bindings` |
+| **Correction** | `fix/nagarjuna-demo-mode-and-catalogue` | `feature/nagarjuna-customer-ui` | `fix(demo): enforce fixed token and portfolio demo framing` |
+| **M3** | `feature/nagarjuna-demo-backend-admin` | `fix/nagarjuna-demo-mode-and-catalogue` | `feat(api): create d1 order management and admin routes` |
+| **M4** | `feature/nagarjuna-order-payment-flow` | `feature/nagarjuna-demo-backend-admin` | `feat(pay): implement tiered advance tokens, upi qr fixtures, utr submission, and admin reconciliation` |
+| **M5** | `feature/nagarjuna-qa-hardening` | `feature/nagarjuna-order-payment-flow` | `test(e2e): add mobile touch target and axe-core audit` |
+| **M6** | `feature/nagarjuna-prod-deploy` | `feature/nagarjuna-qa-hardening` | `chore(deploy): configure cloudflare pages and d1 bindings` |
 
 ---
 
@@ -112,11 +113,46 @@ To maintain repository safety and prevent accidental overrides:
 6. **Automated Verification:**
    - 63 Vitest tests passing across 11 test files (100% green).
    - Zero TypeScript compile errors (`npm run build` succeeds).
-### Milestone 4: Payment Workflow
-1. **Dynamic UPI Generator:** Implement dynamic UPI intent link and QR renderer using store VPA and order note.
-2. **UTR Ingestion API:** Implement `POST /api/v1/orders/:id/payment-reference` with 12-digit regex validation and unique constraint handling.
-3. **Operator Verification Modal:** Implement staff verification interface in `/admin/orders/:id`.
-4. **Audit Logging:** Wire all payment approvals to `audit_logs` table.
+
+### Milestone 4: Full-Stack Ordering System, UPI QR Fixture, UTR Submission & Admin Reconciliation (COMPLETED)
+1. **Branch Safety:** Created and developed on `feature/nagarjuna-order-payment-flow` based on `feature/nagarjuna-demo-backend-admin`.
+2. **Clean Commercial Storefront Experience:**
+   - Scrubbed all portfolio and demo labels from the customer storefront.
+   - Designed clean, authentic Sivakasi retailer UI with warm amber accents, crisp contrast, PESO safety compliance notices, and counter collection guidance.
+3. **Restricted Payment Safety & Test Fixture:**
+   - Live money collection disabled by default (`PAYMENT_COLLECTION_ENABLED = false`).
+   - Non-payable test QR fixture served with explicit test payload (`test-fixture@nagarjunatraders`) and clear restricted environment notice.
+4. **Shared Tiered Token Calculation Engine (`src/utils/tokenPolicy.ts`):**
+   - Subtotal < ₹200 (`20,000 paise`): advance token amount is **₹50** (`5,000 paise`).
+   - Subtotal $\ge$ ₹200 (`20,000 paise`): advance token amount is **₹100** (`10,000 paise`).
+   - Boundary condition: exactly ₹200 belongs to the ₹100 tier.
+   - Minimum order subtotal is ₹50 (`5,000 paise`).
+   - Remaining balance = $\max(0, \text{subtotal} - \text{token})$ payable at counter.
+   - Server recalculates all prices, line subtotals, and tokens using integer paise; never trusts client values.
+5. **10 Customer Screens / States Implemented:**
+   - `HOME`: Clean welcome screen with counter collection info.
+   - `CUSTOMER_FORM`: Transient customer details with 18+ age verification.
+   - `CATALOGUE`: 6 Authentic categories with search and category tabs.
+   - `VARIANT_CONTROLS`: Stepper quantity controls (1–50 limits).
+   - `CART`: Responsive basket showing subtotal, advance token due, remaining balance, and checkout gates.
+   - `REVIEW`: Order summary before reservation submission.
+   - `QR_INSTRUCTIONS`: Test QR code fixture, UPI ID, reference note, and advance token due.
+   - `UTR_SUBMISSION`: 12-digit numeric string input with instant feedback.
+   - `CONFIRMATION`: Reservation reference (`NT-XXXX`), advance token status, and WhatsApp share button.
+   - `STATUS_TRACKER`: Real-time order tracker polling `GET /api/v1/orders/:reference/status`.
+6. **12-Digit UTR Workflow & Database Migrations:**
+   - `migrations/0003_payment_flow_schema.sql`: Added `payment_submissions` table with unique constraint on 12-digit `utr_reference`.
+   - Added `order_status_history` and `payment_status_history` tables.
+   - UTR strictly handled as a 12-digit string (`/^\d{12}$/`); never parsed into a number.
+   - Status transitions to `RECORDED_UNVERIFIED`.
+   - Duplicate UTR rejected with `HTTP 409 Conflict` (`DUPLICATE_UTR`).
+7. **Staff Manual Bank Reconciliation:**
+   - Prohibited automated bank verification claims.
+   - Admin reconciliation modal requires mandatory staff notes confirming match against official bank statements.
+   - Audit trail records `reconciled_by`, `reconciled_at`, and `reconciliation_notes`.
+8. **Automated Verification:**
+   - 66 Vitest tests passing across 11 test files (100% green).
+   - Clean production build (`tsc && vite build` generates 225.86 kB bundle / gzip 62.77 kB).
 
 ### Milestone 5: Quality & Security Hardening
 1. **Vitest Unit Suite:** Test mathematical functions, paise conversions, and Zod schemas.

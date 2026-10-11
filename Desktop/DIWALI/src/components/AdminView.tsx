@@ -41,6 +41,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
 
   // Selected Order for Modal
   const [selectedOrder, setSelectedOrder] = useState<DemoOrderRecordWithItems | null>(null);
+  const [reconciliationNotesInput, setReconciliationNotesInput] = useState<string>('');
 
   // Price Editing Modal State
   const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null);
@@ -98,26 +99,30 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
     showNotification('Logged out from admin console.');
   };
 
-  // Order Actions
-  const handleVerifyPayment = async (orderId: string, action: 'APPROVE_TOKEN' | 'REJECT_INVALID_UTR') => {
+  // Order Reconciliation Actions
+  const handleReconcilePayment = async (
+    orderId: string,
+    action: 'RECONCILE' | 'REJECT' | 'APPROVE_TOKEN' | 'REJECT_INVALID_UTR'
+  ) => {
+    if (!reconciliationNotesInput.trim()) {
+      showNotification('Staff reconciliation note is mandatory before recording reconciliation.', 'error');
+      return;
+    }
     try {
-      const updated = await apiClient.verifyPayment(
-        orderId,
-        action,
+      const updated = await apiClient.reconcilePayment(orderId, {
+        action: action === 'RECONCILE' || action === 'APPROVE_TOKEN' ? 'RECONCILE' : 'REJECT',
         operatorId,
-        action === 'APPROVE_TOKEN'
-          ? 'Reconciled simulated ₹100 token credit'
-          : 'Mismatched or invalid 12-digit UTR'
-      );
+        reconciliationNotes: reconciliationNotesInput.trim(),
+      });
       showNotification(
-        action === 'APPROVE_TOKEN'
-          ? `Order ${updated.order_reference} payment verified! Status moved to CONFIRMED.`
+        action === 'RECONCILE' || action === 'APPROVE_TOKEN'
+          ? `Order ${updated.order_reference} manually reconciled against bank statement.`
           : `Order ${updated.order_reference} UTR rejected.`
       );
       setSelectedOrder(updated);
       loadAllData();
     } catch (err: any) {
-      showNotification(err?.message || 'Verification failed', 'error');
+      showNotification(err?.message || 'Reconciliation failed', 'error');
     }
   };
 
@@ -497,7 +502,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                       <th className="p-3.5">Customer</th>
                       <th className="p-3.5">Items</th>
                       <th className="p-3.5">Subtotal</th>
-                      <th className="p-3.5">₹100 Token</th>
+                      <th className="p-3.5">Advance Token</th>
                       <th className="p-3.5">Remaining</th>
                       <th className="p-3.5">Payment</th>
                       <th className="p-3.5">Status</th>
@@ -556,7 +561,10 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                         </td>
                         <td className="p-3.5 text-right">
                           <button
-                            onClick={() => setSelectedOrder(ord)}
+                            onClick={() => {
+                              setSelectedOrder(ord);
+                              setReconciliationNotesInput(ord.reconciliation_notes || '');
+                            }}
                             className="px-3 py-1 rounded-lg text-xs font-semibold bg-bg-elevated hover:bg-white/10 text-content-primary border border-white/10"
                           >
                             Manage
@@ -817,7 +825,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                 </span>
               </div>
               <div className="flex justify-between text-emerald-400 font-semibold">
-                <span>Fixed ₹100 Demo Token:</span>
+                <span>Advance Token Due:</span>
                 <span className="font-mono">{formatPaiseToRupees(selectedOrder.token_amount_paise)}</span>
               </div>
               <div className="flex justify-between pt-1 border-t border-white/5">
@@ -828,37 +836,71 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
               </div>
             </div>
 
-            {/* UTR Verification Section */}
+            {/* Manual Bank Statement Reconciliation Section */}
             <div className="border border-amber-500/30 bg-amber-950/20 rounded-xl p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-amber-300">
-                  Simulated Payment UTR Verification
+                  Manual Bank Statement Reconciliation
                 </span>
                 <span className="text-xs font-mono font-bold text-content-primary">
                   {selectedOrder.payment_reference || 'NO UTR SUBMITTED'}
                 </span>
               </div>
 
-              {selectedOrder.payment_status === 'PENDING_VERIFICATION' && (
-                <div className="flex gap-2 pt-1">
-                  <button
-                    onClick={() => handleVerifyPayment(selectedOrder.id, 'APPROVE_TOKEN')}
-                    className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-black transition-colors"
-                  >
-                    Approve ₹100 Token
-                  </button>
-                  <button
-                    onClick={() => handleVerifyPayment(selectedOrder.id, 'REJECT_INVALID_UTR')}
-                    className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold bg-red-950 hover:bg-red-900 text-red-300 border border-red-800 transition-colors"
-                  >
-                    Flag / Reject UTR
-                  </button>
+              <div className="text-[11px] text-content-muted leading-relaxed">
+                Automated bank verification is prohibited. Staff must cross-reference customer UTR with authorized bank statements or SMS notifications before confirming.
+              </div>
+
+              {selectedOrder.reconciliation_notes && (
+                <div className="p-2.5 rounded-lg bg-bg-base border border-white/5 text-xs text-content-secondary">
+                  <span className="text-content-muted block text-[10px]">Staff Reconciliation Note:</span>
+                  <span className="italic">{selectedOrder.reconciliation_notes}</span>
+                  {selectedOrder.reconciled_by && (
+                    <span className="block text-[10px] text-content-muted mt-0.5 font-mono">
+                      By: {selectedOrder.reconciled_by} • {selectedOrder.reconciled_at ? new Date(selectedOrder.reconciled_at).toLocaleString('en-IN') : ''}
+                    </span>
+                  )}
                 </div>
               )}
 
-              {selectedOrder.payment_status === 'VERIFIED_TOKEN' && (
+              {(selectedOrder.payment_status === 'RECORDED_UNVERIFIED' ||
+                selectedOrder.payment_status === 'PENDING_VERIFICATION') && (
+                <div className="space-y-2 pt-1">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-content-secondary mb-1">
+                      Bank Statement Matching Notes <span className="text-festive-crimson">*</span>
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={reconciliationNotesInput}
+                      onChange={(e) => setReconciliationNotesInput(e.target.value)}
+                      placeholder="e.g. Matched with HDFC credit notification #8492 at 15:30"
+                      className="w-full p-2.5 rounded-lg bg-bg-elevated border border-white/10 text-content-primary text-xs focus:outline-none focus:ring-1 focus:ring-festive-marigold"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleReconcilePayment(selectedOrder.id, 'RECONCILE')}
+                      className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-black transition-colors"
+                    >
+                      Record Statement Match (Reconcile)
+                    </button>
+                    <button
+                      onClick={() => handleReconcilePayment(selectedOrder.id, 'REJECT')}
+                      className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold bg-red-950 hover:bg-red-900 text-red-300 border border-red-800 transition-colors"
+                    >
+                      Reject UTR (Not in Statement)
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {(selectedOrder.payment_status === 'RECONCILED' ||
+                selectedOrder.payment_status === 'VERIFIED_TOKEN') && (
                 <p className="text-xs text-emerald-300 flex items-center gap-1.5 font-medium">
-                  ✓ Token payment of ₹100 has been verified.
+                  ✓ Payment reference reconciled with bank statement.
                 </p>
               )}
             </div>

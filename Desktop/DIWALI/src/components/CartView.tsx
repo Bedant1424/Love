@@ -31,11 +31,11 @@ export const CartView: React.FC<CartViewProps> = ({
           📦
         </div>
         <h2 className="text-2xl font-bold font-display text-content-primary">
-          Your Demo Basket is Empty
+          Your Shopping Cart is Empty
         </h2>
         <p className="text-sm text-content-muted mt-2 max-w-sm mx-auto leading-relaxed">
           You have not selected any cracker items yet. Browse our 6 authentic Diwali
-          poster categories to assemble your sample box.
+          catalogue categories to assemble your festival box.
         </p>
         <button
           type="button"
@@ -54,7 +54,7 @@ export const CartView: React.FC<CartViewProps> = ({
       <div className="flex items-center justify-between border-b border-white/10 pb-4">
         <div>
           <h2 className="text-2xl font-bold font-display text-content-primary">
-            Demo Basket
+            Shopping Cart
           </h2>
           <p className="text-xs text-content-muted mt-0.5">
             {totals.totalQuantity} items selected across {items.length} product(s)
@@ -65,12 +65,12 @@ export const CartView: React.FC<CartViewProps> = ({
           onClick={onClear}
           className="text-xs text-content-muted hover:text-festive-crimson p-2 transition-colors focus:outline-none"
         >
-          Clear Basket
+          Clear Cart
         </button>
       </div>
 
       {/* Item List */}
-      <div className="space-y-3" role="list" aria-label="Demo basket items">
+      <div className="space-y-3" role="list" aria-label="Shopping cart items">
         {items.map((item) => (
           <div
             key={`${item.productId}-${item.variantId}`}
@@ -102,7 +102,7 @@ export const CartView: React.FC<CartViewProps> = ({
               <div className="mt-1 text-[11px]">
                 {item.lineSubtotalPaise !== null ? (
                   <span className="text-amber-300">
-                    Catalogue Estimate: {formatPaise(item.lineSubtotalPaise)}
+                    Line Subtotal: {formatPaise(item.lineSubtotalPaise)}
                   </span>
                 ) : (
                   <span className="text-amber-400 font-medium">
@@ -125,7 +125,7 @@ export const CartView: React.FC<CartViewProps> = ({
                 type="button"
                 onClick={() => onRemove(item.productId, item.variantId)}
                 className="w-10 h-10 flex items-center justify-center rounded-lg text-content-muted hover:text-festive-crimson hover:bg-white/5 transition-colors"
-                aria-label={`Remove ${item.productName} from enquiry basket`}
+                aria-label={`Remove ${item.productName} from cart`}
                 title="Remove item"
               >
                 ✕
@@ -135,16 +135,16 @@ export const CartView: React.FC<CartViewProps> = ({
         ))}
       </div>
 
-      {/* Estimates & Financial Summary Card */}
+      {/* Financial Summary Card */}
       <div className="p-5 rounded-2xl bg-bg-surface border border-white/10 space-y-4">
         <h3 className="text-base font-bold font-display text-content-primary">
-          Demo Financial Breakdown (Integer Paise)
+          Order Price & Advance Token Breakdown
         </h3>
 
         <div className="space-y-2 text-sm border-b border-white/5 pb-4">
           <div className="flex justify-between items-center">
             <span className="text-content-muted">
-              Priced Items ({totals.pricedItemCount})
+              Order Subtotal ({totals.pricedItemCount} item{totals.pricedItemCount !== 1 ? 's' : ''})
             </span>
             <span className="font-mono font-bold text-content-primary">
               {formatPaise(totals.subtotalPaise)}
@@ -153,9 +153,9 @@ export const CartView: React.FC<CartViewProps> = ({
 
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-1.5">
-              <span className="text-content-muted">Fixed Demo Token</span>
+              <span className="text-content-muted">Advance Token Required</span>
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-festive-amber border border-amber-500/20">
-                Fixed ₹100
+                {totals.subtotalPaise < 20000 ? '₹50 (< ₹200)' : '₹100 (≥ ₹200)'}
               </span>
             </div>
             <span className="font-mono font-bold text-festive-amber">
@@ -164,7 +164,7 @@ export const CartView: React.FC<CartViewProps> = ({
           </div>
 
           <div className="flex justify-between items-center">
-            <span className="text-content-muted">Remaining Balance</span>
+            <span className="text-content-muted">Balance Due at Counter</span>
             <span className="font-mono font-bold text-content-primary">
               {formatPaise(totals.remainingBalancePaise)}
             </span>
@@ -184,10 +184,10 @@ export const CartView: React.FC<CartViewProps> = ({
         <div className="flex justify-between items-baseline pt-1">
           <div>
             <span className="text-base font-bold text-content-primary">
-              Simulated Order Subtotal
+              Order Subtotal
             </span>
             <p className="text-[11px] text-content-muted">
-              Order Subtotal = sum of priced items and quantities
+              Advance token online + remaining balance at counter pickup
             </p>
           </div>
           <span className="text-2xl font-bold font-mono text-festive-amber">
@@ -202,7 +202,7 @@ export const CartView: React.FC<CartViewProps> = ({
               <span>⚠️</span> Unpriced Items Present:
             </p>
             <p>
-              Every item in your box must have a confirmed price before proceeding to simulated payment.
+              Every item in your box must have a confirmed price before proceeding to payment instructions.
             </p>
           </div>
         )}
@@ -210,23 +210,13 @@ export const CartView: React.FC<CartViewProps> = ({
         {!totals.minOrderRequirementMet && (
           <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-800/40 text-xs text-amber-300 space-y-1">
             <p className="font-bold flex items-center gap-1.5">
-              <span>ℹ️</span> Minimum Demo Subtotal:
+              <span>ℹ️</span> Minimum Order Subtotal:
             </p>
             <p>
-              Add items until your subtotal reaches ₹100. The demo token amount is fixed at ₹100.
+              Add items until your subtotal reaches at least ₹50 to meet the minimum advance token requirement.
             </p>
           </div>
         )}
-
-        {/* Portfolio Demo Notice */}
-        <div className="p-3 rounded-xl bg-bg-elevated border border-white/5 text-xs text-content-muted space-y-1">
-          <p className="text-content-primary font-semibold">
-            📌 Portfolio Demo Notice:
-          </p>
-          <p>
-            Portfolio Demo Only. No real orders, fireworks sales, delivery, or payments are processed.
-          </p>
-        </div>
       </div>
 
       {/* Actions */}
@@ -244,7 +234,7 @@ export const CartView: React.FC<CartViewProps> = ({
           onClick={onProceedToReview}
           className="w-full sm:flex-1 min-h-touch px-6 py-3 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 text-black font-semibold text-base transition-transform flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-festive-marigold"
         >
-          <span>Proceed to Review & Summary →</span>
+          <span>Proceed to Review & Pay →</span>
         </button>
       </div>
     </div>

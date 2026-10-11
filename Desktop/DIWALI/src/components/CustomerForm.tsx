@@ -31,7 +31,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
 
     if (!values.ageConfirmed) {
       errs.ageConfirmed =
-        'You must confirm that you are 18 years or older for the demo ordering flow.';
+        'You must confirm that you are 18 years or older for fireworks ordering.';
     }
 
     return errs;
@@ -63,15 +63,13 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
         <div className="mb-6">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-festive-marigold/10 border border-festive-marigold/30 text-festive-amber mb-2">
             <span>👤</span>
-            <span>Transient Session Memory Only</span>
+            <span>Counter Collection Verification</span>
           </div>
           <h2 className="text-2xl font-bold font-display text-content-primary">
-            Sample Customer Information
+            Customer Information
           </h2>
           <p className="text-sm text-content-muted mt-1 leading-relaxed">
-            Please enter sample contact details for the order simulation. Your
-            details are stored only in memory for this session and are never
-            saved to local storage.
+            Please enter your contact details for counter pickup reservation and order reference tracking.
           </p>
         </div>
 
@@ -164,7 +162,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
               </p>
             ) : (
               <p className="mt-1 text-xs text-content-muted">
-                Used to label your simulated demo order slip.
+                Used to verify pickup identity at the counter.
               </p>
             )}
           </div>
@@ -172,7 +170,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
           {/* Fulfilment Preference */}
           <div>
             <label className="block text-sm font-semibold text-content-primary mb-1.5">
-              Collection Method (Demonstration)
+              Collection Method
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button
@@ -191,7 +189,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
               >
                 <div className="font-bold text-sm">Store Counter Pickup</div>
                 <div className="text-content-muted mt-0.5">
-                  Simulated local counter collection demo
+                  Direct physical collection at Sivakasi depot
                 </div>
               </button>
 
@@ -211,7 +209,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
               >
                 <div className="font-bold text-sm">Wholesale Enquiry</div>
                 <div className="text-content-muted mt-0.5">
-                  Simulated bulk festival batch demo
+                  Bulk order reservation for commercial lots
                 </div>
               </button>
             </div>
@@ -238,7 +236,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                 <strong className="text-content-primary">
                   18 years of age or older
                 </strong>{' '}
-                (Simulated age verification for demo ordering flow).{' '}
+                as required by Explosives Rules and safety regulations.{' '}
                 <span className="text-festive-crimson">*</span>
               </span>
             </label>
@@ -265,7 +263,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
               onChange={(e) =>
                 setDetails((prev) => ({ ...prev, notes: e.target.value }))
               }
-              placeholder="e.g. Test notes for simulated packaging or pickup date."
+              placeholder="e.g. Expected pickup date or packaging preferences."
               className="w-full p-3 rounded-xl bg-bg-elevated border border-white/10 text-content-primary placeholder-content-muted text-sm focus:outline-none focus:ring-2 focus:ring-festive-marigold"
             />
             <div className="text-right text-[11px] text-content-muted mt-1">

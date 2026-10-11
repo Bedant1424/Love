@@ -7,6 +7,7 @@ import {
   DemoOrderRecordWithItems,
   OperationalStatus,
   PaymentStatus,
+  PaymentSubmission,
   PriceAuditLog,
 } from './types';
 
@@ -32,6 +33,7 @@ class InMemoryDemoDatabase {
   private variants: Map<string, ProductVariant> = new Map();
   private orders: Map<string, DbOrder> = new Map();
   private orderItems: Map<string, DbOrderItem[]> = new Map();
+  private paymentSubmissions: Map<string, PaymentSubmission> = new Map();
   private auditLogs: PriceAuditLog[] = [];
 
   constructor() {
@@ -48,7 +50,6 @@ class InMemoryDemoDatabase {
   }
 
   public async getCategories() {
-    // Reconstruct categories with up-to-date variants from map
     return this.categories.map((cat) => ({
       ...cat,
       products: this.products
@@ -90,7 +91,6 @@ class InMemoryDemoDatabase {
     };
     this.variants.set(variantId, updated);
 
-    // Also update in product list
     for (const p of this.products) {
       p.variants = p.variants.map((v) => (v.id === variantId ? updated : v));
     }
@@ -103,7 +103,11 @@ class InMemoryDemoDatabase {
       operator_id: operatorId,
       old_value_json: JSON.stringify({ pricePaise: oldPrice }),
       new_value_json: JSON.stringify({ pricePaise: newPricePaise }),
-      reason: reason || (isOverride ? 'Manual override authorized' : 'Updated demo price within printed range'),
+      reason:
+        reason ||
+        (isOverride
+          ? 'Manual override authorized'
+          : 'Updated demo price within printed range'),
       is_override: isOverride ? 1 : 0,
       created_at: new Date().toISOString(),
     };
@@ -116,6 +120,19 @@ class InMemoryDemoDatabase {
     order: Omit<DbOrder, 'created_at' | 'updated_at'>,
     items: Omit<DbOrderItem, 'id' | 'order_id' | 'created_at'>[]
   ): Promise<DemoOrderRecordWithItems> {
+    // Idempotency check
+    if (order.idempotency_key) {
+      const existing = Array.from(this.orders.values()).find(
+        (o) => o.idempotency_key === order.idempotency_key
+      );
+      if (existing) {
+        return {
+          ...existing,
+          items: this.orderItems.get(existing.id) || [],
+        };
+      }
+    }
+
     const now = new Date().toISOString();
     const fullOrder: DbOrder = {
       ...order,
@@ -144,7 +161,7 @@ class InMemoryDemoDatabase {
         subtotalPaise: order.subtotal_paise,
         tokenDuePaise: order.token_amount_paise,
       }),
-      reason: 'Demo simulated order created by customer',
+      reason: 'Order created with server-calculated totals',
       is_override: 0,
       created_at: now,
     };
@@ -196,10 +213,10 @@ class InMemoryDemoDatabase {
         (o) =>
           o.order_reference.toLowerCase().includes(q) ||
           o.customer_name.toLowerCase().includes(q) ||
-          o.customer_mobile.includes(q)
+          o.customer_mobile.includes(q) ||
+          (o.payment_reference && o.payment_reference.toLowerCase().includes(q))
       );
     }
-    // Sort descending by creation date
     list.sort(
       (a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -219,11 +236,33 @@ class InMemoryDemoDatabase {
     const order = await this.getOrderByReference(reference, accessToken);
     if (!order) throw new Error('ORDER_NOT_FOUND');
 
+    // Duplicate UTR check: reject if another order already used this exact UTR
+    const existingSubmission = Array.from(this.paymentSubmissions.values()).find(
+      (s) => s.utr === utr && s.order_reference !== reference
+    );
+    if (existingSubmission) {
+      throw new Error('DUPLICATE_UTR');
+    }
+
+    const now = new Date().toISOString();
+    const submissionId = `sub_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+    const submission: PaymentSubmission = {
+      id: submissionId,
+      order_id: order.id,
+      order_reference: reference,
+      utr,
+      payment_status: 'RECORDED_UNVERIFIED',
+      created_at: now,
+    };
+    this.paymentSubmissions.set(submissionId, submission);
+
     const updatedOrder: DbOrder = {
       ...order,
       payment_reference: utr,
-      payment_status: 'PENDING_VERIFICATION',
-      updated_at: new Date().toISOString(),
+      payment_submitted_at: now,
+      payment_status: 'RECORDED_UNVERIFIED',
+      updated_at: now,
     };
     this.orders.set(order.id, updatedOrder);
 
@@ -231,16 +270,109 @@ class InMemoryDemoDatabase {
       id: `audit_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       entity_type: 'PAYMENT_VERIFICATION',
       entity_id: order.id,
-      action: 'UTR_SUBMITTED',
+      action: 'UTR_RECORDED_UNVERIFIED',
       operator_id: 'CUSTOMER',
       old_value_json: JSON.stringify({ paymentStatus: order.payment_status }),
-      new_value_json: JSON.stringify({ utr, paymentStatus: 'PENDING_VERIFICATION' }),
-      reason: 'Customer submitted simulated 12-digit UTR',
+      new_value_json: JSON.stringify({
+        utr,
+        paymentStatus: 'RECORDED_UNVERIFIED',
+      }),
+      reason:
+        'Customer submitted 12-digit UTR; recorded as unverified pending bank reconciliation',
       is_override: 0,
-      created_at: new Date().toISOString(),
+      created_at: now,
     });
 
     return { ...updatedOrder, items: this.orderItems.get(order.id) || [] };
+  }
+
+  public async reconcilePayment(
+    orderId: string,
+    action: 'RECONCILE' | 'REJECT' | 'APPROVE_TOKEN' | 'REJECT_INVALID_UTR',
+    reconciliationNotes: string,
+    operatorId: string = 'OP-ADMIN'
+  ): Promise<DemoOrderRecordWithItems> {
+    const order = this.orders.get(orderId);
+    if (!order) throw new Error('ORDER_NOT_FOUND');
+
+    if (!reconciliationNotes || !reconciliationNotes.trim()) {
+      throw new Error('RECONCILIATION_NOTES_REQUIRED');
+    }
+
+    const now = new Date().toISOString();
+    let updatedPaymentStatus: PaymentStatus = order.payment_status;
+    let updatedOperationalStatus: OperationalStatus = order.operational_status;
+
+    const isApproval = action === 'RECONCILE' || action === 'APPROVE_TOKEN';
+
+    if (isApproval) {
+      updatedPaymentStatus = 'RECONCILED';
+      if (order.operational_status === 'SUBMITTED') {
+        updatedOperationalStatus = 'CONFIRMED';
+      }
+    } else {
+      updatedPaymentStatus = 'FAILED';
+    }
+
+    const updatedOrder: DbOrder = {
+      ...order,
+      payment_status: updatedPaymentStatus,
+      operational_status: updatedOperationalStatus,
+      reconciled_by: operatorId,
+      reconciled_at: now,
+      reconciliation_notes: reconciliationNotes.trim(),
+      updated_at: now,
+    };
+    this.orders.set(orderId, updatedOrder);
+
+    // Update payment submission if present
+    for (const [subId, sub] of this.paymentSubmissions.entries()) {
+      if (sub.order_id === orderId) {
+        this.paymentSubmissions.set(subId, {
+          ...sub,
+          payment_status: isApproval ? 'RECONCILED' : 'REJECTED',
+          reconciled_by: operatorId,
+          reconciled_at: now,
+          reconciliation_notes: reconciliationNotes.trim(),
+        });
+      }
+    }
+
+    this.auditLogs.unshift({
+      id: `audit_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      entity_type: 'PAYMENT_RECONCILIATION',
+      entity_id: orderId,
+      action: isApproval ? 'MANUAL_RECONCILIATION_CONFIRMED' : 'MANUAL_RECONCILIATION_REJECTED',
+      operator_id: operatorId,
+      old_value_json: JSON.stringify({
+        paymentStatus: order.payment_status,
+        operationalStatus: order.operational_status,
+      }),
+      new_value_json: JSON.stringify({
+        paymentStatus: updatedPaymentStatus,
+        operationalStatus: updatedOperationalStatus,
+      }),
+      reason: reconciliationNotes.trim(),
+      is_override: 0,
+      created_at: now,
+    });
+
+    return { ...updatedOrder, items: this.orderItems.get(orderId) || [] };
+  }
+
+  // Backward compatibility alias for tests
+  public async verifyPayment(
+    orderId: string,
+    action: 'APPROVE_TOKEN' | 'REJECT_INVALID_UTR',
+    operatorId: string = 'OP-ADMIN',
+    operatorNote?: string
+  ): Promise<DemoOrderRecordWithItems> {
+    return this.reconcilePayment(
+      orderId,
+      action,
+      operatorNote || 'Manual administrator statement verification',
+      operatorId
+    );
   }
 
   public async updateOrderStatus(
@@ -252,7 +384,6 @@ class InMemoryDemoDatabase {
     const order = this.orders.get(orderId);
     if (!order) throw new Error('ORDER_NOT_FOUND');
 
-    // Business guard: cannot mark ready or completed if unpaid
     if (
       (newStatus === 'READY_FOR_PICKUP' || newStatus === 'COMPLETED') &&
       order.payment_status === 'UNPAID'
@@ -273,60 +404,11 @@ class InMemoryDemoDatabase {
       entity_id: orderId,
       action: 'STATUS_TRANSITION',
       operator_id: operatorId,
-      old_value_json: JSON.stringify({ operationalStatus: order.operational_status }),
-      new_value_json: JSON.stringify({ operationalStatus: newStatus }),
-      reason: notes || `Operational status transitioned to ${newStatus}`,
-      is_override: 0,
-      created_at: new Date().toISOString(),
-    });
-
-    return { ...updatedOrder, items: this.orderItems.get(orderId) || [] };
-  }
-
-  public async verifyPayment(
-    orderId: string,
-    action: 'APPROVE_TOKEN' | 'REJECT_INVALID_UTR',
-    operatorId: string = 'OP-ADMIN',
-    operatorNote?: string
-  ): Promise<DemoOrderRecordWithItems> {
-    const order = this.orders.get(orderId);
-    if (!order) throw new Error('ORDER_NOT_FOUND');
-
-    let updatedPaymentStatus: PaymentStatus = order.payment_status;
-    let updatedOperationalStatus: OperationalStatus = order.operational_status;
-
-    if (action === 'APPROVE_TOKEN') {
-      updatedPaymentStatus = 'VERIFIED_TOKEN';
-      if (order.operational_status === 'SUBMITTED') {
-        updatedOperationalStatus = 'CONFIRMED';
-      }
-    } else {
-      updatedPaymentStatus = 'FAILED';
-    }
-
-    const updatedOrder: DbOrder = {
-      ...order,
-      payment_status: updatedPaymentStatus,
-      operational_status: updatedOperationalStatus,
-      updated_at: new Date().toISOString(),
-    };
-    this.orders.set(orderId, updatedOrder);
-
-    this.auditLogs.unshift({
-      id: `audit_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-      entity_type: 'PAYMENT_VERIFICATION',
-      entity_id: orderId,
-      action: action === 'APPROVE_TOKEN' ? 'TOKEN_VERIFIED' : 'UTR_REJECTED',
-      operator_id: operatorId,
       old_value_json: JSON.stringify({
-        paymentStatus: order.payment_status,
         operationalStatus: order.operational_status,
       }),
-      new_value_json: JSON.stringify({
-        paymentStatus: updatedPaymentStatus,
-        operationalStatus: updatedOperationalStatus,
-      }),
-      reason: operatorNote || (action === 'APPROVE_TOKEN' ? 'Simulated token payment approved' : 'Simulated UTR rejected'),
+      new_value_json: JSON.stringify({ operationalStatus: newStatus }),
+      reason: notes || `Operational status transitioned to ${newStatus}`,
       is_override: 0,
       created_at: new Date().toISOString(),
     });
@@ -337,8 +419,10 @@ class InMemoryDemoDatabase {
   public async getDashboardKPIs(): Promise<AdminDashboardKPIs> {
     const ordersList = Array.from(this.orders.values());
     const totalOrders = ordersList.length;
-    const pendingVerifications = ordersList.filter(
-      (o) => o.payment_status === 'PENDING_VERIFICATION'
+    const recordedUnverified = ordersList.filter(
+      (o) =>
+        o.payment_status === 'RECORDED_UNVERIFIED' ||
+        o.payment_status === 'PENDING_VERIFICATION'
     ).length;
     const readyForPickup = ordersList.filter(
       (o) => o.operational_status === 'READY_FOR_PICKUP'
@@ -349,11 +433,16 @@ class InMemoryDemoDatabase {
     const confirmedToday = ordersList.filter(
       (o) =>
         o.operational_status === 'CONFIRMED' ||
+        o.payment_status === 'RECONCILED' ||
         o.payment_status === 'VERIFIED_TOKEN'
     ).length;
 
     const totalTokenCollected = ordersList
-      .filter((o) => o.payment_status === 'VERIFIED_TOKEN')
+      .filter(
+        (o) =>
+          o.payment_status === 'RECONCILED' ||
+          o.payment_status === 'VERIFIED_TOKEN'
+      )
       .reduce((sum, o) => sum + o.token_amount_paise, 0);
 
     const totalBalanceCollected = ordersList
@@ -367,7 +456,9 @@ class InMemoryDemoDatabase {
 
     return {
       totalDemoOrders: totalOrders,
-      pendingPaymentVerificationCount: pendingVerifications,
+      totalOrders,
+      recordedUnverifiedCount: recordedUnverified,
+      pendingPaymentVerificationCount: recordedUnverified,
       ordersReadyForPickupCount: readyForPickup,
       confirmedTodayCount: confirmedToday,
       completedOrdersCount: completedOrders,
@@ -381,15 +472,14 @@ class InMemoryDemoDatabase {
   public async getAuditLogs(): Promise<PriceAuditLog[]> {
     return [...this.auditLogs];
   }
+
+  public async getPaymentSubmissions(): Promise<PaymentSubmission[]> {
+    return Array.from(this.paymentSubmissions.values());
+  }
 }
 
-// Global in-memory singleton for test and local dev persistence
 export const globalMemoryDb = new InMemoryDemoDatabase();
 
-/**
- * Returns database client: wraps Cloudflare D1 if provided, otherwise memory fallback.
- */
 export function getDb(_d1?: D1Database | null) {
-  // If no D1 instance, return in-memory database
   return globalMemoryDb;
 }

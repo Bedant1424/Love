@@ -1,4 +1,11 @@
-import { TOKEN_AMOUNT_PAISE, MIN_ORDER_SUBTOTAL_PAISE } from '../types/cart';
+import {
+  calculateTokenAmountPaise,
+  calculateRemainingBalancePaise,
+  TOKEN_TIER_THRESHOLD_PAISE,
+  TOKEN_LOW_TIER_PAISE,
+  TOKEN_HIGH_TIER_PAISE,
+  MIN_ORDER_SUBTOTAL_PAISE,
+} from '../utils/tokenPolicy';
 import { getDb } from './db';
 import {
   ApiResponse,
@@ -6,17 +13,33 @@ import {
   DbOrder,
   DbOrderItem,
   OperationalStatus,
+  PaymentConfig,
+  ReconcilePaymentRequest,
+  SubmitUtrRequest,
   UpdateDemoPriceRequest,
   UpdateOrderStatusRequest,
-  VerifyPaymentRequest,
 } from './types';
 
-export interface RouteContext {
-  params: Record<string, string>;
-  searchParams: URLSearchParams;
-  request: Request;
-  env?: any;
-}
+export const PAYMENT_COLLECTION_ENABLED = false;
+
+export const DEFAULT_PAYMENT_CONFIG: PaymentConfig = {
+  paymentCollectionEnabled: PAYMENT_COLLECTION_ENABLED,
+  testFixture: {
+    qrPayload:
+      'upi://pay?pa=test-fixture@nagarjunatraders&pn=NAGARJUNA%20TRADERS&am=0&tn=TEST%20FIXTURE%20ONLY',
+    vpa: 'test-fixture@nagarjunatraders',
+    accountName: 'NAGARJUNA TRADERS (TEST FIXTURE)',
+    isRestrictedEnv: true,
+    notice:
+      'Payment collection is currently disabled. Test fixture provided for restricted workflow testing only.',
+  },
+  tokenTiers: {
+    thresholdPaise: TOKEN_TIER_THRESHOLD_PAISE,
+    lowTierPaise: TOKEN_LOW_TIER_PAISE,
+    highTierPaise: TOKEN_HIGH_TIER_PAISE,
+    minOrderSubtotalPaise: MIN_ORDER_SUBTOTAL_PAISE,
+  },
+};
 
 export async function handleApiRequest(
   request: Request,
@@ -34,7 +57,8 @@ export async function handleApiRequest(
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Order-Token',
+        'Access-Control-Allow-Headers':
+          'Content-Type, Authorization, X-Order-Token',
       },
     });
   };
@@ -45,13 +69,22 @@ export async function handleApiRequest(
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Order-Token',
+        'Access-Control-Allow-Headers':
+          'Content-Type, Authorization, X-Order-Token',
       },
     });
   }
 
   try {
     // ── PUBLIC ENDPOINTS ─────────────────────────────────────────────
+
+    // GET /api/v1/payment-config
+    if (path === '/api/v1/payment-config' && method === 'GET') {
+      return jsonResponse({
+        success: true,
+        data: DEFAULT_PAYMENT_CONFIG,
+      });
+    }
 
     // GET /api/v1/catalogue
     if (path === '/api/v1/catalogue' && method === 'GET') {
@@ -62,9 +95,9 @@ export async function handleApiRequest(
           store: {
             name: 'Nagarjuna Traders',
             location: 'Sivakasi / Counter Collection',
-            checkoutEnabled: false,
-            isPortfolioDemo: true,
-            fixedTokenAmountPaise: TOKEN_AMOUNT_PAISE,
+            checkoutEnabled: true,
+            paymentCollectionEnabled: PAYMENT_COLLECTION_ENABLED,
+            tokenTiers: DEFAULT_PAYMENT_CONFIG.tokenTiers,
           },
           categories,
         },
@@ -123,7 +156,7 @@ export async function handleApiRequest(
             success: false,
             error: {
               code: 'EMPTY_BASKET',
-              message: 'At least one item is required in the demo basket.',
+              message: 'At least one item is required in the order.',
             },
           },
           400
@@ -131,7 +164,10 @@ export async function handleApiRequest(
       }
 
       let subtotalPaise = 0;
-      const orderItemsToCreate: Omit<DbOrderItem, 'id' | 'order_id' | 'created_at'>[] = [];
+      const orderItemsToCreate: Omit<
+        DbOrderItem,
+        'id' | 'order_id' | 'created_at'
+      >[] = [];
 
       for (const item of body.items) {
         if (!item.quantity || item.quantity <= 0 || item.quantity > 50) {
@@ -168,7 +204,7 @@ export async function handleApiRequest(
               success: false,
               error: {
                 code: 'UNPRICED_ITEM_IN_ORDER',
-                message: `Every item in your box must have a confirmed price before proceeding to simulated payment. Item "${variant.name}" has an unconfirmed price range.`,
+                message: `Every item in your order must have a confirmed price. Item "${variant.name}" has an unconfirmed price range.`,
               },
             },
             400
@@ -189,7 +225,7 @@ export async function handleApiRequest(
         });
       }
 
-      // 3. Minimum order gating: ₹100
+      // 3. Minimum order gating: ₹50
       if (subtotalPaise < MIN_ORDER_SUBTOTAL_PAISE) {
         return jsonResponse(
           {
@@ -197,29 +233,35 @@ export async function handleApiRequest(
             error: {
               code: 'SUBTOTAL_BELOW_MINIMUM',
               message:
-                'Add items until your subtotal reaches ₹100. The demo token amount is fixed at ₹100.',
+                'Add items until your subtotal reaches at least ₹50 to meet the minimum order requirement.',
             },
           },
           400
         );
       }
 
-      // 4. Financial Calculations: Fixed ₹100 Token
-      const tokenDuePaise = TOKEN_AMOUNT_PAISE;
-      const balanceDuePaise = Math.max(0, subtotalPaise - tokenDuePaise);
+      // 4. Server-side Tiered Token Calculation
+      // Below ₹200 -> ₹50 (5,000 paise). ₹200 or above -> ₹100 (10,000 paise).
+      const tokenDuePaise = calculateTokenAmountPaise(subtotalPaise);
+      const balanceDuePaise = calculateRemainingBalancePaise(
+        subtotalPaise,
+        tokenDuePaise
+      );
 
       const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-      const orderRef = `DEMO-NT-${Math.floor(1000 + Math.random() * 9000)}`;
-      const accessToken = typeof crypto !== 'undefined' && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `token_${Date.now()}_${Math.random().toString(36).substring(2, 12)}`;
+      const orderRef = `NT-${Math.floor(1000 + Math.random() * 9000)}`;
+      const accessToken =
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `token_${Date.now()}_${Math.random().toString(36).substring(2, 12)}`;
 
       const orderRecord: Omit<DbOrder, 'created_at' | 'updated_at'> = {
         id: orderId,
         order_reference: orderRef,
         customer_name: body.customer.fullName.trim(),
         customer_mobile: mobileClean,
-        fulfilment_preference: body.customer.fulfilmentPreference || 'COUNTER_PICKUP',
+        fulfilment_preference:
+          body.customer.fulfilmentPreference || 'COUNTER_PICKUP',
         operational_status: 'SUBMITTED',
         payment_status: 'UNPAID',
         subtotal_paise: subtotalPaise,
@@ -229,7 +271,11 @@ export async function handleApiRequest(
         idempotency_key: body.idempotencyKey || null,
         customer_notes: body.customer.notes || null,
         payment_reference: null,
-        is_simulated_demo: 1,
+        payment_submitted_at: null,
+        reconciled_by: null,
+        reconciled_at: null,
+        reconciliation_notes: null,
+        is_simulated_demo: 0,
       };
 
       const created = await db.createOrder(orderRecord, orderItemsToCreate);
@@ -245,14 +291,13 @@ export async function handleApiRequest(
             subtotalPaise: created.subtotal_paise,
             tokenDuePaise: created.token_amount_paise,
             balanceDuePaise: created.remaining_balance_paise,
-            isSimulatedDemo: true,
             paymentInstructions: {
-              vpa: 'nagarjunatraders@okhdfcbank',
-              accountName: 'NAGARJUNA TRADERS (PORTFOLIO DEMO)',
-              amountInr: '100.00',
+              vpa: DEFAULT_PAYMENT_CONFIG.testFixture.vpa,
+              accountName: DEFAULT_PAYMENT_CONFIG.testFixture.accountName,
+              amountInr: (created.token_amount_paise / 100).toFixed(2),
               transactionNote: created.order_reference,
-              notice:
-                'Portfolio Demo Only. No real orders, fireworks sales, delivery, or payments are processed.',
+              paymentCollectionEnabled: PAYMENT_COLLECTION_ENABLED,
+              notice: DEFAULT_PAYMENT_CONFIG.testFixture.notice,
             },
           },
         },
@@ -260,65 +305,197 @@ export async function handleApiRequest(
       );
     }
 
+    // Match GET /api/v1/orders/:reference/status
+    const orderStatusMatch = path.match(/^\/api\/v1\/orders\/([^/]+)\/status$/);
+    if (orderStatusMatch && method === 'GET') {
+      const reference = orderStatusMatch[1];
+      const token =
+        url.searchParams.get('token') ||
+        request.headers.get('X-Order-Token') ||
+        undefined;
+
+      try {
+        const order = await db.getOrderByReference(reference, token);
+        if (!order) {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'ORDER_NOT_FOUND',
+                message: `Order with reference ${reference} was not found.`,
+              },
+            },
+            404
+          );
+        }
+
+        return jsonResponse({
+          success: true,
+          data: {
+            orderReference: order.order_reference,
+            customerName: order.customer_name,
+            operationalStatus: order.operational_status,
+            paymentStatus: order.payment_status,
+            paymentReference: order.payment_reference,
+            paymentSubmittedAt: order.payment_submitted_at,
+            subtotalPaise: order.subtotal_paise,
+            tokenAmountPaise: order.token_amount_paise,
+            remainingBalancePaise: order.remaining_balance_paise,
+            createdAt: order.created_at,
+            updatedAt: order.updated_at,
+          },
+        });
+      } catch (err: any) {
+        if (err.message === 'INVALID_ACCESS_TOKEN') {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'UNAUTHORIZED',
+                message: 'Invalid access token for order status query.',
+              },
+            },
+            403
+          );
+        }
+        throw err;
+      }
+    }
+
     // Match GET /api/v1/orders/:reference
     const orderLookupMatch = path.match(/^\/api\/v1\/orders\/([^/]+)$/);
     if (orderLookupMatch && method === 'GET') {
       const reference = orderLookupMatch[1];
       const token =
-        url.searchParams.get('token') || request.headers.get('X-Order-Token') || undefined;
+        url.searchParams.get('token') ||
+        request.headers.get('X-Order-Token') ||
+        undefined;
 
-      const order = await db.getOrderByReference(reference, token);
-      if (!order) {
-        return jsonResponse(
-          {
-            success: false,
-            error: {
-              code: 'ORDER_NOT_FOUND',
-              message: `Order with reference ${reference} was not found.`,
+      try {
+        const order = await db.getOrderByReference(reference, token);
+        if (!order) {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'ORDER_NOT_FOUND',
+                message: `Order with reference ${reference} was not found.`,
+              },
             },
-          },
-          404
-        );
-      }
+            404
+          );
+        }
 
-      return jsonResponse({
-        success: true,
-        data: order,
-      });
+        return jsonResponse({
+          success: true,
+          data: order,
+        });
+      } catch (err: any) {
+        if (err.message === 'INVALID_ACCESS_TOKEN') {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'UNAUTHORIZED',
+                message: 'Invalid access token for order lookup.',
+              },
+            },
+            403
+          );
+        }
+        throw err;
+      }
     }
 
-    // Match POST /api/v1/orders/:reference/payment-reference
-    const utrMatch = path.match(/^\/api\/v1\/orders\/([^/]+)\/payment-reference$/);
+    // Match POST /api/v1/orders/:reference/utr or /payment-reference
+    const utrMatch =
+      path.match(/^\/api\/v1\/orders\/([^/]+)\/utr$/) ||
+      path.match(/^\/api\/v1\/orders\/([^/]+)\/payment-reference$/);
+
     if (utrMatch && method === 'POST') {
       const reference = utrMatch[1];
       const token =
-        url.searchParams.get('token') || request.headers.get('X-Order-Token') || undefined;
-      const body = (await request.json()) as { utr: string };
+        url.searchParams.get('token') ||
+        request.headers.get('X-Order-Token') ||
+        undefined;
+      const body = (await request.json()) as SubmitUtrRequest;
 
-      if (!body.utr || !/^\d{12}$/.test(body.utr.trim())) {
+      // UTR must be a string of exactly 12 digits. Never parse as number.
+      if (
+        typeof body.utr !== 'string' ||
+        !/^\d{12}$/.test(body.utr.trim())
+      ) {
         return jsonResponse(
           {
             success: false,
             error: {
               code: 'INVALID_UTR_FORMAT',
-              message: 'Simulated payment UTR reference must be exactly 12 numeric digits.',
+              message:
+                'UTR payment reference must be a string of exactly 12 numeric digits.',
             },
           },
           400
         );
       }
 
-      const updated = await db.submitPaymentReference(reference, body.utr.trim(), token);
-      return jsonResponse({
-        success: true,
-        data: {
-          orderReference: updated.order_reference,
-          paymentReference: updated.payment_reference,
-          paymentStatus: updated.payment_status,
-          message:
-            'Simulated payment UTR submitted successfully. Awaiting administrator verification.',
-        },
-      });
+      const utrString = body.utr.trim();
+
+      try {
+        const updated = await db.submitPaymentReference(
+          reference,
+          utrString,
+          token
+        );
+        return jsonResponse({
+          success: true,
+          data: {
+            orderReference: updated.order_reference,
+            paymentReference: updated.payment_reference,
+            paymentStatus: updated.payment_status,
+            message:
+              '12-digit UTR payment reference recorded. Status is recorded as unverified pending manual bank statement reconciliation.',
+          },
+        });
+      } catch (err: any) {
+        if (err.message === 'DUPLICATE_UTR') {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'DUPLICATE_UTR',
+                message:
+                  'This UTR reference has already been submitted for another order.',
+              },
+            },
+            409
+          );
+        }
+        if (err.message === 'INVALID_ACCESS_TOKEN') {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'UNAUTHORIZED',
+                message: 'Invalid access token for UTR submission.',
+              },
+            },
+            403
+          );
+        }
+        if (err.message === 'ORDER_NOT_FOUND') {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'ORDER_NOT_FOUND',
+                message: `Order with reference ${reference} was not found.`,
+              },
+            },
+            404
+          );
+        }
+        throw err;
+      }
     }
 
     // ── ADMIN ENDPOINTS ──────────────────────────────────────────────
@@ -334,7 +511,9 @@ export async function handleApiRequest(
 
     // GET /api/v1/admin/orders
     if (path === '/api/v1/admin/orders' && method === 'GET') {
-      const opStatus = url.searchParams.get('operationalStatus') as OperationalStatus | undefined;
+      const opStatus = url.searchParams.get(
+        'operationalStatus'
+      ) as OperationalStatus | undefined;
       const payStatus = url.searchParams.get('paymentStatus') as any;
       const search = url.searchParams.get('search') || undefined;
 
@@ -351,7 +530,9 @@ export async function handleApiRequest(
     }
 
     // GET /api/v1/admin/orders/:id
-    const adminOrderDetailMatch = path.match(/^\/api\/v1\/admin\/orders\/([^/]+)$/);
+    const adminOrderDetailMatch = path.match(
+      /^\/api\/v1\/admin\/orders\/([^/]+)$/
+    );
     if (adminOrderDetailMatch && method === 'GET') {
       const orderId = adminOrderDetailMatch[1];
       const order = await db.getOrderById(orderId);
@@ -371,7 +552,9 @@ export async function handleApiRequest(
     }
 
     // POST /api/v1/admin/orders/:id/status
-    const adminStatusMatch = path.match(/^\/api\/v1\/admin\/orders\/([^/]+)\/status$/);
+    const adminStatusMatch = path.match(
+      /^\/api\/v1\/admin\/orders\/([^/]+)\/status$/
+    );
     if (adminStatusMatch && method === 'POST') {
       const orderId = adminStatusMatch[1];
       const body = (await request.json()) as UpdateOrderStatusRequest;
@@ -404,23 +587,53 @@ export async function handleApiRequest(
       }
     }
 
-    // POST /api/v1/admin/orders/:id/verify-payment
-    const adminVerifyMatch = path.match(/^\/api\/v1\/admin\/orders\/([^/]+)\/verify-payment$/);
-    if (adminVerifyMatch && method === 'POST') {
-      const orderId = adminVerifyMatch[1];
-      const body = (await request.json()) as VerifyPaymentRequest;
+    // POST /api/v1/admin/orders/:id/reconciliation or verify-payment
+    const adminReconciliationMatch =
+      path.match(/^\/api\/v1\/admin\/orders\/([^/]+)\/reconciliation$/) ||
+      path.match(/^\/api\/v1\/admin\/orders\/([^/]+)\/verify-payment$/);
 
-      const updated = await db.verifyPayment(
-        orderId,
-        body.action,
-        body.operatorId || 'OP-ADMIN',
-        body.operatorNote
-      );
+    if (adminReconciliationMatch && method === 'POST') {
+      const orderId = adminReconciliationMatch[1];
+      const body = (await request.json()) as ReconcilePaymentRequest;
 
-      return jsonResponse({
-        success: true,
-        data: updated,
-      });
+      if (!body.reconciliationNotes || !body.reconciliationNotes.trim()) {
+        return jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'RECONCILIATION_NOTES_REQUIRED',
+              message:
+                'Staff manual reconciliation notes are mandatory. Automated bank verification is prohibited.',
+            },
+          },
+          400
+        );
+      }
+
+      try {
+        const updated = await db.reconcilePayment(
+          orderId,
+          body.action,
+          body.reconciliationNotes.trim(),
+          body.operatorId || 'OP-ADMIN'
+        );
+
+        return jsonResponse({
+          success: true,
+          data: updated,
+        });
+      } catch (err: any) {
+        return jsonResponse(
+          {
+            success: false,
+            error: {
+              code: err.message || 'RECONCILIATION_FAILED',
+              message: err.message,
+            },
+          },
+          400
+        );
+      }
     }
 
     // GET /api/v1/admin/variants
@@ -433,7 +646,9 @@ export async function handleApiRequest(
     }
 
     // POST /api/v1/admin/variants/:id/demo-price
-    const adminPriceMatch = path.match(/^\/api\/v1\/admin\/variants\/([^/]+)\/demo-price$/);
+    const adminPriceMatch = path.match(
+      /^\/api\/v1\/admin\/variants\/([^/]+)\/demo-price$/
+    );
     if (adminPriceMatch && method === 'POST') {
       const variantId = adminPriceMatch[1];
       const body = (await request.json()) as UpdateDemoPriceRequest;
@@ -462,7 +677,6 @@ export async function handleApiRequest(
         );
       }
 
-      // Range check
       let isOutsidePrintedRange = false;
       const min = variant.printedMinPaise;
       const max = variant.printedMaxPaise;
@@ -501,7 +715,8 @@ export async function handleApiRequest(
             success: false,
             error: {
               code: 'OVERRIDE_REASON_REQUIRED',
-              message: 'An audit reason must be supplied when overriding printed range boundaries.',
+              message:
+                'An audit reason must be supplied when overriding printed range boundaries.',
             },
           },
           400
@@ -534,12 +749,14 @@ export async function handleApiRequest(
     // POST /api/v1/admin/auth/login
     if (path === '/api/v1/admin/auth/login' && method === 'POST') {
       const body = (await request.json()) as { passphrase?: string };
-      // Allow demo passphrase
-      if (body.passphrase === 'nagarjuna-demo-2026' || body.passphrase === 'admin') {
+      if (
+        body.passphrase === 'nagarjuna-demo-2026' ||
+        body.passphrase === 'admin'
+      ) {
         return jsonResponse({
           success: true,
           data: {
-            token: 'demo-jwt-session-nagarjuna-admin',
+            token: 'admin-jwt-session-nagarjuna',
             operatorId: 'OP-NAGARJUNA',
             role: 'ADMINISTRATOR',
             expiresIn: 43200,
@@ -552,7 +769,7 @@ export async function handleApiRequest(
           success: false,
           error: {
             code: 'INVALID_CREDENTIALS',
-            message: 'Invalid passphrase. Demo passphrase: "nagarjuna-demo-2026" or "admin".',
+            message: 'Invalid passphrase.',
           },
         },
         401

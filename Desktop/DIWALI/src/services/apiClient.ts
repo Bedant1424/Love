@@ -5,8 +5,10 @@ import {
   CreateOrderRequest,
   DemoOrderRecordWithItems,
   OperationalStatus,
+  PaymentConfig,
   PaymentStatus,
   PriceAuditLog,
+  ReconcilePaymentRequest,
 } from '../server/types';
 import { ProductVariant } from '../types/catalogue';
 
@@ -28,7 +30,6 @@ async function executeApi<T>(
       },
     });
   } catch (_fetchErr) {
-    // If standard fetch fails (e.g. no running HTTP server in pure unit test), dispatch directly to handler
     const fullUrl = `http://localhost${url}`;
     const syntheticReq = new Request(fullUrl, {
       ...options,
@@ -49,7 +50,13 @@ async function executeApi<T>(
 
 export const apiClient = {
   // Public Customer Operations
-  async createDemoOrder(order: CreateOrderRequest) {
+  async getPaymentConfig(): Promise<PaymentConfig> {
+    return executeApi<PaymentConfig>('/payment-config', {
+      method: 'GET',
+    });
+  },
+
+  async createOrder(order: CreateOrderRequest) {
     return executeApi<{
       orderReference: string;
       accessToken: string;
@@ -58,12 +65,12 @@ export const apiClient = {
       subtotalPaise: number;
       tokenDuePaise: number;
       balanceDuePaise: number;
-      isSimulatedDemo: true;
       paymentInstructions: {
         vpa: string;
         accountName: string;
         amountInr: string;
         transactionNote: string;
+        paymentCollectionEnabled: boolean;
         notice: string;
       };
     }>('/orders', {
@@ -72,24 +79,60 @@ export const apiClient = {
     });
   },
 
-  async submitPaymentReference(orderReference: string, utr: string, token?: string) {
+  // Backward compatibility alias
+  async createDemoOrder(order: CreateOrderRequest) {
+    return this.createOrder(order);
+  },
+
+  async submitUtr(orderReference: string, utr: string, token?: string) {
     return executeApi<{
       orderReference: string;
       paymentReference: string;
       paymentStatus: PaymentStatus;
       message: string;
-    }>(`/orders/${orderReference}/payment-reference`, {
+    }>(`/orders/${orderReference}/utr`, {
       method: 'POST',
       headers: token ? { 'X-Order-Token': token } : {},
       body: JSON.stringify({ utr }),
     });
   },
 
-  async getOrder(orderReference: string, token?: string) {
+  // Backward compatibility alias
+  async submitPaymentReference(
+    orderReference: string,
+    utr: string,
+    token?: string
+  ) {
+    return this.submitUtr(orderReference, utr, token);
+  },
+
+  async getOrderStatus(orderReference: string, token?: string) {
     const query = token ? `?token=${encodeURIComponent(token)}` : '';
-    return executeApi<DemoOrderRecordWithItems>(`/orders/${orderReference}${query}`, {
+    return executeApi<{
+      orderReference: string;
+      customerName: string;
+      operationalStatus: OperationalStatus;
+      paymentStatus: PaymentStatus;
+      paymentReference?: string | null;
+      paymentSubmittedAt?: string | null;
+      subtotalPaise: number;
+      tokenAmountPaise: number;
+      remainingBalancePaise: number;
+      createdAt: string;
+      updatedAt: string;
+    }>(`/orders/${orderReference}/status${query}`, {
       method: 'GET',
     });
+  },
+
+  async getOrder(orderReference: string, token?: string) {
+    const query = token ? `?token=${encodeURIComponent(token)}` : '';
+    return executeApi<DemoOrderRecordWithItems>(
+      `/orders/${orderReference}${query}`,
+      {
+        method: 'GET',
+      }
+    );
   },
 
   // Admin Dashboard Operations
@@ -117,8 +160,10 @@ export const apiClient = {
     search?: string;
   }) {
     const params = new URLSearchParams();
-    if (filters?.operationalStatus) params.append('operationalStatus', filters.operationalStatus);
-    if (filters?.paymentStatus) params.append('paymentStatus', filters.paymentStatus);
+    if (filters?.operationalStatus)
+      params.append('operationalStatus', filters.operationalStatus);
+    if (filters?.paymentStatus)
+      params.append('paymentStatus', filters.paymentStatus);
     if (filters?.search) params.append('search', filters.search);
 
     const query = params.toString() ? `?${params.toString()}` : '';
@@ -139,21 +184,40 @@ export const apiClient = {
     operatorId: string = 'OP-ADMIN',
     notes?: string
   ) {
-    return executeApi<DemoOrderRecordWithItems>(`/admin/orders/${orderId}/status`, {
-      method: 'POST',
-      body: JSON.stringify({ operationalStatus, operatorId, notes }),
-    });
+    return executeApi<DemoOrderRecordWithItems>(
+      `/admin/orders/${orderId}/status`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ operationalStatus, operatorId, notes }),
+      }
+    );
   },
 
+  async reconcilePayment(
+    orderId: string,
+    request: ReconcilePaymentRequest
+  ) {
+    return executeApi<DemoOrderRecordWithItems>(
+      `/admin/orders/${orderId}/reconciliation`,
+      {
+        method: 'POST',
+        body: JSON.stringify(request),
+      }
+    );
+  },
+
+  // Backward compatibility alias
   async verifyPayment(
     orderId: string,
     action: 'APPROVE_TOKEN' | 'REJECT_INVALID_UTR',
     operatorId: string = 'OP-ADMIN',
     operatorNote?: string
   ) {
-    return executeApi<DemoOrderRecordWithItems>(`/admin/orders/${orderId}/verify-payment`, {
-      method: 'POST',
-      body: JSON.stringify({ action, operatorId, operatorNote }),
+    return this.reconcilePayment(orderId, {
+      action,
+      operatorId,
+      reconciliationNotes:
+        operatorNote || 'Manual administrator statement verification',
     });
   },
 
@@ -170,15 +234,18 @@ export const apiClient = {
     reason?: string,
     allowOverride: boolean = false
   ) {
-    return executeApi<ProductVariant>(`/admin/variants/${variantId}/demo-price`, {
-      method: 'POST',
-      body: JSON.stringify({
-        newPricePaise,
-        operatorId,
-        reason,
-        allowOverride,
-      }),
-    });
+    return executeApi<ProductVariant>(
+      `/admin/variants/${variantId}/demo-price`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          newPricePaise,
+          operatorId,
+          reason,
+          allowOverride,
+        }),
+      }
+    );
   },
 
   async getAuditLogs() {

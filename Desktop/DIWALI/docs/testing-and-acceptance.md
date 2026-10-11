@@ -12,26 +12,34 @@
 
 ```
 +───────────────────────────────────────────────────────────────────────────────────+
-|                           TEST SUITE TOPOLOGY (PORTFOLIO DEMO)                    |
+|               TEST SUITE TOPOLOGY (MILESTONE 4 ORDER & PAYMENT FLOW)              |
 |                                                                                   |
-|  [ Level 1: Unit Tests (Vitest) - 100% Passed (25 tests) ]                         |
-|  - Integer paise arithmetic and formatting (formatters.test.ts)                   |
-|  - Fixed ₹100 token rule (TOKEN_AMOUNT_PAISE = 10000) (cart.test.ts)              |
-|  - Minimum subtotal gating (subtotal >= ₹100) (cart.test.ts)                      |
-|  - Non-negative remaining balance: Math.max(0, subtotal - 10000) (cart.test.ts)   |
-|  - Unpriced range item gating (cart.test.ts)                                      |
-|  - Safe LocalStorage cart recovery (storage.test.ts)                              |
-|  - Human-readable demo summary generation & WhatsApp link (enquirySummary.test.ts)|
+|  [ Level 1: Unit & Calculation Tests (Vitest) - 100% Passed (41 tests) ]          |
+|  - Integer paise arithmetic and Rupee formatting (formatters.test.ts: 3)          |
+|  - Tiered advance token rules: < ₹200 -> ₹50, >= ₹200 -> ₹100 (cart.test.ts: 14) |
+|  - Boundary condition: subtotal == ₹200 is ₹100 tier (cart.test.ts)               |
+|  - Minimum subtotal gating (subtotal >= ₹50) (cart.test.ts)                       |
+|  - Non-negative remaining balance calculation (cart.test.ts)                      |
+|  - Unpriced range item gating & quantity clamping (cart.test.ts)                  |
+|  - Safe LocalStorage cart recovery (storage.test.ts: 5)                           |
+|  - Enquiry & Order summary generator & WhatsApp link (enquirySummary.test.ts: 5)  |
+|  - Edge API & Server router unit tests (api.test.ts: 14)                          |
+|    * GET /api/v1/payment-config returns non-payable test fixture                  |
+|    * Server-side tiered token recalculation (< ₹200 -> ₹50, >= ₹200 -> ₹100)      |
+|    * Rejection of unpriced range items                                            |
+|    * 12-digit string UTR regex validation (non-numeric data type)                 |
+|    * Duplicate UTR rejection with 409 Conflict                                    |
+|    * Order status query with authorization token                                  |
+|    * Admin manual reconciliation requiring mandatory staff notes                  |
 |                                                                                   |
 |  [ Level 2: Component Integration Tests (Vitest + RTL) - 100% Passed (25 tests) ]  |
-|  - 6 Authentic category tabs & poster pricing (CatalogueView.test.tsx)            |
-|  - Environmental statutory notice for Category 1 Laddis (CatalogueView.test.tsx)  |
-|  - Transient customer form validation & 18+ attestation (CustomerForm.test.tsx)   |
-|  - Demo basket, ₹100 token breakdown & blockers (CartView.test.tsx)                |
-|  - Simulated checkout, pending authorization & success (ReviewView.test.tsx)      |
-|  - Failure state simulation & retry action (ReviewView.test.tsx)                  |
-|  - Complete customer journey: Home -> Catalogue -> Basket -> Form -> Review ->   |
-|    Simulated Payment -> Demo Order Confirmation (App.test.tsx)                    |
+|  - 6 Authentic category tabs & poster pricing (CatalogueView.test.tsx: 5)         |
+|  - Environmental statutory notice for Category 1 Laddis (CatalogueView.test.tsx) |
+|  - Transient customer form validation & 18+ attestation (CustomerForm.test.tsx: 5)|
+|  - Cart view, tiered token breakdown & checkout gating (CartView.test.tsx: 4)     |
+|  - Screens 6 to 10 flow: Review -> QR -> UTR -> Confirmation (ReviewView: 4)      |
+|  - Admin portal: KPI cards, price bounds, reconciliation modal (AdminView: 4)     |
+|  - Full E2E user flow from Home to UTR submission & confirmation (App.test.tsx: 3)|
 +───────────────────────────────────────────────────────────────────────────────────+
 ```
 
@@ -41,16 +49,19 @@
 
 | Test Suite | Tests | Scenario Covered | Outcome | Command |
 |---|---|---|---|---|
-| `cart.test.ts` | 12 | Fixed ₹100 token (`10000`), min subtotal gating, non-negative balance, quantity limits (1-50), clamp | ✓ Passed (12/12) | `npm test` |
-| `formatters.test.ts` | 3 | Integer paise to Indian Rupee formatting (`35000` -> `"₹350.00"`) | ✓ Passed (3/3) | `npm test` |
+| `cart.test.ts` | 14 | Tiered tokens (< ₹200 $\rightarrow$ ₹50, $\ge$ ₹200 $\rightarrow$ ₹100, boundary ₹200 $\rightarrow$ ₹100), min subtotal (₹50), non-negative balance | ✓ Passed (14/14) | `npm test` |
+| `api.test.ts` | 14 | Payment config, server tiered tokens, 12-digit UTR string validation, duplicate UTR 409, order status, admin reconciliation | ✓ Passed (14/14) | `npm test` |
+| `formatters.test.ts` | 3 | Integer paise to Indian Rupee formatting (`35000` $\rightarrow$ `"₹350.00"`) | ✓ Passed (3/3) | `npm test` |
 | `storage.test.ts` | 5 | Safe localStorage recovery, JSON fallback, quota error handling | ✓ Passed (5/5) | `npm test` |
-| `enquirySummary.test.ts` | 5 | Human-readable demo summary, fixed token, remaining balance, WhatsApp URL | ✓ Passed (5/5) | `npm test` |
-| `CustomerForm.test.tsx` | 5 | Name validation, Indian mobile regex (`^[6-9]\d{9}$`), age checkbox | ✓ Passed (5/5) | `npm test` |
-| `CartView.test.tsx` | 4 | Demo basket display, price confirmation notes, fixed ₹100 token, blockers | ✓ Passed (4/4) | `npm test` |
-| `ReviewView.test.tsx` | 8 | Customer info, item valuation, simulated payment (pending/success/failure), copy | ✓ Passed (8/8) | `npm test` |
+| `enquirySummary.test.ts` | 5 | Order summary generator, tiered token breakdown, WhatsApp share URL | ✓ Passed (5/5) | `npm test` |
+| `CustomerForm.test.tsx` | 5 | Name validation, Indian mobile regex (`^[6-9]\d{9}$`), age verification | ✓ Passed (5/5) | `npm test` |
+| `CartView.test.tsx` | 4 | Cart item list, price confirmation notes, tiered token breakdown, blockers | ✓ Passed (4/4) | `npm test` |
+| `ReviewView.test.tsx` | 4 | 10-screen lifecycle: Review $\rightarrow$ QR instructions $\rightarrow$ UTR submit $\rightarrow$ Confirmation $\rightarrow$ Status tracker | ✓ Passed (4/4) | `npm test` |
 | `CatalogueView.test.tsx` | 5 | 6 Categories, discrete vs range items, category filtering, search, Laddis notice | ✓ Passed (5/5) | `npm test` |
-| `App.test.tsx` | 3 | Initial Home rendering, end-to-end full customer journey to simulated confirmation, localStorage restore | ✓ Passed (3/3) | `npm test` |
-| **Total** | **50** | **Comprehensive Frontend & Portfolio Demo Verification** | **✓ 50/50 Passed (100%)** | `npm test` |
+| `AdminView.test.tsx` | 4 | Passphrase login, KPI overview, catalogue price bounds override, reconciliation | ✓ Passed (4/4) | `npm test` |
+| `App.test.tsx` | 3 | End-to-end full customer journey to reservation and UTR confirmation | ✓ Passed (3/3) | `npm test` |
+| **Total** | **66** | **Comprehensive Full-Stack Ordering, UTR & Payment Flow Verification** | **✓ 66/66 Passed (100%)** | `npm test` |
+
 
 ---
 

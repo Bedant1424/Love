@@ -10,8 +10,10 @@ export type OperationalStatus =
 
 export type PaymentStatus =
   | 'UNPAID'
-  | 'PENDING_VERIFICATION'
-  | 'VERIFIED_TOKEN'
+  | 'RECORDED_UNVERIFIED'
+  | 'RECONCILED'
+  | 'PENDING_VERIFICATION' // backward compat alias
+  | 'VERIFIED_TOKEN'      // backward compat alias
   | 'FAILED';
 
 export interface DbOrder {
@@ -28,7 +30,11 @@ export interface DbOrder {
   access_token: string;
   idempotency_key?: string | null;
   customer_notes?: string | null;
-  payment_reference?: string | null;
+  payment_reference?: string | null; // 12-digit UTR string
+  payment_submitted_at?: string | null;
+  reconciled_by?: string | null;
+  reconciled_at?: string | null;
+  reconciliation_notes?: string | null;
   is_simulated_demo: number;
   created_at: string;
   updated_at: string;
@@ -51,9 +57,26 @@ export interface DemoOrderRecordWithItems extends DbOrder {
   items: DbOrderItem[];
 }
 
+export interface PaymentSubmission {
+  id: string;
+  order_id: string;
+  order_reference: string;
+  utr: string; // Exactly 12-digit string
+  payment_status: 'RECORDED_UNVERIFIED' | 'RECONCILED' | 'REJECTED';
+  reconciled_by?: string | null;
+  reconciled_at?: string | null;
+  reconciliation_notes?: string | null;
+  created_at: string;
+}
+
 export interface PriceAuditLog {
   id: string;
-  entity_type: 'VARIANT_PRICE' | 'ORDER_STATUS' | 'PAYMENT_VERIFICATION' | 'SYSTEM_SETTING';
+  entity_type:
+    | 'VARIANT_PRICE'
+    | 'ORDER_STATUS'
+    | 'PAYMENT_VERIFICATION'
+    | 'PAYMENT_RECONCILIATION'
+    | 'SYSTEM_SETTING';
   entity_id: string;
   action: string;
   operator_id: string;
@@ -66,6 +89,8 @@ export interface PriceAuditLog {
 
 export interface AdminDashboardKPIs {
   totalDemoOrders: number;
+  totalOrders: number;
+  recordedUnverifiedCount: number;
   pendingPaymentVerificationCount: number;
   ordersReadyForPickupCount: number;
   confirmedTodayCount: number;
@@ -74,6 +99,23 @@ export interface AdminDashboardKPIs {
   totalBalanceCollectedPaise: number;
   unresolvedVariantsCount: number;
   totalVariantsCount: number;
+}
+
+export interface PaymentConfig {
+  paymentCollectionEnabled: boolean;
+  testFixture: {
+    qrPayload: string;
+    vpa: string;
+    accountName: string;
+    isRestrictedEnv: boolean;
+    notice: string;
+  };
+  tokenTiers: {
+    thresholdPaise: number;
+    lowTierPaise: number;
+    highTierPaise: number;
+    minOrderSubtotalPaise: number;
+  };
 }
 
 export interface ApiSuccess<T> {
@@ -107,11 +149,18 @@ export interface UpdateOrderStatusRequest {
   notes?: string;
 }
 
-export interface VerifyPaymentRequest {
-  action: 'APPROVE_TOKEN' | 'REJECT_INVALID_UTR';
-  operatorId?: string;
-  operatorNote?: string;
+export interface SubmitUtrRequest {
+  utr: string;
 }
+
+export interface ReconcilePaymentRequest {
+  action: 'RECONCILE' | 'REJECT' | 'APPROVE_TOKEN' | 'REJECT_INVALID_UTR';
+  operatorId?: string;
+  reconciliationNotes: string;
+}
+
+// Backward compatibility alias
+export type VerifyPaymentRequest = ReconcilePaymentRequest;
 
 export interface UpdateDemoPriceRequest {
   newPricePaise: number;

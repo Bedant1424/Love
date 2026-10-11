@@ -1,6 +1,12 @@
 import React from 'react';
 
-export type ActiveTab = 'home' | 'catalogue' | 'customer' | 'cart' | 'review' | 'admin';
+export type ActiveTab =
+  | 'home'
+  | 'catalogue'
+  | 'customer'
+  | 'cart'
+  | 'review'
+  | 'admin';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -15,13 +21,6 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-bg-surface/95 backdrop-blur-md border-b border-white/10">
-      {/* Portfolio Demo Notice Banner */}
-      <div className="bg-amber-500/15 border-b border-amber-500/30 px-3 py-1 text-center">
-        <p className="text-[11px] sm:text-xs font-medium text-amber-300">
-          Portfolio Demo Only. No real orders, fireworks sales, delivery, or payments are processed.
-        </p>
-      </div>
-
       {/* Top Brand Banner */}
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -36,21 +35,21 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </div>
             <p className="text-xs text-content-muted flex items-center gap-1.5 mt-0.5">
-              <span>Diwali Catalogue Showcase</span>
+              <span>Diwali Fireworks Catalogue</span>
               <span>•</span>
-              <span className="text-festive-amber">Portfolio Demo</span>
+              <span className="text-festive-gold">Sivakasi Counter Collection</span>
             </p>
           </button>
         </div>
 
-        {/* Operational Mode Pill & Cart Action & Admin Quick Link */}
+        {/* Counter Collection Badge, Admin Link & Cart Action */}
         <div className="flex items-center gap-2 md:gap-3">
           <span
-            className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-950/60 text-amber-300 border border-amber-800/40"
-            title="Portfolio Demo Only: All ordering flows and token payments are simulated"
+            className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-950/60 text-emerald-300 border border-emerald-800/40"
+            title="Advance token required online; balance payable at physical counter collection"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-            Portfolio Demo Mode
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            Counter Pickup Only
           </span>
 
           <button
@@ -72,9 +71,9 @@ export const Header: React.FC<HeaderProps> = ({
                 ? 'bg-festive-marigold text-black'
                 : 'bg-bg-elevated text-content-primary hover:bg-white/10 border border-white/10'
             }`}
-            aria-label={`View demo basket with ${cartCount} items`}
+            aria-label={`View shopping cart with ${cartCount} items`}
           >
-            <span>Basket</span>
+            <span>Cart</span>
             <span
               className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                 activeTab === 'cart'
@@ -121,7 +120,7 @@ export const Header: React.FC<HeaderProps> = ({
               : 'text-content-muted hover:text-content-primary'
           }`}
         >
-          Sample Customer
+          Customer Details
         </button>
         <button
           onClick={() => onSelectTab('cart')}
@@ -131,7 +130,7 @@ export const Header: React.FC<HeaderProps> = ({
               : 'text-content-muted hover:text-content-primary'
           }`}
         >
-          Demo Basket ({cartCount})
+          Shopping Cart ({cartCount})
         </button>
         <button
           onClick={() => onSelectTab('review')}
@@ -141,7 +140,7 @@ export const Header: React.FC<HeaderProps> = ({
               : 'text-content-muted hover:text-content-primary'
           }`}
         >
-          Simulated Checkout
+          Review & Pay
         </button>
         <button
           onClick={() => onSelectTab('admin')}

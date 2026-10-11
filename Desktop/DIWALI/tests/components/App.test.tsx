@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import App from '../../src/App';
+import { apiClient } from '../../src/services/apiClient';
 
 describe('App End-to-End Integration Flow', () => {
   beforeEach(() => {
@@ -8,16 +9,11 @@ describe('App End-to-End Integration Flow', () => {
     vi.clearAllMocks();
   });
 
-  it('renders initial Home page with store identity, portfolio demo badge, and category cards', () => {
+  it('renders initial Home page with authentic store identity and 6 category cards without demo badges', () => {
     render(<App />);
 
     expect(screen.getByText('NAGARJUNA TRADERS')).toBeInTheDocument();
-    expect(screen.getAllByText(/Portfolio Demo Mode/i).length).toBeGreaterThan(0);
-    expect(
-      screen.getAllByText(
-        /Portfolio Demo Only\. No real orders, fireworks sales, delivery, or payments are processed\./i
-      ).length
-    ).toBeGreaterThan(0);
+    expect(screen.getByText(/Counter Pickup Only/i)).toBeInTheDocument();
 
     // Verify 6 authentic category cards on home page
     expect(screen.getByText('Laddis')).toBeInTheDocument();
@@ -28,7 +24,32 @@ describe('App End-to-End Integration Flow', () => {
     expect(screen.getByText('Others')).toBeInTheDocument();
   });
 
-  it('allows full customer journey: Home -> Catalogue -> Add Items (>= ₹100) -> Basket -> Customer Form -> Simulated Payment -> Demo Order Confirmation', async () => {
+  it('allows full customer journey: Home -> Catalogue -> Add Items -> Cart -> Customer Form -> Review -> QR -> UTR -> Confirmation', async () => {
+    vi.spyOn(apiClient, 'createOrder').mockResolvedValueOnce({
+      orderReference: 'NT-9001',
+      accessToken: 'token-uuid-9001',
+      operationalStatus: 'SUBMITTED',
+      paymentStatus: 'UNPAID',
+      subtotalPaise: 12000,
+      tokenDuePaise: 5000, // ₹50 token for ₹120 subtotal (< ₹200)
+      balanceDuePaise: 7000,
+      paymentInstructions: {
+        vpa: 'test-fixture@nagarjunatraders',
+        accountName: 'NAGARJUNA TRADERS (TEST)',
+        amountInr: '50.00',
+        transactionNote: 'NT-9001',
+        paymentCollectionEnabled: false,
+        notice: 'Test fixture only.',
+      },
+    });
+
+    vi.spyOn(apiClient, 'submitUtr').mockResolvedValueOnce({
+      orderReference: 'NT-9001',
+      paymentReference: '428911223344',
+      paymentStatus: 'RECORDED_UNVERIFIED',
+      message: 'Recorded unverified',
+    });
+
     render(<App />);
 
     // 1. Click "Browse 2026 Catalogue" from Home
@@ -53,32 +74,31 @@ describe('App End-to-End Integration Flow', () => {
     // Sticky Cart bar should appear on mobile viewport
     expect(screen.getByText(/Review Box/i)).toBeInTheDocument();
 
-    // Increment quantity to 2 so subtotal = ₹120 (>= ₹100 minimum demo requirement)
+    // Increment quantity to 2 so subtotal = ₹120
     const increaseBtn = screen.getByRole('button', {
       name: /Increase quantity/i,
     });
     fireEvent.click(increaseBtn);
 
-    // 3. Open Basket via the sticky bar
-    const viewBasketBtn = screen.getByText(/Review Box/i);
-    fireEvent.click(viewBasketBtn);
+    // 3. Open Cart via the sticky bar
+    const viewCartBtn = screen.getByText(/Review Box/i);
+    fireEvent.click(viewCartBtn);
 
     // Verify we are in CartView
-    expect(screen.getByText('Demo Basket')).toBeInTheDocument();
+    expect(screen.getByText('Shopping Cart')).toBeInTheDocument();
     expect(
-      screen.getByText(/Demo Financial Breakdown/i)
+      screen.getByText(/Order Price & Advance Token Breakdown/i)
     ).toBeInTheDocument();
-    expect(screen.getByText('Fixed Demo Token')).toBeInTheDocument();
 
-    // 4. Click Proceed to Review & Summary
+    // 4. Click Proceed to Review & Pay
     // Since customer details are empty, it should navigate to Customer Form first
     const proceedBtn = screen.getByRole('button', {
-      name: /Proceed to Review & Summary/i,
+      name: /Proceed to Review & Pay/i,
     });
     fireEvent.click(proceedBtn);
 
     // Verify we are on Customer Information page
-    expect(screen.getByText('Sample Customer Information')).toBeInTheDocument();
+    expect(screen.getByText('Customer Information')).toBeInTheDocument();
 
     // 5. Fill customer form
     fireEvent.change(screen.getByLabelText(/Full Name/i), {
@@ -95,50 +115,54 @@ describe('App End-to-End Integration Flow', () => {
     });
     fireEvent.click(saveAndContinueBtn);
 
-    // 6. Should now be in ReviewView
-    expect(screen.getByText('Simulated Checkout & Review')).toBeInTheDocument();
+    // 6. Should now be in ReviewView (Step 6)
+    expect(screen.getByText('Order Review & Advance Token')).toBeInTheDocument();
     expect(screen.getByText('Kalyan Varma')).toBeInTheDocument();
     expect(screen.getByText('+91 9848022338')).toBeInTheDocument();
     expect(screen.getAllByText(/₹120\.00/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/₹100\.00/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/₹20\.00/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/₹50\.00/i).length).toBeGreaterThan(0); // ₹50 token for ₹120
 
-    // 7. Proceed to Simulated Payment
-    const simulatedPayBtn = screen.getByRole('button', {
-      name: /Proceed to Simulated Payment/i,
+    // 7. Proceed to QR Payment Instructions (Step 7)
+    const proceedToQrBtn = screen.getByRole('button', {
+      name: /Proceed to QR Payment Instructions/i,
     });
-    fireEvent.click(simulatedPayBtn);
+    fireEvent.click(proceedToQrBtn);
 
-    // Modal opens in pending state
-    expect(
-      screen.getByText(/Fixed ₹100 Demo Token Payment/i)
-    ).toBeInTheDocument();
-
-    // Simulate success
-    const simulateSuccessBtn = screen.getByRole('button', {
-      name: /Simulate Successful Payment \(Test Success\)/i,
+    await waitFor(() => {
+      expect(screen.getByText(/UPI QR Payment Instructions/i)).toBeInTheDocument();
+      expect(screen.getByText('NT-9001')).toBeInTheDocument();
     });
-    fireEvent.click(simulateSuccessBtn);
 
-    // 8. Order confirmation state reached
-    expect(
-      screen.getByText(/Demo Order Confirmation/i)
-    ).toBeInTheDocument();
-    expect(screen.getByText(/DEMO-NT-/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Simulated Token Paid:/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Remaining Balance:/i)
-    ).toBeInTheDocument();
+    // 8. Proceed to enter 12-digit UTR (Step 8)
+    const enterUtrBtn = screen.getByRole('button', {
+      name: /I Have Paid \/ Enter 12-Digit UTR/i,
+    });
+    fireEvent.click(enterUtrBtn);
 
-    // Verify that live commerce checkout is NEVER rendered
+    expect(screen.getByText(/Submit 12-Digit UTR/i)).toBeInTheDocument();
+    const utrInput = screen.getByLabelText(/12-Digit UPI Transaction Reference/i);
+    fireEvent.change(utrInput, { target: { value: '428911223344' } });
+
+    const submitUtrBtn = screen.getByRole('button', {
+      name: /Submit UTR Reference/i,
+    });
+    fireEvent.click(submitUtrBtn);
+
+    // 9. Order Confirmation (Step 9)
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Order Reserved Successfully/i)
+      ).toBeInTheDocument();
+      expect(screen.getByText(/Order Reference: NT-9001/i)).toBeInTheDocument();
+      expect(screen.getByText(/RECORDED_UNVERIFIED/i)).toBeInTheDocument();
+    });
+
+    // Verify live commerce checkout forms are never rendered
     expect(screen.queryByLabelText(/Card Number/i)).toBeNull();
     expect(screen.queryByRole('button', { name: /^Pay Now$/i })).toBeNull();
   });
 
   it('restores cart items from localStorage on initial render', () => {
-    // Seed localStorage with authentic product ID and variant from catalogueData
     localStorage.setItem(
       'nt_cart_items_v1',
       JSON.stringify([
@@ -152,13 +176,11 @@ describe('App End-to-End Integration Flow', () => {
 
     render(<App />);
 
-    // Header navigation button reflects 3 items
     const cartNavBtn = screen.getByRole('button', {
-      name: /Demo Basket \(3\)/i,
+      name: /Shopping Cart \(3\)/i,
     });
     expect(cartNavBtn).toBeInTheDocument();
 
-    // Navigate to cart
     fireEvent.click(cartNavBtn);
 
     expect(screen.getByText('Bijli Laddi')).toBeInTheDocument();

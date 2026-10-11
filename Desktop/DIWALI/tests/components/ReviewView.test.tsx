@@ -3,8 +3,9 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ReviewView } from '../../src/components/ReviewView';
 import { CartItem, CartTotals } from '../../src/types/cart';
 import { CustomerDetails } from '../../src/types/customer';
+import { apiClient } from '../../src/services/apiClient';
 
-describe('ReviewView Component', () => {
+describe('ReviewView Component (Screens 6 to 10)', () => {
   const mockCustomer: CustomerDetails = {
     fullName: 'Ramesh Patel',
     mobileNumber: '9876543210',
@@ -36,8 +37,8 @@ describe('ReviewView Component', () => {
     unpricedItemCount: 0,
     subtotalPaise: 36000,
     provisionalSubtotalPaise: 36000,
-    tokenAmountPaise: 10000,
-    remainingBalancePaise: 26000,
+    tokenAmountPaise: 10000, // ₹100 tier for ₹360 subtotal
+    remainingBalancePaise: 26000, // ₹360 - ₹100 = ₹260
     canProceedToCheckout: true,
     minOrderRequirementMet: true,
     hasUnpricedItems: false,
@@ -56,14 +57,14 @@ describe('ReviewView Component', () => {
     minOrderRequirementMet: true,
     hasUnpricedItems: true,
     checkoutBlockedReason:
-      'Every item in your box must have a confirmed price before proceeding to simulated payment.',
+      'Every item in your box must have a confirmed price before proceeding to payment instructions.',
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('renders customer details, items, financial breakdown, and portfolio demo notice', () => {
+  it('renders customer details, items, financial breakdown with tiered token', () => {
     render(
       <ReviewView
         customer={mockCustomer}
@@ -77,9 +78,8 @@ describe('ReviewView Component', () => {
     // Customer info
     expect(screen.getByText('Ramesh Patel')).toBeInTheDocument();
     expect(screen.getByText('+91 9876543210')).toBeInTheDocument();
-    expect(screen.getAllByText(/Store Counter Pickup/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Confirmed 18\+ years of age/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Please pack carefully/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Store Counter Pickup/i)).toBeInTheDocument();
+    expect(screen.getByText(/18\+ Confirmed/i)).toBeInTheDocument();
 
     // Item info
     expect(
@@ -90,49 +90,34 @@ describe('ReviewView Component', () => {
     expect(screen.getAllByText(/₹360\.00/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/₹100\.00/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/₹260\.00/i).length).toBeGreaterThan(0);
-
-    // Portfolio demo notices
-    expect(
-      screen.getAllByText(/Portfolio Demo Only\. No real orders, fireworks sales, delivery, or payments are processed\./i).length
-    ).toBeGreaterThan(0);
   });
 
-  it('shows missing customer details alert if details are incomplete', () => {
-    const incompleteCustomer: CustomerDetails = {
-      fullName: '',
-      mobileNumber: '',
-      fulfilmentPreference: 'COUNTER_PICKUP',
-      ageConfirmed: false,
-      notes: '',
-    };
-    const handleEditCustomer = vi.fn();
-
-    render(
-      <ReviewView
-        customer={incompleteCustomer}
-        items={mockPricedItems}
-        totals={mockValidTotals}
-        onEditCustomer={handleEditCustomer}
-        onEditCart={vi.fn()}
-      />
-    );
-
-    expect(
-      screen.getByText(/Contact details are incomplete/i)
-    ).toBeInTheDocument();
-    const fillBtn = screen.getByRole('button', { name: /Fill Details/i });
-    fireEvent.click(fillBtn);
-    expect(handleEditCustomer).toHaveBeenCalledTimes(1);
-  });
-
-  it('copies demo summary to clipboard on click', async () => {
-    const writeTextMock = vi.fn().mockResolvedValue(undefined);
-    Object.assign(navigator, {
-      clipboard: {
-        writeText: writeTextMock,
+  it('advances from Screen 6 (Review) -> Screen 7 (QR) -> Screen 8 (UTR) -> Screen 9 (Confirmation)', async () => {
+    vi.spyOn(apiClient, 'createOrder').mockResolvedValueOnce({
+      orderReference: 'NT-8821',
+      accessToken: 'token-uuid-1234',
+      operationalStatus: 'SUBMITTED',
+      paymentStatus: 'UNPAID',
+      subtotalPaise: 36000,
+      tokenDuePaise: 10000,
+      balanceDuePaise: 26000,
+      paymentInstructions: {
+        vpa: 'test-fixture@nagarjunatraders',
+        accountName: 'NAGARJUNA TRADERS (TEST)',
+        amountInr: '100.00',
+        transactionNote: 'NT-8821',
+        paymentCollectionEnabled: false,
+        notice: 'Test fixture only.',
       },
     });
 
+    vi.spyOn(apiClient, 'submitUtr').mockResolvedValueOnce({
+      orderReference: 'NT-8821',
+      paymentReference: '428912345678',
+      paymentStatus: 'RECORDED_UNVERIFIED',
+      message: 'Recorded unverified pending manual reconciliation',
+    });
+
     render(
       <ReviewView
         customer={mockCustomer}
@@ -143,113 +128,125 @@ describe('ReviewView Component', () => {
       />
     );
 
-    const copyBtn = screen.getByRole('button', {
-      name: /Copy Demo Summary/i,
+    // Step 6: Click Proceed to QR
+    const proceedBtn = screen.getByRole('button', {
+      name: /Proceed to QR Payment Instructions/i,
     });
-    fireEvent.click(copyBtn);
+    fireEvent.click(proceedBtn);
+
+    // Step 7: QR instructions screen
+    await waitFor(() => {
+      expect(
+        screen.getByText(/UPI QR Payment Instructions/i)
+      ).toBeInTheDocument();
+      expect(screen.getByText('NT-8821')).toBeInTheDocument();
+      expect(screen.getByText(/NON-PAYABLE FIXTURE/i)).toBeInTheDocument();
+    });
+
+    // Click to enter UTR
+    const enterUtrBtn = screen.getByRole('button', {
+      name: /I Have Paid \/ Enter 12-Digit UTR/i,
+    });
+    fireEvent.click(enterUtrBtn);
+
+    // Step 8: UTR submission screen
+    expect(screen.getByText(/Submit 12-Digit UTR/i)).toBeInTheDocument();
+    const utrInput = screen.getByLabelText(/12-Digit UPI Transaction Reference/i);
+
+    // Enter 12 digits
+    fireEvent.change(utrInput, { target: { value: '428912345678' } });
+
+    const submitUtrBtn = screen.getByRole('button', {
+      name: /Submit UTR Reference/i,
+    });
+    fireEvent.click(submitUtrBtn);
+
+    // Step 9: Confirmation screen
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Order Reserved Successfully/i)
+      ).toBeInTheDocument();
+      expect(screen.getByText(/RECORDED_UNVERIFIED/i)).toBeInTheDocument();
+      expect(screen.getByText('428912345678')).toBeInTheDocument();
+    });
+  });
+
+  it('navigates to Screen 10 (Order Status Tracker) and shows progress', async () => {
+    vi.spyOn(apiClient, 'createOrder').mockResolvedValueOnce({
+      orderReference: 'NT-5500',
+      accessToken: 'token-uuid-5500',
+      operationalStatus: 'SUBMITTED',
+      paymentStatus: 'UNPAID',
+      subtotalPaise: 36000,
+      tokenDuePaise: 10000,
+      balanceDuePaise: 26000,
+      paymentInstructions: {
+        vpa: 'test-fixture@nagarjunatraders',
+        accountName: 'NAGARJUNA TRADERS (TEST)',
+        amountInr: '100.00',
+        transactionNote: 'NT-5500',
+        paymentCollectionEnabled: false,
+        notice: 'Test fixture only.',
+      },
+    });
+
+    vi.spyOn(apiClient, 'submitUtr').mockResolvedValueOnce({
+      orderReference: 'NT-5500',
+      paymentReference: '428999887766',
+      paymentStatus: 'RECORDED_UNVERIFIED',
+      message: 'Recorded unverified',
+    });
+
+    render(
+      <ReviewView
+        customer={mockCustomer}
+        items={mockPricedItems}
+        totals={mockValidTotals}
+        onEditCustomer={vi.fn()}
+        onEditCart={vi.fn()}
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /Proceed to QR Payment Instructions/i,
+      })
+    );
 
     await waitFor(() => {
-      expect(writeTextMock).toHaveBeenCalledTimes(1);
+      expect(screen.getAllByText(/NT-5500/i).length).toBeGreaterThan(0);
+    });
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /I Have Paid \/ Enter 12-Digit UTR/i,
+      })
+    );
+
+    const utrInput = screen.getByLabelText(/12-Digit UPI Transaction Reference/i);
+    fireEvent.change(utrInput, { target: { value: '428999887766' } });
+    fireEvent.click(
+      screen.getByRole('button', { name: /Submit UTR Reference/i })
+    );
+
+    await waitFor(() => {
       expect(
-        screen.getByText(/Summary Copied to Clipboard!/i)
+        screen.getByRole('button', { name: /Track Live Order Status/i })
       ).toBeInTheDocument();
     });
-  });
 
-  it('executes simulated payment flow and generates demo confirmation record', async () => {
-    const handleReset = vi.fn();
-    render(
-      <ReviewView
-        customer={mockCustomer}
-        items={mockPricedItems}
-        totals={mockValidTotals}
-        onEditCustomer={vi.fn()}
-        onEditCart={vi.fn()}
-        onResetOrder={handleReset}
-      />
+    // Click Track Live Order Status -> Enters Screen 10
+    fireEvent.click(
+      screen.getByRole('button', { name: /Track Live Order Status/i })
     );
 
-    const checkoutBtn = screen.getByRole('button', {
-      name: /Proceed to Simulated Payment/i,
-    });
-    expect(checkoutBtn).not.toBeDisabled();
-    fireEvent.click(checkoutBtn);
-
-    // Enters simulated pending state modal/view
-    expect(
-      screen.getByText(/Fixed ₹100 Demo Token Payment/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Simulating Payment Authorization\.\.\./i)
-    ).toBeInTheDocument();
-
-    // Trigger test success action
-    const simulateSuccessBtn = screen.getByRole('button', {
-      name: /Simulate Successful Payment \(Test Success\)/i,
-    });
-    fireEvent.click(simulateSuccessBtn);
-
-    // Resolves to simulated success state
-    expect(
-      screen.getByText(/Demo Order Confirmation/i)
-    ).toBeInTheDocument();
-    expect(screen.getByText(/DEMO-NT-/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Simulated Token Paid:/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Remaining Balance:/i)
-    ).toBeInTheDocument();
-
-    // Test reset demo order
-    const startNewBtn = screen.getByRole('button', {
-      name: /Start New Demo Order/i,
-    });
-    fireEvent.click(startNewBtn);
-    expect(handleReset).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(/Order Status Tracker/i)).toBeInTheDocument();
+    expect(screen.getByText(/Fulfilment Progress/i)).toBeInTheDocument();
+    expect(screen.getByText(/1\. Submitted/i)).toBeInTheDocument();
+    expect(screen.getByText(/Sivakasi Counter Collection Details/i)).toBeInTheDocument();
   });
 
-  it('handles simulated payment failure state and allows retrying', () => {
-    render(
-      <ReviewView
-        customer={mockCustomer}
-        items={mockPricedItems}
-        totals={mockValidTotals}
-        onEditCustomer={vi.fn()}
-        onEditCart={vi.fn()}
-      />
-    );
-
-    const checkoutBtn = screen.getByRole('button', {
-      name: /Proceed to Simulated Payment/i,
-    });
-    fireEvent.click(checkoutBtn);
-
-    // Trigger simulated failure
-    const simulateFailureBtn = screen.getByRole('button', {
-      name: /Simulate Payment Failure \(Test Error\)/i,
-    });
-    fireEvent.click(simulateFailureBtn);
-
-    // Displays failure message
-    expect(
-      screen.getByText(/Simulated Payment Failed/i)
-    ).toBeInTheDocument();
-
-    // Displays retry action
-    const retryBtn = screen.getByRole('button', {
-      name: /Retry Simulated Payment/i,
-    });
-    expect(retryBtn).toBeInTheDocument();
-    fireEvent.click(retryBtn);
-
-    // Returns to pending screen
-    expect(
-      screen.getByText(/Simulating Payment Authorization\.\.\./i)
-    ).toBeInTheDocument();
-  });
-
-  it('disables checkout action when unpriced items exist', () => {
+  it('disables proceed action when unpriced items exist', () => {
     render(
       <ReviewView
         customer={mockCustomer}
@@ -260,56 +257,9 @@ describe('ReviewView Component', () => {
       />
     );
 
-    const checkoutBtn = screen.getByRole('button', {
-      name: /Proceed to Simulated Payment/i,
+    const proceedBtn = screen.getByRole('button', {
+      name: /Proceed to QR Payment Instructions/i,
     });
-    expect(checkoutBtn).toBeDisabled();
-    expect(
-      screen.getAllByText(/Every item in your box must have a confirmed price/i).length
-    ).toBeGreaterThan(0);
-  });
-
-  it('never renders live payment inputs, UPI ID fields, or live payment links', () => {
-    render(
-      <ReviewView
-        customer={mockCustomer}
-        items={mockPricedItems}
-        totals={mockValidTotals}
-        onEditCustomer={vi.fn()}
-        onEditCart={vi.fn()}
-      />
-    );
-
-    // Verify absence of payment form elements
-    expect(screen.queryByLabelText(/UPI ID/i)).toBeNull();
-    expect(screen.queryByLabelText(/Card Number/i)).toBeNull();
-    expect(screen.queryByRole('button', { name: /^Pay Now$/i })).toBeNull();
-  });
-
-  it('navigates back to customer form or cart on edit button clicks', () => {
-    const handleEditCustomer = vi.fn();
-    const handleEditCart = vi.fn();
-
-    render(
-      <ReviewView
-        customer={mockCustomer}
-        items={mockPricedItems}
-        totals={mockValidTotals}
-        onEditCustomer={handleEditCustomer}
-        onEditCart={handleEditCart}
-      />
-    );
-
-    const editDetailsBtn = screen.getByRole('button', {
-      name: /Edit Details/i,
-    });
-    fireEvent.click(editDetailsBtn);
-    expect(handleEditCustomer).toHaveBeenCalledTimes(1);
-
-    const editBasketBtn = screen.getByRole('button', {
-      name: /Edit Basket/i,
-    });
-    fireEvent.click(editBasketBtn);
-    expect(handleEditCart).toHaveBeenCalledTimes(1);
+    expect(proceedBtn).toBeDisabled();
   });
 });

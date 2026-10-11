@@ -1,14 +1,30 @@
 import React, { useState, useRef } from 'react';
-import {
-  CartItem,
-  CartTotals,
-  SimulatedPaymentStatus,
-  DemoOrderRecord,
-} from '../types/cart';
+import { CartItem, CartTotals, PaymentStatus } from '../types/cart';
 import { CustomerDetails } from '../types/customer';
 import { formatPaise } from '../utils/formatters';
 import { generateEnquiryText, getWhatsAppUrl } from '../utils/enquirySummary';
 import { apiClient } from '../services/apiClient';
+import { TestQrCode } from './TestQrCode';
+
+export type ReviewStep =
+  | 'REVIEW'
+  | 'QR_PAYMENT'
+  | 'UTR_SUBMIT'
+  | 'CONFIRMATION'
+  | 'ORDER_STATUS';
+
+interface OrderState {
+  orderReference: string;
+  accessToken: string;
+  operationalStatus: string;
+  paymentStatus: PaymentStatus;
+  subtotalPaise: number;
+  tokenDuePaise: number;
+  balanceDuePaise: number;
+  paymentReference?: string | null;
+  paymentSubmittedAt?: string | null;
+  reconciliationNotes?: string | null;
+}
 
 interface ReviewViewProps {
   customer: CustomerDetails;
@@ -27,13 +43,17 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
   onEditCart,
   onResetOrder,
 }) => {
+  const [currentStep, setCurrentStep] = useState<ReviewStep>('REVIEW');
+  const [orderState, setOrderState] = useState<OrderState | null>(null);
+  const [utrInput, setUtrInput] = useState('');
+  const [utrError, setUtrError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [paymentStatus, setPaymentStatus] =
-    useState<SimulatedPaymentStatus>('NOT_STARTED');
-  const [demoOrder, setDemoOrder] = useState<DemoOrderRecord | null>(null);
+  const [statusLookupRef, setStatusLookupRef] = useState('');
+  const [statusLookupError, setStatusLookupError] = useState<string | null>(null);
+  const [statusPolling, setStatusPolling] = useState(false);
 
-  // Idempotency lock to prevent duplicate order generation on rapid clicks
-  const isSubmittingRef = useRef(false);
+  const isSubmittingOrderRef = useRef(false);
 
   const isCustomerValid =
     customer.fullName.trim().length >= 2 &&
@@ -46,8 +66,13 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
     totals.minOrderRequirementMet &&
     !totals.hasUnpricedItems;
 
-  const currentOrderId = demoOrder?.demoOrderId;
-  const summaryText = generateEnquiryText(customer, items, totals, currentOrderId);
+  const currentOrderId = orderState?.orderReference;
+  const summaryText = generateEnquiryText(
+    customer,
+    items,
+    totals,
+    currentOrderId
+  );
   const whatsappUrl = getWhatsAppUrl(summaryText);
 
   const handleCopy = async () => {
@@ -60,152 +85,399 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
     }
   };
 
-  // Start simulated payment flow
-  const handleInitiatePayment = () => {
-    if (!canProceedToPayment) return;
-    setPaymentStatus('PENDING');
-  };
+  // Step 6 -> Step 7: Create Order on server and proceed to QR payment instructions
+  const handleProceedToQr = async () => {
+    if (!canProceedToPayment || isSubmittingOrderRef.current) return;
+    isSubmittingOrderRef.current = true;
+    setIsSubmitting(true);
 
-  // Simulate successful payment (idempotent)
-  const handleSimulateSuccess = () => {
-    if (isSubmittingRef.current) return;
-    isSubmittingRef.current = true;
-
-    // Retain existing order ID if already generated
-    const orderId =
-      demoOrder?.demoOrderId ||
-      `DEMO-NT-${Math.floor(1000 + Math.random() * 9000)}`;
-
-    const record: DemoOrderRecord = {
-      demoOrderId: orderId,
-      createdAt: new Date().toISOString(),
-      customerName: customer.fullName,
-      customerMobile: customer.mobileNumber,
-      items,
-      subtotalPaise: totals.subtotalPaise,
-      tokenAmountPaise: totals.tokenAmountPaise,
-      remainingBalancePaise: totals.remainingBalancePaise,
-      paymentStatus: 'SUCCESS',
-      isSimulatedDemo: true,
-    };
-
-    setDemoOrder(record);
-    setPaymentStatus('SUCCESS');
-    isSubmittingRef.current = false;
-
-    // Asynchronously dispatch to backend API for persistence in D1 / memory db
-    const utr = `4289${Math.floor(10000000 + Math.random() * 90000000)}`;
-    apiClient
-      .createDemoOrder({
+    try {
+      const response = await apiClient.createOrder({
         customer,
         items: items.map((it) => ({
           variantId: it.variantId,
           quantity: it.quantity,
         })),
-        idempotencyKey: orderId,
-      })
-      .then((res) => {
-        apiClient.submitPaymentReference(res.orderReference, utr, res.accessToken).catch(() => {});
-      })
-      .catch(() => {});
+      });
+
+      setOrderState({
+        orderReference: response.orderReference,
+        accessToken: response.accessToken,
+        operationalStatus: response.operationalStatus,
+        paymentStatus: response.paymentStatus,
+        subtotalPaise: response.subtotalPaise,
+        tokenDuePaise: response.tokenDuePaise,
+        balanceDuePaise: response.balanceDuePaise,
+      });
+
+      setCurrentStep('QR_PAYMENT');
+    } catch (err: any) {
+      alert(err.message || 'Failed to initialize order on server.');
+    } finally {
+      setIsSubmitting(false);
+      isSubmittingOrderRef.current = false;
+    }
   };
 
-  // Simulate payment failure
-  const handleSimulateFailure = () => {
-    setPaymentStatus('FAILED');
+  // Step 7 -> Step 8: Move from QR to UTR submission
+  const handleProceedToUtr = () => {
+    setCurrentStep('UTR_SUBMIT');
   };
 
-  // Retry payment after simulated failure
-  const handleRetryPayment = () => {
-    setPaymentStatus('PENDING');
+  // Step 8: Submit 12-Digit UTR
+  const handleSubmitUtr = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!orderState) return;
+
+    const trimmed = utrInput.trim();
+    if (!/^\d{12}$/.test(trimmed)) {
+      setUtrError('UTR must be a string of exactly 12 numeric digits.');
+      return;
+    }
+
+    setUtrError(null);
+    setIsSubmitting(true);
+
+    try {
+      const updated = await apiClient.submitUtr(
+        orderState.orderReference,
+        trimmed,
+        orderState.accessToken
+      );
+
+      setOrderState((prev) =>
+        prev
+          ? {
+              ...prev,
+              paymentReference: updated.paymentReference,
+              paymentStatus: updated.paymentStatus,
+              paymentSubmittedAt: new Date().toISOString(),
+            }
+          : null
+      );
+
+      setCurrentStep('CONFIRMATION');
+    } catch (err: any) {
+      setUtrError(err.message || 'Failed to record UTR. Please check digits and try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  // Cancel simulated payment and return to review
-  const handleCancelPayment = () => {
-    setPaymentStatus('NOT_STARTED');
+  // Step 10: Refresh live order status
+  const handleRefreshStatus = async () => {
+    if (!orderState) return;
+    setStatusPolling(true);
+    try {
+      const live = await apiClient.getOrderStatus(
+        orderState.orderReference,
+        orderState.accessToken
+      );
+      setOrderState((prev) =>
+        prev
+          ? {
+              ...prev,
+              operationalStatus: live.operationalStatus,
+              paymentStatus: live.paymentStatus,
+              paymentReference: live.paymentReference,
+              paymentSubmittedAt: live.paymentSubmittedAt,
+            }
+          : null
+      );
+    } catch (_err) {
+      // keep current state
+    } finally {
+      setStatusPolling(false);
+    }
   };
 
-  // ── SCREEN STATE 1: SIMULATED PAYMENT SUCCESS (DEMO CONFIRMATION) ──
-  if (paymentStatus === 'SUCCESS' && demoOrder) {
+  // Dedicated lookup by order reference from tracker
+  const handleLookupOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!statusLookupRef.trim()) return;
+
+    setStatusLookupError(null);
+    setStatusPolling(true);
+    try {
+      const live = await apiClient.getOrderStatus(statusLookupRef.trim());
+      setOrderState({
+        orderReference: live.orderReference,
+        accessToken: '',
+        operationalStatus: live.operationalStatus,
+        paymentStatus: live.paymentStatus,
+        subtotalPaise: live.subtotalPaise,
+        tokenDuePaise: live.tokenAmountPaise,
+        balanceDuePaise: live.remainingBalancePaise,
+        paymentReference: live.paymentReference,
+        paymentSubmittedAt: live.paymentSubmittedAt,
+      });
+      setCurrentStep('ORDER_STATUS');
+    } catch (err: any) {
+      setStatusLookupError(err.message || 'Order reference not found.');
+    } finally {
+      setStatusPolling(false);
+    }
+  };
+
+  // ══════════════════════════════════════════════════════════════════
+  // SCREEN 10: ORDER STATUS TRACKER
+  // ══════════════════════════════════════════════════════════════════
+  if (currentStep === 'ORDER_STATUS' && orderState) {
+    const isUnverified =
+      orderState.paymentStatus === 'RECORDED_UNVERIFIED' ||
+      orderState.paymentStatus === 'PENDING_VERIFICATION';
+    const isReconciled =
+      orderState.paymentStatus === 'RECONCILED' ||
+      orderState.paymentStatus === 'VERIFIED_TOKEN';
+
     return (
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-        {/* Explicit Portfolio Demo Banner */}
-        <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-800/40 text-xs text-amber-200 space-y-1">
-          <p className="font-bold text-amber-300 flex items-center gap-1.5">
-            <span>ℹ️</span> Portfolio Demo Notice
+        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+          <div>
+            <h2 className="text-2xl font-bold font-display text-content-primary">
+              Order Status Tracker
+            </h2>
+            <p className="text-xs text-content-muted mt-0.5">
+              Live status for Reference: <span className="font-mono text-festive-marigold font-bold">{orderState.orderReference}</span>
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleRefreshStatus}
+            disabled={statusPolling}
+            className="px-3.5 py-1.5 rounded-xl bg-bg-elevated hover:bg-white/10 border border-white/10 text-xs font-semibold text-content-primary flex items-center gap-1.5 transition-colors"
+          >
+            <span>{statusPolling ? 'Refreshing...' : '🔄 Refresh Status'}</span>
+          </button>
+        </div>
+
+        {/* Operational Status Stepper */}
+        <div className="p-5 rounded-2xl bg-bg-surface border border-white/10 space-y-4">
+          <h3 className="text-sm font-bold text-content-primary uppercase tracking-wider font-mono">
+            Fulfilment Progress
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center text-xs">
+            {[
+              { key: 'SUBMITTED', label: '1. Submitted' },
+              { key: 'CONFIRMED', label: '2. Confirmed' },
+              { key: 'PREPARING', label: '3. Packing' },
+              { key: 'READY_FOR_PICKUP', label: '4. Ready' },
+              { key: 'COMPLETED', label: '5. Collected' },
+            ].map((step, idx) => {
+              const orderStatuses = [
+                'SUBMITTED',
+                'CONFIRMED',
+                'PREPARING',
+                'READY_FOR_PICKUP',
+                'COMPLETED',
+              ];
+              const currentIndex = orderStatuses.indexOf(orderState.operationalStatus);
+              const isPastOrCurrent = currentIndex >= idx;
+              const isCurrent = orderState.operationalStatus === step.key;
+
+              return (
+                <div
+                  key={step.key}
+                  className={`p-2.5 rounded-xl border transition-colors ${
+                    isCurrent
+                      ? 'bg-festive-marigold/20 border-festive-marigold text-festive-marigold font-bold shadow-md'
+                      : isPastOrCurrent
+                      ? 'bg-emerald-950/30 border-emerald-700/40 text-emerald-300 font-medium'
+                      : 'bg-bg-elevated/40 border-white/5 text-content-muted'
+                  }`}
+                >
+                  <div className="text-xs font-mono">{step.label}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Payment & Token Verification Card */}
+        <div className="p-5 rounded-2xl bg-bg-surface border border-white/10 space-y-3">
+          <h3 className="text-sm font-bold text-content-primary uppercase tracking-wider font-mono">
+            Advance Token & Payment Status
+          </h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+            <div className="p-3 rounded-xl bg-bg-elevated border border-white/5">
+              <span className="text-[11px] text-content-muted block">Advance Token Due</span>
+              <span className="text-base font-bold font-mono text-festive-marigold">
+                {formatPaise(orderState.tokenDuePaise)}
+              </span>
+            </div>
+
+            <div className="p-3 rounded-xl bg-bg-elevated border border-white/5">
+              <span className="text-[11px] text-content-muted block">Remaining Balance</span>
+              <span className="text-base font-bold font-mono text-content-primary">
+                {formatPaise(orderState.balanceDuePaise)}
+              </span>
+            </div>
+
+            <div className="p-3 rounded-xl bg-bg-elevated border border-white/5">
+              <span className="text-[11px] text-content-muted block">Payment State</span>
+              <span
+                className={`text-xs font-bold font-mono px-2 py-0.5 rounded inline-block mt-1 ${
+                  isReconciled
+                    ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
+                    : isUnverified
+                    ? 'bg-amber-950 text-amber-300 border border-amber-700'
+                    : 'bg-red-950 text-red-300 border border-red-700'
+                }`}
+              >
+                {isReconciled
+                  ? 'RECONCILED'
+                  : isUnverified
+                  ? 'RECORDED (UNVERIFIED)'
+                  : orderState.paymentStatus}
+              </span>
+            </div>
+          </div>
+
+          {orderState.paymentReference && (
+            <div className="mt-3 p-3 rounded-xl bg-bg-base border border-white/5 text-xs text-content-secondary space-y-1">
+              <div>
+                <strong>Submitted 12-Digit UTR:</strong>{' '}
+                <span className="font-mono text-festive-amber font-bold">
+                  {orderState.paymentReference}
+                </span>
+              </div>
+              <div className="text-[11px] text-content-muted">
+                Note: Bank verification is performed manually by staff against bank statements before counter pickup handover.
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Counter Pickup Instructions */}
+        <div className="p-5 rounded-2xl bg-bg-surface border border-white/10 space-y-2 text-xs text-content-secondary">
+          <h3 className="text-sm font-bold text-content-primary font-display">
+            Sivakasi Counter Collection Details
+          </h3>
+          <p>
+            • Please present your order reference <strong className="text-content-primary font-mono">{orderState.orderReference}</strong> and registered mobile number at the depot counter.
           </p>
-          <p className="font-semibold text-sm">
-            Portfolio Demo Only. No real orders, fireworks sales, delivery, or payments are processed.
+          <p>
+            • Remaining balance of <strong className="text-content-primary font-mono">{formatPaise(orderState.balanceDuePaise)}</strong> can be paid in cash or UPI at the collection desk.
           </p>
-          <p className="text-[11px] text-amber-200/80">
-            No money was received or deducted from your account. This screen demonstrates a simulated order confirmation for an engineering portfolio project.
+          <p>
+            • 18+ Photo ID verification is legally required for handing over crackers.
           </p>
         </div>
 
+        <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => setCurrentStep('REVIEW')}
+            className="w-full sm:w-auto min-h-touch px-5 py-2.5 rounded-xl bg-bg-elevated hover:bg-white/10 border border-white/10 text-content-primary font-semibold text-sm transition-colors text-center"
+          >
+            ← Back to Order Summary
+          </button>
+          {onResetOrder && (
+            <button
+              type="button"
+              onClick={onResetOrder}
+              className="w-full sm:w-auto min-h-touch px-5 py-2.5 rounded-xl bg-bg-elevated hover:bg-white/10 border border-white/10 text-content-muted hover:text-content-primary font-semibold text-sm transition-colors text-center"
+            >
+              Start New Order
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // SCREEN 9: ORDER CONFIRMATION
+  // ══════════════════════════════════════════════════════════════════
+  if (currentStep === 'CONFIRMATION' && orderState) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
         {/* Success Card */}
         <div className="p-6 md:p-8 rounded-2xl bg-bg-surface border border-emerald-500/30 text-center space-y-4 shadow-xl">
           <div className="w-16 h-16 mx-auto rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-3xl">
             ✓
           </div>
+
           <div>
-            <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 mb-2">
-              Simulated Payment Completed
-            </span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-950/60 text-emerald-300 border border-emerald-800/40 mb-2">
+              <span>🎉</span>
+              <span>Order Reserved Successfully</span>
+            </div>
             <h2 className="text-2xl md:text-3xl font-bold font-display text-content-primary">
-              Demo Order Confirmation
+              Order Reference: {orderState.orderReference}
             </h2>
-            <p className="text-xs text-content-muted mt-1">
-              Demo Reference:{' '}
-              <span className="font-mono font-bold text-content-primary">
-                {demoOrder.demoOrderId}
-              </span>
+            <p className="text-xs text-content-muted mt-1 font-mono">
+              Order Date: {new Date().toLocaleDateString('en-IN', { dateStyle: 'medium' })}
             </p>
           </div>
 
-          {/* Financial Summary */}
-          <div className="max-w-md mx-auto p-4 rounded-xl bg-bg-base border border-white/5 text-left text-xs space-y-2 font-mono">
-            <div className="flex justify-between">
-              <span className="text-content-muted">Order Subtotal:</span>
-              <span className="text-content-primary font-bold">
-                {formatPaise(demoOrder.subtotalPaise)}
+          {/* Payment & UTR Status Callout */}
+          <div className="max-w-md mx-auto p-4 rounded-xl bg-bg-elevated border border-white/10 text-left space-y-2 text-xs">
+            <div className="flex justify-between items-center pb-2 border-b border-white/5">
+              <span className="text-content-muted">Customer Name:</span>
+              <span className="font-semibold text-content-primary">{customer.fullName}</span>
+            </div>
+            <div className="flex justify-between items-center pb-2 border-b border-white/5">
+              <span className="text-content-muted">Mobile Number:</span>
+              <span className="font-mono text-content-primary">+91 {customer.mobileNumber}</span>
+            </div>
+            <div className="flex justify-between items-center pb-2 border-b border-white/5">
+              <span className="text-content-muted">Submitted 12-Digit UTR:</span>
+              <span className="font-mono text-festive-amber font-bold">
+                {orderState.paymentReference || 'Recorded'}
               </span>
             </div>
-            <div className="flex justify-between text-emerald-400">
-              <span>Simulated Token Paid:</span>
-              <span className="font-bold">
-                {formatPaise(demoOrder.tokenAmountPaise)}
+            <div className="flex justify-between items-center pb-2 border-b border-white/5">
+              <span className="text-content-muted">Payment Reference Status:</span>
+              <span className="px-2 py-0.5 rounded bg-amber-950/80 text-amber-300 font-mono font-bold text-[11px] border border-amber-800/60">
+                RECORDED_UNVERIFIED
               </span>
             </div>
-            <div className="flex justify-between pt-1 border-t border-white/10 text-festive-amber">
-              <span>Remaining Balance:</span>
-              <span className="font-bold">
-                {formatPaise(demoOrder.remainingBalancePaise)}
+            <div className="flex justify-between items-center pb-2 border-b border-white/5">
+              <span className="text-content-muted">Advance Token Amount:</span>
+              <span className="font-mono font-bold text-festive-marigold">
+                {formatPaise(orderState.tokenDuePaise)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center pt-1 text-sm">
+              <span className="font-bold text-content-primary">Balance Due at Counter:</span>
+              <span className="font-mono font-bold text-content-primary text-base">
+                {formatPaise(orderState.balanceDuePaise)}
               </span>
             </div>
           </div>
 
-          {/* Copy Summary Action */}
-          <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
+          <p className="text-xs text-content-muted max-w-md mx-auto leading-relaxed">
+            Your 12-digit UTR has been recorded. Payment status is unverified pending manual reconciliation with our bank account. Stock has been reserved for your counter pickup in Sivakasi.
+          </p>
+
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => setCurrentStep('ORDER_STATUS')}
+              className="w-full sm:w-auto min-h-touch px-6 py-3 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 text-black font-semibold text-sm transition-transform shadow-lg shadow-amber-500/10 focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+            >
+              <span>Track Live Order Status →</span>
+            </button>
+
             <button
               type="button"
               onClick={handleCopy}
-              className={`min-h-touch px-6 py-3 rounded-xl font-semibold text-sm transition-transform active:scale-95 flex items-center justify-center gap-2 border ${
-                copied
-                  ? 'bg-emerald-600 text-white border-emerald-500'
-                  : 'bg-festive-marigold hover:bg-festive-marigold-hover text-black border-festive-marigold'
-              }`}
+              className="w-full sm:w-auto min-h-touch px-5 py-2.5 rounded-xl bg-bg-elevated hover:bg-white/10 border border-white/10 text-content-primary font-semibold text-sm transition-colors text-center"
             >
-              {copied ? '✓ Copied to Clipboard!' : '📋 Copy Demo Order Summary'}
+              {copied ? '✓ Summary Copied!' : '📋 Copy Order Summary'}
             </button>
 
-            {onResetOrder && (
-              <button
-                type="button"
-                onClick={onResetOrder}
-                className="min-h-touch px-5 py-2.5 rounded-xl bg-bg-elevated hover:bg-white/10 border border-white/10 text-content-primary font-semibold text-sm transition-colors"
+            {whatsappUrl && (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto min-h-touch px-5 py-2.5 rounded-xl bg-emerald-700/80 hover:bg-emerald-600 text-white font-semibold text-sm transition-colors text-center inline-flex items-center justify-center gap-1.5"
               >
-                Start New Demo Order
-              </button>
+                <span>💬 Share to WhatsApp</span>
+              </a>
             )}
           </div>
         </div>
@@ -213,95 +485,169 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
     );
   }
 
-  // ── SCREEN STATE 2: SIMULATED PAYMENT PENDING / FAILURE MODAL VIEW ──
-  if (paymentStatus === 'PENDING' || paymentStatus === 'FAILED') {
+  // ══════════════════════════════════════════════════════════════════
+  // SCREEN 8: UTR SUBMISSION FORM
+  // ══════════════════════════════════════════════════════════════════
+  if (currentStep === 'UTR_SUBMIT' && orderState) {
     return (
-      <div className="max-w-xl mx-auto px-4 py-8 space-y-6">
-        {/* Explicit Portfolio Demo Banner */}
-        <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-800/40 text-xs text-amber-200 space-y-1">
-          <p className="font-bold text-amber-300 flex items-center gap-1.5">
-            <span>ℹ️</span> Portfolio Demo Notice
-          </p>
-          <p className="font-semibold text-sm">
-            Portfolio Demo Only. No real orders, fireworks sales, delivery, or payments are processed.
-          </p>
-        </div>
-
-        <div className="p-6 md:p-8 rounded-2xl bg-bg-surface border border-white/10 space-y-6 text-center shadow-2xl">
-          <div>
-            <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-festive-amber border border-amber-500/30 mb-2">
-              Simulated Payment Gateway Demo
-            </span>
+      <div className="max-w-xl mx-auto px-4 py-6 space-y-6">
+        <div className="bg-bg-surface border border-white/10 rounded-2xl p-5 md:p-7 shadow-xl">
+          <div className="mb-6">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-festive-marigold/10 border border-festive-marigold/30 text-festive-amber mb-2">
+              <span>💳</span>
+              <span>Step 8 of 10 • UTR Submission</span>
+            </div>
             <h2 className="text-2xl font-bold font-display text-content-primary">
-              Fixed ₹100 Demo Token Payment
+              Submit 12-Digit UTR
             </h2>
-            <p className="text-xs text-content-muted mt-1">
-              Simulated token reservation amount:{' '}
-              <strong className="text-festive-amber font-mono text-base">
-                {formatPaise(totals.tokenAmountPaise)}
-              </strong>
+            <p className="text-xs text-content-muted mt-1 leading-relaxed">
+              Order Reference:{' '}
+              <span className="font-mono text-festive-marigold font-bold">
+                {orderState.orderReference}
+              </span>{' '}
+              • Token Due:{' '}
+              <span className="font-mono text-content-primary font-bold">
+                {formatPaise(orderState.tokenDuePaise)}
+              </span>
             </p>
           </div>
 
-          {paymentStatus === 'PENDING' ? (
-            <div className="p-5 rounded-xl bg-bg-base border border-white/5 space-y-3">
-              <div className="w-10 h-10 mx-auto rounded-full border-2 border-festive-marigold border-t-transparent animate-spin" />
-              <p className="text-sm font-semibold text-content-primary">
-                Simulating Payment Authorization...
+          <form onSubmit={handleSubmitUtr} className="space-y-5">
+            <div>
+              <label
+                htmlFor="utr-input"
+                className="block text-sm font-semibold text-content-primary mb-1.5"
+              >
+                12-Digit UPI Transaction Reference (UTR){' '}
+                <span className="text-festive-crimson">*</span>
+              </label>
+              <input
+                id="utr-input"
+                type="text"
+                required
+                maxLength={12}
+                inputMode="numeric"
+                autoComplete="off"
+                value={utrInput}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, '').slice(0, 12);
+                  setUtrInput(digits);
+                }}
+                placeholder="e.g. 428912345678"
+                className="w-full min-h-touch px-4 py-2.5 rounded-xl bg-bg-elevated border border-white/10 text-content-primary font-mono text-base tracking-widest focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+              />
+              <p className="text-xs text-content-muted mt-1.5">
+                Exact 12 digits from your UPI payment receipt (GPay, PhonePe, Paytm, or BHIM).
               </p>
-              <p className="text-xs text-content-muted leading-relaxed max-w-sm mx-auto">
-                No real UPI intent or bank API is contacted. Use the buttons
-                below to test success or error response states:
-              </p>
+              {utrError && (
+                <p className="mt-1.5 text-xs text-festive-crimson flex items-center gap-1">
+                  <span>⚠️</span> {utrError}
+                </p>
+              )}
             </div>
-          ) : (
-            <div className="p-5 rounded-xl bg-red-950/30 border border-red-800/40 space-y-2 text-left text-xs text-red-200">
-              <p className="font-bold text-sm text-red-300 flex items-center gap-1.5">
-                <span>⚠️</span> Simulated Payment Failed
+
+            <div className="p-3 rounded-xl bg-bg-elevated border border-white/5 text-xs text-content-muted space-y-1">
+              <p className="text-content-primary font-semibold">
+                ⚖️ Verification Notice:
               </p>
               <p>
-                This error state demonstrates how transaction timeouts, bank
-                declines, or user cancellation are handled. No funds were
-                charged.
+                A submitted UTR is recorded as unverified pending manual bank statement reconciliation by our store staff. Automated bank verification is prohibited.
               </p>
             </div>
-          )}
 
-          {/* Test Action Controls */}
-          <div className="space-y-3 pt-2">
-            {paymentStatus === 'PENDING' ? (
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button
-                  type="button"
-                  onClick={handleSimulateSuccess}
-                  className="flex-1 min-h-touch px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white font-semibold text-sm transition-transform shadow-lg shadow-emerald-900/20"
-                >
-                  Simulate Successful Payment (Test Success)
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSimulateFailure}
-                  className="flex-1 min-h-touch px-6 py-3 rounded-xl bg-red-950/60 hover:bg-red-900/60 active:scale-95 text-red-200 font-semibold text-sm transition-colors border border-red-800/50"
-                >
-                  Simulate Payment Failure (Test Error)
-                </button>
-              </div>
-            ) : (
+            <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
               <button
                 type="button"
-                onClick={handleRetryPayment}
-                className="w-full min-h-touch px-6 py-3 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 text-black font-semibold text-sm transition-transform"
+                onClick={() => setCurrentStep('QR_PAYMENT')}
+                className="w-full sm:w-auto min-h-touch px-5 py-2.5 rounded-xl bg-bg-elevated hover:bg-white/10 border border-white/10 text-content-primary font-semibold text-sm transition-colors text-center"
               >
-                Retry Simulated Payment
+                ← Back to QR
               </button>
-            )}
+              <button
+                type="submit"
+                disabled={isSubmitting || utrInput.length !== 12}
+                className="w-full sm:flex-1 min-h-touch px-6 py-3 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 disabled:opacity-50 text-black font-semibold text-base transition-transform flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+              >
+                <span>{isSubmitting ? 'Recording UTR...' : 'Submit UTR Reference →'}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // SCREEN 7: QR PAYMENT INSTRUCTIONS
+  // ══════════════════════════════════════════════════════════════════
+  if (currentStep === 'QR_PAYMENT' && orderState) {
+    const amountInr = (orderState.tokenDuePaise / 100).toFixed(2);
+
+    return (
+      <div className="max-w-xl mx-auto px-4 py-6 space-y-6">
+        <div className="bg-bg-surface border border-white/10 rounded-2xl p-5 md:p-7 shadow-xl space-y-6">
+          <div className="text-center space-y-1">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-festive-marigold/10 border border-festive-marigold/30 text-festive-amber mb-1">
+              <span>📱</span>
+              <span>Step 7 of 10 • Advance Token QR</span>
+            </div>
+            <h2 className="text-2xl font-bold font-display text-content-primary">
+              UPI QR Payment Instructions
+            </h2>
+            <p className="text-xs text-content-muted">
+              Scan the QR code to submit your advance order token.
+            </p>
+          </div>
+
+          {/* Test QR Code Fixture */}
+          <TestQrCode
+            vpa="test-fixture@nagarjunatraders"
+            accountName="NAGARJUNA TRADERS (TEST)"
+            amountInr={amountInr}
+            transactionNote={orderState.orderReference}
+            isRestricted={true}
+          />
+
+          {/* Payment Guidance Card */}
+          <div className="p-4 rounded-xl bg-bg-elevated border border-white/10 text-xs space-y-2">
+            <div className="flex justify-between items-center text-content-secondary">
+              <span>Order Reference:</span>
+              <span className="font-mono text-festive-marigold font-bold">
+                {orderState.orderReference}
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-content-secondary">
+              <span>Advance Token Required:</span>
+              <span className="font-mono font-bold text-content-primary">
+                ₹{amountInr} ({orderState.tokenDuePaise < 20000 ? 'Tier ₹50' : 'Tier ₹100'})
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-content-secondary">
+              <span>Remaining Balance:</span>
+              <span className="font-mono font-bold text-content-primary">
+                {formatPaise(orderState.balanceDuePaise)} (Payable at counter)
+              </span>
+            </div>
+            <div className="pt-2 border-t border-white/5 text-[11px] text-amber-300 leading-relaxed">
+              ⚠️ Restricted Test Environment: Real payment collection is disabled. Test fixture provided for workflow verification only. Do not transfer actual money.
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setCurrentStep('REVIEW')}
+              className="w-full sm:w-auto min-h-touch px-5 py-2.5 rounded-xl bg-bg-elevated hover:bg-white/10 border border-white/10 text-content-primary font-semibold text-sm transition-colors text-center"
+            >
+              ← Back to Review
+            </button>
 
             <button
               type="button"
-              onClick={handleCancelPayment}
-              className="w-full text-xs text-content-muted hover:text-content-primary py-2 transition-colors"
+              onClick={handleProceedToUtr}
+              className="w-full sm:flex-1 min-h-touch px-6 py-3 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 text-black font-semibold text-base transition-transform flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-festive-marigold"
             >
-              ← Cancel and Return to Review Screen
+              <span>I Have Paid / Enter 12-Digit UTR →</span>
             </button>
           </div>
         </div>
@@ -309,309 +655,205 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
     );
   }
 
-  // ── SCREEN STATE 3: DRAFT REVIEW & SIMULATED SUBMISSION ──
+  // ══════════════════════════════════════════════════════════════════
+  // SCREEN 6: ORDER REVIEW (DEFAULT)
+  // ══════════════════════════════════════════════════════════════════
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-      {/* Explicit Portfolio Demo Banner */}
-      <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-800/40 text-xs text-amber-200 space-y-1">
-        <p className="font-bold text-amber-300 flex items-center gap-1.5">
-          <span>ℹ️</span> Portfolio Demo Notice
-        </p>
-        <p className="font-semibold text-sm">
-          Portfolio Demo Only. No real orders, fireworks sales, delivery, or payments are processed.
-        </p>
-        <p className="text-[11px] text-amber-200/80">
-          This simulated checkout demonstrates an online order calculation with a fixed ₹100 token deposit rule.
-        </p>
-      </div>
-
-      {/* Screen Title */}
-      <div>
+      {/* Header */}
+      <div className="border-b border-white/10 pb-4">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-festive-marigold/10 border border-festive-marigold/30 text-festive-amber mb-2">
+          <span>📋</span>
+          <span>Step 6 of 10 • Order Review</span>
+        </div>
         <h2 className="text-2xl font-bold font-display text-content-primary">
-          Simulated Checkout & Review
+          Order Review & Advance Token
         </h2>
-        <p className="text-xs text-content-muted mt-1 leading-relaxed">
-          Review your sample customer details, selected fireworks, fixed ₹100 demo
-          token, and remaining balance below.
+        <p className="text-xs text-content-muted mt-0.5">
+          Review your items, customer details, and advance token before proceeding.
         </p>
       </div>
 
-      {/* Customer Details Card */}
-      <div className="p-5 rounded-2xl bg-bg-surface border border-white/10 space-y-3">
-        <div className="flex items-center justify-between border-b border-white/5 pb-3">
-          <h3 className="text-sm font-bold font-display text-content-primary">
+      {/* Customer Verification Box */}
+      <div className="p-4 rounded-2xl bg-bg-surface border border-white/10 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-content-primary font-display">
             Customer Information
           </h3>
           <button
             type="button"
             onClick={onEditCustomer}
-            className="text-xs text-festive-marigold hover:underline font-medium"
+            className="text-xs text-festive-marigold hover:underline font-semibold"
           >
             Edit Details
           </button>
         </div>
 
-        {isCustomerValid ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            <div>
-              <span className="text-content-muted">Full Name:</span>
-              <p className="font-semibold text-content-primary text-sm mt-0.5">
-                {customer.fullName}
-              </p>
-            </div>
-            <div>
-              <span className="text-content-muted">Mobile Number:</span>
-              <p className="font-mono font-semibold text-content-primary text-sm mt-0.5">
-                +91 {customer.mobileNumber}
-              </p>
-            </div>
-            <div>
-              <span className="text-content-muted">Collection Method:</span>
-              <p className="font-medium text-content-secondary mt-0.5">
-                {customer.fulfilmentPreference === 'COUNTER_PICKUP'
-                  ? 'Store Counter Pickup (Sivakasi)'
-                  : 'Wholesale Enquiry'}
-              </p>
-            </div>
-            <div>
-              <span className="text-content-muted">Age Attestation:</span>
-              <p className="font-medium text-emerald-400 mt-0.5">
-                ✓ Confirmed 18+ years of age
-              </p>
-            </div>
-            {customer.notes.trim() && (
-              <div className="sm:col-span-2 pt-2 border-t border-white/5">
-                <span className="text-content-muted">Special Notes:</span>
-                <p className="text-content-secondary mt-0.5 italic">
-                  "{customer.notes.trim()}"
-                </p>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-800/40 text-xs text-amber-300 flex items-center justify-between gap-3">
-            <span>
-              ⚠️ Contact details are incomplete. Please provide your name,
-              phone number, and age confirmation.
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div>
+            <span className="text-content-muted block">Full Name:</span>
+            <span className="font-semibold text-content-primary">
+              {customer.fullName || '—'}
             </span>
-            <button
-              type="button"
-              onClick={onEditCustomer}
-              className="shrink-0 px-3 py-1.5 rounded-lg bg-festive-marigold text-black font-semibold"
-            >
-              Fill Details
-            </button>
           </div>
-        )}
+          <div>
+            <span className="text-content-muted block">Mobile Number:</span>
+            <span className="font-mono text-content-primary">
+              {customer.mobileNumber ? `+91 ${customer.mobileNumber}` : '—'}
+            </span>
+          </div>
+          <div>
+            <span className="text-content-muted block">Collection Preference:</span>
+            <span className="text-content-primary">
+              {customer.fulfilmentPreference === 'SPECIAL_ENQUIRY'
+                ? 'Wholesale Enquiry'
+                : 'Store Counter Pickup (Sivakasi)'}
+            </span>
+          </div>
+          <div>
+            <span className="text-content-muted block">Age Attestation:</span>
+            <span className="text-emerald-400 font-semibold">
+              {customer.ageConfirmed ? '✓ 18+ Confirmed' : 'Not confirmed'}
+            </span>
+          </div>
+        </div>
       </div>
 
-      {/* Selected Items Card */}
-      <div className="p-5 rounded-2xl bg-bg-surface border border-white/10 space-y-3">
-        <div className="flex items-center justify-between border-b border-white/5 pb-3">
-          <h3 className="text-sm font-bold font-display text-content-primary">
-            Selected Items ({totals.totalQuantity} Units)
+      {/* Item Summary List */}
+      <div className="p-4 rounded-2xl bg-bg-surface border border-white/10 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-content-primary font-display">
+            Items in Order ({totals.totalQuantity} items)
           </h3>
           <button
             type="button"
             onClick={onEditCart}
-            className="text-xs text-festive-marigold hover:underline font-medium"
+            className="text-xs text-festive-marigold hover:underline font-semibold"
           >
-            Edit Basket
+            Edit Cart
           </button>
         </div>
 
-        <div className="divide-y divide-white/5 text-xs">
+        <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
           {items.map((item) => (
             <div
               key={`${item.productId}-${item.variantId}`}
-              className="py-2.5 flex items-center justify-between gap-2"
+              className="p-2.5 rounded-xl bg-bg-elevated border border-white/5 flex items-center justify-between text-xs"
             >
-              <div className="min-w-0">
+              <div>
                 <span className="font-semibold text-content-primary">
                   {item.productName} ({item.variantName})
                 </span>
-                <span className="text-content-muted ml-2">
-                  × {item.quantity}
+                <span className="text-content-muted block text-[11px]">
+                  Qty: {item.quantity} × {item.pricePaise !== null ? formatPaise(item.pricePaise) : item.printedPriceText}
                 </span>
               </div>
-              <div className="font-mono text-right shrink-0">
-                {item.lineSubtotalPaise !== null ? (
-                  <span className="text-content-primary font-bold">
-                    {formatPaise(item.lineSubtotalPaise)}
-                  </span>
-                ) : (
-                  <span className="text-festive-amber font-medium">
-                    On enquiry ({item.printedPriceText})
-                  </span>
-                )}
-              </div>
+              <span className="font-mono font-bold text-content-primary">
+                {item.lineSubtotalPaise !== null
+                  ? formatPaise(item.lineSubtotalPaise)
+                  : 'Unpriced'}
+              </span>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Financial Estimates Card */}
+      {/* Financial Breakdown Card with Tiered Token Rules */}
       <div className="p-5 rounded-2xl bg-bg-surface border border-white/10 space-y-3">
-        <h3 className="text-sm font-bold font-display text-content-primary border-b border-white/5 pb-3">
-          Estimated Valuation (Integer Paise)
+        <h3 className="text-base font-bold font-display text-content-primary">
+          Price & Advance Token Accounting
         </h3>
 
-        <div className="space-y-2 text-xs">
+        <div className="space-y-2 text-sm border-b border-white/5 pb-3">
           <div className="flex justify-between items-center">
-            <span className="text-content-muted">
-              Priced Items Subtotal ({totals.pricedItemCount} items)
-            </span>
-            <span className="font-mono font-bold text-content-primary text-sm">
+            <span className="text-content-muted">Order Subtotal:</span>
+            <span className="font-mono font-bold text-content-primary">
               {formatPaise(totals.subtotalPaise)}
             </span>
           </div>
 
           <div className="flex justify-between items-center">
-            <span className="text-content-muted">
-              Fixed Demo Token Amount
-            </span>
-            <span className="font-mono font-bold text-festive-amber text-sm">
+            <div className="flex items-center gap-1.5">
+              <span className="text-content-muted">Advance Token Required:</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-festive-amber border border-amber-500/20">
+                {totals.subtotalPaise < 20000 ? '₹50 (< ₹200)' : '₹100 (≥ ₹200)'}
+              </span>
+            </div>
+            <span className="font-mono font-bold text-festive-amber">
               {formatPaise(totals.tokenAmountPaise)}
             </span>
           </div>
 
           <div className="flex justify-between items-center">
-            <span className="text-content-muted">
-              Remaining Balance (Subtotal - Token)
-            </span>
-            <span className="font-mono font-bold text-content-primary text-sm">
+            <span className="text-content-muted">Balance Due at Sivakasi Counter:</span>
+            <span className="font-mono font-bold text-content-primary">
               {formatPaise(totals.remainingBalancePaise)}
             </span>
           </div>
-
-          {totals.unpricedItemCount > 0 && (
-            <div className="flex justify-between items-center text-festive-amber">
-              <span>Items Requiring Store Confirmation</span>
-              <span className="font-mono font-bold">
-                {totals.unpricedItemCount} item(s)
-              </span>
-            </div>
-          )}
         </div>
 
-        {/* Final Estimate Notice */}
-        <div className="pt-3 border-t border-white/5 flex justify-between items-baseline">
-          <div>
-            <span className="text-base font-bold text-content-primary">
-              Provisional Subtotal:
-            </span>
-            <p className="text-[11px] text-content-muted">
-              Portfolio Demo Only. No real orders, fireworks sales, delivery, or payments are processed.
-            </p>
-          </div>
-          <span className="text-2xl font-bold font-mono text-festive-amber">
+        <div className="flex justify-between items-baseline pt-1">
+          <span className="text-base font-bold text-content-primary">
+            Subtotal Due Overall
+          </span>
+          <span className="text-2xl font-bold font-mono text-festive-marigold">
             {formatPaise(totals.subtotalPaise)}
           </span>
         </div>
       </div>
 
-      {/* Edge Case Blocking Feedback */}
-      {totals.hasUnpricedItems && (
-        <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-800/40 text-xs text-amber-300 space-y-1">
-          <p className="font-bold">⚠️ Unpriced Items in Box:</p>
-          <p>
-            Every item in your box must have a confirmed price before proceeding to simulated payment.
-          </p>
+      {/* Warnings & Action Button */}
+      {!canProceedToPayment && (
+        <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-800/40 text-xs text-amber-300">
+          ⚠️ Please ensure customer details are complete (including 18+ confirmation) and cart meets minimum requirements before proceeding.
         </div>
       )}
 
-      {!totals.minOrderRequirementMet && (
-        <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-800/40 text-xs text-amber-300 space-y-1">
-          <p className="font-bold">ℹ️ Minimum Order Not Reached:</p>
-          <p>
-            Add items until your subtotal reaches ₹100. The demo token amount is fixed at ₹100.
-          </p>
-        </div>
-      )}
+      <div className="flex flex-col sm:flex-row items-center gap-3">
+        <button
+          type="button"
+          onClick={onEditCart}
+          className="w-full sm:w-auto min-h-touch px-5 py-2.5 rounded-xl bg-bg-elevated hover:bg-white/10 border border-white/10 text-content-primary font-semibold text-sm transition-colors text-center"
+        >
+          ← Edit Cart
+        </button>
 
-      {/* Simulated Submission Action */}
-      <div className="p-5 rounded-2xl bg-bg-surface border border-white/10 space-y-4">
-        <h3 className="text-sm font-bold font-display text-content-primary">
-          Demo Checkout Action
-        </h3>
-
-        <div className="flex flex-col sm:flex-row gap-3">
-          <button
-            type="button"
-            onClick={handleInitiatePayment}
-            disabled={!canProceedToPayment}
-            className={`flex-1 min-h-touch px-6 py-3.5 rounded-xl font-semibold text-base transition-transform flex items-center justify-center gap-2 ${
-              canProceedToPayment
-                ? 'bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 text-black shadow-lg shadow-amber-500/10 cursor-pointer'
-                : 'bg-white/10 text-content-muted cursor-not-allowed border border-white/10'
-            }`}
-          >
-            <span>Proceed to Simulated Payment (₹100 Demo Token) →</span>
-          </button>
-        </div>
-
-        {totals.checkoutBlockedReason && (
-          <p className="text-xs text-amber-400 font-medium text-center">
-            {totals.checkoutBlockedReason}
-          </p>
-        )}
+        <button
+          type="button"
+          disabled={!canProceedToPayment || isSubmitting}
+          onClick={handleProceedToQr}
+          className="w-full sm:flex-1 min-h-touch px-6 py-3 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 disabled:opacity-50 text-black font-semibold text-base transition-transform flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+        >
+          <span>{isSubmitting ? 'Creating Order...' : 'Proceed to QR Payment Instructions →'}</span>
+        </button>
       </div>
 
-      {/* Summary Preparation & Actions */}
-      <div className="p-5 rounded-2xl bg-bg-surface border border-white/10 space-y-4">
-        <h3 className="text-sm font-bold font-display text-content-primary">
-          Demo Summary Slip
-        </h3>
-
-        <div className="relative">
-          <textarea
-            readOnly
-            rows={7}
-            value={summaryText}
-            className="w-full p-3 rounded-xl bg-bg-base border border-white/10 font-mono text-xs text-content-secondary leading-relaxed focus:outline-none select-all"
-            aria-label="Human-readable enquiry summary text"
-          />
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3">
-          <button
-            type="button"
-            onClick={handleCopy}
-            className={`flex-1 min-h-touch px-6 py-3 rounded-xl font-semibold text-sm transition-transform active:scale-95 flex items-center justify-center gap-2 border ${
-              copied
-                ? 'bg-emerald-600 text-white border-emerald-500'
-                : 'bg-festive-marigold hover:bg-festive-marigold-hover text-black border-festive-marigold'
-            }`}
-          >
-            {copied ? (
-              <>
-                <span>✓</span>
-                <span>Summary Copied to Clipboard!</span>
-              </>
-            ) : (
-              <>
-                <span>📋</span>
-                <span>Copy Demo Summary</span>
-              </>
-            )}
-          </button>
-
-          {whatsappUrl ? (
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 min-h-touch px-6 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-600 active:scale-95 text-white font-semibold text-sm transition-transform flex items-center justify-center gap-2 border border-emerald-600"
+      {/* Quick Order Lookup Form */}
+      <div className="pt-6 border-t border-white/5">
+        <details className="text-xs text-content-muted">
+          <summary className="cursor-pointer hover:text-content-primary font-semibold py-1">
+            Already placed an order? Track with Order Reference
+          </summary>
+          <form onSubmit={handleLookupOrder} className="mt-3 flex gap-2">
+            <input
+              type="text"
+              value={statusLookupRef}
+              onChange={(e) => setStatusLookupRef(e.target.value)}
+              placeholder="e.g. NT-4921"
+              className="flex-1 px-3 py-2 rounded-xl bg-bg-elevated border border-white/10 font-mono text-content-primary text-xs"
+            />
+            <button
+              type="submit"
+              disabled={statusPolling}
+              className="px-4 py-2 rounded-xl bg-bg-surface hover:bg-white/10 border border-white/10 text-content-primary font-semibold text-xs"
             >
-              <span>💬</span>
-              <span>Send via WhatsApp</span>
-            </a>
-          ) : (
-            <div className="flex-1 text-center text-xs text-content-muted flex items-center justify-center p-2 rounded-xl bg-bg-elevated border border-white/5">
-              <span>(WhatsApp direct link not configured. Use Copy button above.)</span>
-            </div>
+              Lookup
+            </button>
+          </form>
+          {statusLookupError && (
+            <p className="mt-1 text-festive-crimson">{statusLookupError}</p>
           )}
-        </div>
+        </details>
       </div>
     </div>
   );

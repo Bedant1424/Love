@@ -41,13 +41,13 @@ describe('CartView Component', () => {
     unpricedItemCount: 1,
     subtotalPaise: 9000,
     provisionalSubtotalPaise: 9000,
-    tokenAmountPaise: 10000,
-    remainingBalancePaise: 0,
+    tokenAmountPaise: 5000, // ₹50 tier for ₹90 subtotal
+    remainingBalancePaise: 4000,
     canProceedToCheckout: false,
-    minOrderRequirementMet: false,
+    minOrderRequirementMet: true,
     hasUnpricedItems: true,
     checkoutBlockedReason:
-      'Every item in your box must have a confirmed price before proceeding to simulated payment.',
+      'Every item in your box must have a confirmed price before proceeding to payment instructions.',
   };
 
   it('renders empty cart state and allows continuing shopping', () => {
@@ -61,7 +61,7 @@ describe('CartView Component', () => {
           unpricedItemCount: 0,
           subtotalPaise: 0,
           provisionalSubtotalPaise: 0,
-          tokenAmountPaise: 10000,
+          tokenAmountPaise: 5000,
           remainingBalancePaise: 0,
           canProceedToCheckout: false,
           minOrderRequirementMet: false,
@@ -77,7 +77,7 @@ describe('CartView Component', () => {
     );
 
     expect(
-      screen.getByText(/Your Demo Basket is Empty/i)
+      screen.getByText(/Your Shopping Cart is Empty/i)
     ).toBeInTheDocument();
     const exploreBtn = screen.getByRole('button', {
       name: /Explore 2026 Catalogue/i,
@@ -86,7 +86,7 @@ describe('CartView Component', () => {
     expect(handleContinue).toHaveBeenCalledTimes(1);
   });
 
-  it('renders item list, correctly differentiating priced and unpriced items with demo breakdown', () => {
+  it('renders item list, correctly differentiating priced and unpriced items with breakdown', () => {
     render(
       <CartView
         items={mockItems}
@@ -106,7 +106,7 @@ describe('CartView Component', () => {
 
     // Check priced item line subtotal: ₹90.00
     expect(
-      screen.getByText(/Catalogue Estimate: ₹90\.00/i)
+      screen.getByText(/Line Subtotal: ₹90\.00/i)
     ).toBeInTheDocument();
 
     // Check unpriced item notice
@@ -114,25 +114,24 @@ describe('CartView Component', () => {
       screen.getByText(/Price to be confirmed \(Range item: ₹80 - ₹180\)/i)
     ).toBeInTheDocument();
 
-    // Check demo financial breakdown
-    expect(screen.getByText(/Demo Financial Breakdown/i)).toBeInTheDocument();
-    expect(screen.getByText('Priced Items (1)')).toBeInTheDocument();
-    expect(screen.getByText('Fixed Demo Token')).toBeInTheDocument();
-    expect(screen.getByText('Fixed ₹100')).toBeInTheDocument();
-    expect(screen.getByText('Remaining Balance')).toBeInTheDocument();
-    expect(screen.getByText('Items Requiring Price Confirmation')).toBeInTheDocument();
+    // Check financial breakdown
+    expect(
+      screen.getByText(/Order Price & Advance Token Breakdown/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText('Order Subtotal (1 item)')).toBeInTheDocument();
+    expect(screen.getByText('Advance Token Required')).toBeInTheDocument();
+    expect(screen.getByText('Balance Due at Counter')).toBeInTheDocument();
+    expect(
+      screen.getByText('Items Requiring Price Confirmation')
+    ).toBeInTheDocument();
     expect(screen.getByText('1 item(s)')).toBeInTheDocument();
 
-    // Check validation blocker notices
+    // Check validation blocker notice
     expect(
-      screen.getByText(/Every item in your box must have a confirmed price before proceeding to simulated payment/i)
+      screen.getByText(
+        /Every item in your box must have a confirmed price before proceeding to payment instructions/i
+      )
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Add items until your subtotal reaches ₹100\. The demo token amount is fixed at ₹100/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getAllByText(/Portfolio Demo Only\. No real orders, fireworks sales, delivery, or payments are processed/i).length
-    ).toBeGreaterThan(0);
   });
 
   it('triggers increment, decrement, and remove actions correctly', () => {
@@ -184,7 +183,7 @@ describe('CartView Component', () => {
     );
   });
 
-  it('supports clearing basket and proceeding to review', () => {
+  it('supports clearing cart and proceeding to review', () => {
     const handleClear = vi.fn();
     const handleReview = vi.fn();
 
@@ -201,14 +200,14 @@ describe('CartView Component', () => {
       />
     );
 
-    // Clear basket
-    const clearBtn = screen.getByRole('button', { name: /Clear Basket/i });
+    // Clear cart
+    const clearBtn = screen.getByRole('button', { name: /Clear Cart/i });
     fireEvent.click(clearBtn);
     expect(handleClear).toHaveBeenCalledTimes(1);
 
     // Proceed to review
     const proceedBtn = screen.getByRole('button', {
-      name: /Proceed to Review & Summary/i,
+      name: /Proceed to Review & Pay/i,
     });
     fireEvent.click(proceedBtn);
     expect(handleReview).toHaveBeenCalledTimes(1);

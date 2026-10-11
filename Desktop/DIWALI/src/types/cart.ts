@@ -1,11 +1,26 @@
 import { PriceStatus, PricingOrigin } from './catalogue';
+import {
+  TOKEN_TIER_THRESHOLD_PAISE,
+  TOKEN_LOW_TIER_PAISE,
+  TOKEN_HIGH_TIER_PAISE,
+  MIN_ORDER_SUBTOTAL_PAISE,
+  calculateTokenAmountPaise,
+  calculateRemainingBalancePaise,
+} from '../utils/tokenPolicy';
+
+export {
+  TOKEN_TIER_THRESHOLD_PAISE,
+  TOKEN_LOW_TIER_PAISE,
+  TOKEN_HIGH_TIER_PAISE,
+  MIN_ORDER_SUBTOTAL_PAISE,
+  calculateTokenAmountPaise,
+  calculateRemainingBalancePaise,
+};
 
 /**
- * Shared fixed demo token constant: ₹100 = 10,000 paise.
- * Invariant: Never a percentage, does not scale with subtotal.
+ * Backward compatibility alias: default high tier token amount (₹100).
  */
-export const TOKEN_AMOUNT_PAISE = 10000;
-export const MIN_ORDER_SUBTOTAL_PAISE = 10000;
+export const TOKEN_AMOUNT_PAISE = TOKEN_HIGH_TIER_PAISE;
 
 export interface StoredCartItem {
   productId: string;
@@ -34,22 +49,27 @@ export interface CartTotals {
   unpricedItemCount: number;
   subtotalPaise: number;
   provisionalSubtotalPaise: number; // backward compatibility alias
-  tokenAmountPaise: number; // Fixed at 10,000 paise (₹100)
-  remainingBalancePaise: number; // max(0, subtotal - 10,000)
+  tokenAmountPaise: number; // Tiered: ₹50 if subtotal < ₹200, ₹100 if subtotal >= ₹200
+  remainingBalancePaise: number; // max(0, subtotal - tokenAmountPaise)
   canProceedToCheckout: boolean;
   minOrderRequirementMet: boolean;
   hasUnpricedItems: boolean;
   checkoutBlockedReason?: string;
 }
 
-export type SimulatedPaymentStatus =
-  | 'NOT_STARTED'
-  | 'PENDING'
-  | 'SUCCESS'
+export type PaymentStatus =
+  | 'UNPAID'
+  | 'RECORDED_UNVERIFIED'
+  | 'RECONCILED'
+  | 'PENDING_VERIFICATION'
+  | 'VERIFIED_TOKEN'
   | 'FAILED';
 
-export interface DemoOrderRecord {
-  demoOrderId: string;
+export type SimulatedPaymentStatus = PaymentStatus;
+
+export interface OrderRecord {
+  orderReference: string;
+  accessToken: string;
   createdAt: string;
   customerName: string;
   customerMobile: string;
@@ -57,6 +77,10 @@ export interface DemoOrderRecord {
   subtotalPaise: number;
   tokenAmountPaise: number;
   remainingBalancePaise: number;
-  paymentStatus: SimulatedPaymentStatus;
-  isSimulatedDemo: true;
+  paymentStatus: PaymentStatus;
+  paymentReference?: string | null;
+  reconciliationNotes?: string | null;
 }
+
+// Backward compatibility alias
+export type DemoOrderRecord = OrderRecord;

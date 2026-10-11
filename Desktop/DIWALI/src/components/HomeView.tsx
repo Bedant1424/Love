@@ -20,7 +20,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <div className="max-w-4xl mx-auto text-center space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-festive-marigold/10 border border-festive-marigold/30 text-festive-amber uppercase tracking-wider">
             <span>✨</span>
-            <span>Diwali Catalogue Portfolio Demonstration</span>
+            <span>Diwali Fireworks Catalogue 2026</span>
           </div>
 
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold font-display tracking-tight text-content-primary leading-tight max-w-2xl mx-auto">
@@ -28,13 +28,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </h1>
 
           <p className="text-base text-content-secondary max-w-xl mx-auto leading-relaxed">
-            Interactive software portfolio demonstration based on an authentic Diwali catalogue poster. Browse products, assemble a box, and experience simulated ₹100 token checkout.
+            Reserve your festival box across six traditional categories. Secure your order with an advance token online and collect your package directly at our licensed Sivakasi counter.
           </p>
-
-          {/* Highlighted Portfolio Demo Callout */}
-          <div className="max-w-xl mx-auto p-3 rounded-xl bg-amber-950/40 border border-amber-800/40 text-xs text-amber-300 font-medium">
-            Portfolio Demo Only. No real orders, fireworks sales, delivery, or payments are processed.
-          </div>
 
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
@@ -51,23 +46,23 @@ export const HomeView: React.FC<HomeViewProps> = ({
               onClick={onEnterCustomerDetails}
               className="w-full sm:w-auto min-h-touch px-6 py-3 rounded-xl bg-bg-surface hover:bg-white/10 border border-white/10 text-content-primary font-semibold text-base transition-colors"
             >
-              <span>Sample Customer Info</span>
+              <span>Customer Details</span>
             </button>
           </div>
         </div>
       </section>
 
-      {/* Feature / Architecture Highlight Strip */}
+      {/* Feature / Policy Strip */}
       <section className="max-w-7xl mx-auto px-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="p-4 rounded-xl bg-bg-surface border border-white/5 flex items-start gap-3">
             <span className="text-2xl" aria-hidden="true">📋</span>
             <div>
               <h2 className="text-sm font-bold text-content-primary font-display">
-                Authentic Poster Data
+                Authentic Sivakasi Catalogue
               </h2>
               <p className="text-xs text-content-muted mt-0.5">
-                Exact products, categories, and printed prices extracted from the original poster.
+                Traditional crackers, sparklers, ground chakkars, and flower pots from genuine Sivakasi manufacturers.
               </p>
             </div>
           </div>
@@ -76,22 +71,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <span className="text-2xl" aria-hidden="true">🪙</span>
             <div>
               <h2 className="text-sm font-bold text-content-primary font-display">
-                Fixed ₹100 Demo Token
+                Tiered Advance Token
               </h2>
               <p className="text-xs text-content-muted mt-0.5">
-                Fixed 10,000 paise token reservation rule with remaining balance accounting.
+                Pay ₹50 token for orders below ₹200, or ₹100 for orders ₹200 and above. Settle remaining balance at pickup.
               </p>
             </div>
           </div>
 
           <div className="p-4 rounded-xl bg-bg-surface border border-white/5 flex items-start gap-3">
-            <span className="text-2xl" aria-hidden="true">📱</span>
+            <span className="text-2xl" aria-hidden="true">📍</span>
             <div>
               <h2 className="text-sm font-bold text-content-primary font-display">
-                Simulated Checkout Flow
+                Licensed Counter Pickup
               </h2>
               <p className="text-xs text-content-muted mt-0.5">
-                Full UI demonstration with simulated payment pending, success, and error states.
+                Physical collection at licensed premises in full compliance with Supreme Court safety guidelines.
               </p>
             </div>
           </div>
@@ -143,8 +138,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
               {cat.complianceWarning && (
                 <div className="mt-4 pt-3 border-t border-white/5 text-[11px] text-amber-300 flex items-center gap-1.5">
-                  <span aria-hidden="true">ℹ️</span>
-                  <span className="truncate">Catalogue demonstration reference</span>
+                  <span aria-hidden="true">⚠️</span>
+                  <span className="truncate">{cat.complianceWarning}</span>
                 </div>
               )}
             </button>
@@ -152,24 +147,24 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </section>
 
-      {/* Demo Information Notice Card */}
+      {/* Counter Collection Guidelines */}
       <section className="max-w-7xl mx-auto px-4">
         <div className="p-6 rounded-2xl bg-bg-surface border border-white/10 space-y-3">
           <h2 className="text-base font-bold font-display text-content-primary">
-            Portfolio Demonstration Architecture
+            Ordering & Counter Collection Guidelines
           </h2>
           <p className="text-xs text-content-secondary leading-relaxed">
-            This web application demonstrates a high-performance, mobile-first ordering interface engineered with React 18, TypeScript, Vite, and Tailwind CSS. All price calculations use exact integer paise arithmetic. The project illustrates how a seasonal fireworks ordering system could operate with fixed token payments and admin reconciliation, without processing real payments or conducting actual commercial sales.
+            Reserve your Diwali crackers online with complete price transparency. All orders are packed in durable cartons and held at our Sivakasi counter for convenient pickup. Supreme Court and PESO regulations require 18+ age verification and prohibit uncertified courier dispatches.
           </p>
           <div className="pt-2 flex flex-wrap gap-2 text-xs">
             <span className="px-3 py-1 rounded-lg bg-bg-elevated border border-white/5 text-content-muted">
-              🪙 Fixed Token: ₹100 (10,000 paise)
+              🪙 Advance Token: ₹50 (&lt;₹200) / ₹100 (≥₹200)
             </span>
             <span className="px-3 py-1 rounded-lg bg-bg-elevated border border-white/5 text-content-muted">
-              🔒 Privacy: Transient session memory only
+              📱 UPI QR Payment & 12-Digit UTR
             </span>
             <span className="px-3 py-1 rounded-lg bg-bg-elevated border border-white/5 text-content-muted">
-              📦 Scope: Non-commercial software portfolio
+              📍 Counter Pickup in Sivakasi
             </span>
           </div>
         </div>

@@ -3,8 +3,9 @@ import {
   StoredCartItem,
   CartItem,
   CartTotals,
-  TOKEN_AMOUNT_PAISE,
   MIN_ORDER_SUBTOTAL_PAISE,
+  calculateTokenAmountPaise,
+  calculateRemainingBalancePaise,
 } from '../types/cart';
 import { PRODUCTS } from '../data/catalogueData';
 import { loadCartFromStorage, saveCartToStorage } from '../utils/storage';
@@ -57,7 +58,7 @@ export function useCart() {
     return items;
   }, [storedItems]);
 
-  // Compute financial totals and unpriced counts with fixed ₹100 token rules
+  // Compute financial totals and unpriced counts with tiered token rules (₹50 below ₹200, ₹100 at or above ₹200)
   const totals: CartTotals = useMemo(() => {
     let totalQuantity = 0;
     let pricedItemCount = 0;
@@ -74,8 +75,11 @@ export function useCart() {
       }
     }
 
-    const tokenAmountPaise = TOKEN_AMOUNT_PAISE;
-    const remainingBalancePaise = Math.max(0, subtotalPaise - tokenAmountPaise);
+    const tokenAmountPaise = calculateTokenAmountPaise(subtotalPaise);
+    const remainingBalancePaise = calculateRemainingBalancePaise(
+      subtotalPaise,
+      tokenAmountPaise
+    );
     const minOrderRequirementMet = subtotalPaise >= MIN_ORDER_SUBTOTAL_PAISE;
     const hasUnpricedItems = unpricedItemCount > 0;
 
@@ -85,10 +89,10 @@ export function useCart() {
     let checkoutBlockedReason: string | undefined;
     if (hasUnpricedItems) {
       checkoutBlockedReason =
-        'Every item in your box must have a confirmed price before proceeding to simulated payment.';
+        'Every item in your box must have a confirmed price before proceeding to payment instructions.';
     } else if (!minOrderRequirementMet && totalQuantity > 0) {
       checkoutBlockedReason =
-        'Add items until your subtotal reaches ₹100. The demo token amount is fixed at ₹100.';
+        'Add items until your subtotal reaches at least ₹50 to meet the minimum order requirement.';
     }
 
     return {

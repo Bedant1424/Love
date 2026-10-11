@@ -57,10 +57,14 @@
   ```
   An attacker guessing the order reference cannot view customer details without the secret token.
 
-### 2.3 Payment Fraud & UTR Protection
-- **Replay Prevention:** The `payments` table maintains a `UNIQUE (payment_reference)` index. Attempting to submit the same UTR across two orders triggers an immediate `SQLITE_CONSTRAINT` abort.
-- **Verification Decoupling:** Submitting a UTR never transitions an order to `CONFIRMED`. It only moves it to `PENDING_VERIFICATION`. Only an authenticated administrator matching the UTR against verified bank credits can mark the order confirmed.
-- **No Screenshot Reliance:** The application rejects image-only payment proofs as automated evidence; customer must provide the textual bank UTR.
+### 2.3 Payment Security, Fixture Isolation & UTR Protection
+- **Disabled Live Payment Collection (`PAYMENT_COLLECTION_ENABLED = false`):** Live money collection is explicitly disabled in the codebase and edge worker runtime until merchant banking KYC, dedicated VPA binding, and formal legal clearance are granted.
+- **Non-Payable QR Test Fixture:** In restricted test environments, the system renders a non-payable test fixture QR (`test-fixture@nagarjunatraders`) with a visible test payload notice (`TEST FIXTURE ONLY`).
+- **12-Digit String UTR Data Type Invariant:** The payment reference must be a string of **strictly 12 numeric digits** (`/^\d{12}$/`). The server rejects non-string inputs and never casts the UTR to a JavaScript number or integer, avoiding IEEE 754 precision distortion and loss of leading zeroes.
+- **Replay & Double-Spend Prevention:** Both the D1 database (`payment_submissions.utr_reference UNIQUE` constraint) and the in-memory engine reject any duplicate UTR previously recorded for another order, responding with `HTTP 409 Conflict` (`DUPLICATE_UTR`).
+- **Recorded Unverified Status:** Submitting a UTR transitions the payment status to `RECORDED_UNVERIFIED`. It never automatically confirms an order.
+- **Prohibition of Automated Verification Claims:** No automated bank verification button or fake external API simulation is permitted. Staff must perform manual verification against the official store bank statement, recording mandatory reconciliation notes before confirming the advance token payment.
+
 
 ### 2.4 Denial of Service (DoS) & Abuse Prevention
 - **Cloudflare Turnstile:** Every order submission requires a valid Turnstile token. The Worker validates this server-to-server with Cloudflare's `/siteverify` endpoint before interacting with D1.

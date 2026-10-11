@@ -251,27 +251,74 @@ CREATE TABLE IF NOT EXISTS system_settings (
 );
 ```
 
+### 2.8 `payment_submissions` (12-Digit UTR Registry)
+```sql
+CREATE TABLE IF NOT EXISTS payment_submissions (
+    id TEXT PRIMARY KEY,
+    order_id TEXT NOT NULL REFERENCES demo_orders(id) ON DELETE CASCADE,
+    utr_reference TEXT NOT NULL UNIQUE,       -- Must be exactly 12 numeric digits
+    submission_status TEXT NOT NULL DEFAULT 'RECORDED_UNVERIFIED'
+        CHECK (submission_status IN ('RECORDED_UNVERIFIED', 'VERIFIED_TOKEN', 'REJECTED')),
+    submitted_at TEXT NOT NULL DEFAULT (datetime('now')),
+    notes TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_payment_submissions_order ON payment_submissions(order_id);
+CREATE INDEX IF NOT EXISTS idx_payment_submissions_utr ON payment_submissions(utr_reference);
+```
+
+### 2.9 `order_status_history` & `payment_status_history`
+```sql
+CREATE TABLE IF NOT EXISTS order_status_history (
+    id TEXT PRIMARY KEY,
+    order_id TEXT NOT NULL REFERENCES demo_orders(id) ON DELETE CASCADE,
+    from_status TEXT,
+    to_status TEXT NOT NULL,
+    changed_by TEXT NOT NULL,
+    notes TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_order_status_hist_order ON order_status_history(order_id);
+
+CREATE TABLE IF NOT EXISTS payment_status_history (
+    id TEXT PRIMARY KEY,
+    order_id TEXT NOT NULL REFERENCES demo_orders(id) ON DELETE CASCADE,
+    from_status TEXT,
+    to_status TEXT NOT NULL,
+    changed_by TEXT NOT NULL,
+    notes TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_payment_status_hist_order ON payment_status_history(order_id);
+```
+
 ---
 
-## 3. Financial Calculation Invariants (Fixed ₹100 Demo Token)
+## 3. Financial Calculation Invariants (Tiered Advance Token Policy)
 
-1. **Paise Integrity:** Every calculation follows:
+1. **Paise Integrity:** Every calculation uses strictly integer arithmetic without floating-point inaccuracies:
    $$\text{line\_subtotal\_paise} = \text{unit\_price\_paise} \times \text{quantity}$$
    $$\text{subtotal\_paise} = \sum_{i} \text{line\_subtotal\_paise}_i$$
-   $$\text{token\_amount\_paise} = 10000 \quad (\text{Strictly fixed at ₹100.00; NOT a percentage})$$
-   $$\text{balance\_due\_paise} = \max\left(0, \text{subtotal\_paise} - \text{token\_amount\_paise}\right)$$
-2. **Subtotal Minimum Gating:** A demo order requires $\text{subtotal\_paise} \ge 10000$ (₹100.00). If below ₹100, simulated checkout is blocked.
-3. **No Fabricated Pricing:** Range items and unconfirmed mappings have `pricePaise: null`. They can be added to the enquiry basket but block final payment simulation until confirmed.
-4. **Zero Inconsistent State:** The sum of priced `lineSubtotalPaise` must exactly equal `subtotalPaise`.
+2. **Tiered Advance Token Rules:**
+   - If $\text{subtotal\_paise} < 20000$ (below ₹200), advance token amount is strictly **₹50.00** (`5,000 paise`).
+   - If $\text{subtotal\_paise} \ge 20000$ (₹200 or above), advance token amount is strictly **₹100.00** (`10,000 paise`).
+   - **Boundary Condition:** Exactly ₹200 belongs to the **₹100 tier**.
+   - **Counter Balance:**
+     $$\text{balance\_due\_paise} = \max\left(0, \text{subtotal\_paise} - \text{token\_amount\_paise}\right)$$
+     (Payable at physical counter upon pickup).
+3. **Subtotal Minimum Gating:** An order requires $\text{subtotal\_paise} \ge 5000$ (minimum ₹50.00 subtotal). If below ₹50, order checkout is blocked.
+4. **No Fabricated Pricing:** Range items and unconfirmed mappings have `pricePaise: null`. They can be added to the enquiry basket but block final checkout until confirmed by the store owner or administrator.
+5. **Zero Inconsistent State:** The sum of priced `lineSubtotalPaise` must exactly equal `subtotalPaise`.
 
 ---
 
-## 4. TypeScript Client & Portfolio Demo Models
+## 4. TypeScript Client & Order Models
 
-### 4.1 Constants
+### 4.1 Constants (`src/utils/tokenPolicy.ts`)
 ```typescript
-export const TOKEN_AMOUNT_PAISE = 10000;       // Fixed ₹100.00 demo token
-export const MIN_ORDER_SUBTOTAL_PAISE = 10000; // Minimum ₹100.00 order subtotal
+export const TOKEN_TIER_THRESHOLD_PAISE = 20000; // ₹200.00 boundary
+export const TOKEN_LOW_TIER_PAISE = 5000;         // ₹50.00 token for orders < ₹200
+export const TOKEN_HIGH_TIER_PAISE = 10000;       // ₹100.00 token for orders >= ₹200
+export const MIN_ORDER_SUBTOTAL_PAISE = 5000;     // Minimum ₹50.00 order subtotal
 ```
 
 ### 4.2 Pricing Origins & Price Status
@@ -289,7 +336,7 @@ export type PriceStatus =
   | 'CONFIRMED';            // Owner-confirmed
 ```
 
-### 4.3 Cart Totals & Simulated Demo Records
+### 4.3 Cart Totals & Order Records
 ```typescript
 export interface CartTotals {
   totalQuantity: number;
@@ -297,36 +344,39 @@ export interface CartTotals {
   unpricedItemCount: number;
   subtotalPaise: number;
   provisionalSubtotalPaise: number;
-  tokenAmountPaise: number;         // Fixed 10,000 paise (₹100)
-  remainingBalancePaise: number;    // max(0, subtotal - 10,000)
-  canProceedToCheckout: boolean;    // subtotal >= 10,000 && !hasUnpricedItems
-  minOrderRequirementMet: boolean;  // subtotal >= 10,000
+  tokenAmountPaise: number;         // Tiered: 5,000 paise (< ₹200) or 10,000 paise (>= ₹200)
+  remainingBalancePaise: number;    // max(0, subtotal - tokenAmountPaise)
+  canProceedToCheckout: boolean;    // subtotal >= 5,000 && !hasUnpricedItems
+  minOrderRequirementMet: boolean;  // subtotal >= 5,000
   hasUnpricedItems: boolean;        // unpricedItemCount > 0
   checkoutBlockedReason?: string;
 }
 
-export type SimulatedPaymentStatus =
-  | 'NOT_STARTED'
-  | 'PENDING'
-  | 'SUCCESS'
+export type PaymentStatus =
+  | 'UNPAID'
+  | 'RECORDED_UNVERIFIED'
+  | 'VERIFIED_TOKEN'
   | 'FAILED';
 
-export interface DemoOrderRecord {
-  demoOrderId: string;             // Format: DEMO-NT-XXXX
+export interface OrderRecord {
+  orderReference: string;           // Format: NT-XXXX
+  accessToken: string;
   createdAt: string;
   customerName: string;
   customerMobile: string;
   items: CartItem[];
   subtotalPaise: number;
-  tokenAmountPaise: number;        // Fixed 10,000 paise
+  tokenAmountPaise: number;
   remainingBalancePaise: number;
-  paymentStatus: SimulatedPaymentStatus;
-  isSimulatedDemo: true;
+  paymentStatus: PaymentStatus;
+  paymentReference?: string;
+  isSimulatedDemo?: boolean;
 }
 ```
 
 ### 4.4 Data Minimisation & Transient State Invariant
 - Customer personal data (`CustomerDetails`: name, phone number, collection preference, age attestation, notes) is held **strictly in React component state**.
-- Customer data is **never written to `localStorage`** or remote servers.
+- Customer data is **never written to `localStorage`** or remote unauthenticated endpoints.
 - `localStorage` stores only anonymous cracker cart item references: `nt_cart_items_v1: [{ productId, variantId, quantity }]`.
+
 
