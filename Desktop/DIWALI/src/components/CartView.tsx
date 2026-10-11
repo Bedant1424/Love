@@ -206,6 +206,17 @@ export const CartView: React.FC<CartViewProps> = ({
             </p>
           </div>
         )}
+
+        {!totals.minOrderRequirementMet && totals.totalQuantity > 0 && !totals.hasUnpricedItems && (
+          <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-800/40 text-xs text-amber-300 space-y-1">
+            <p className="font-bold flex items-center gap-1.5">
+              <span>⚠️</span> Minimum Order Subtotal Required:
+            </p>
+            <p>
+              Order subtotal must be at least ₹50.00 because the required advance token is ₹50.00.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Actions */}

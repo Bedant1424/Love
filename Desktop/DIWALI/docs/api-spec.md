@@ -6,7 +6,7 @@
 **Authentication:** 
 - Public Endpoints: Public / Rate-limited + Cloudflare Turnstile Verification
 - Customer Order Access: Strictly require header `X-Order-Token: <token>`. URL query parameter tokens (`?token=...`) are prohibited and rejected with `401 Unauthorized` to prevent token leakage in browser history, proxy logs, and referrer headers.
-- Admin Endpoints: In production, strictly validated against Cloudflare Access JWT Assertion (`Cf-Access-Jwt-Assertion`), checking signature, issuer, audience (`CF_ACCESS_AUD`), and expiry (`exp`). In local/restricted development, isolated Bearer token `dev-admin-token`. Public admin registration is non-existent, and password login in production is rejected with `403 Forbidden`.
+- Admin Endpoints: In production, strictly validated with cryptographic RS256 signature verification of Cloudflare Access JWT Assertion (`Cf-Access-Jwt-Assertion`) via `jose` against documented JWKS endpoint (`https://<team>.cloudflareaccess.com/cdn-cgi/access/certs`), validating issuer (`CF_ACCESS_TEAM_DOMAIN`), audience (`CF_ACCESS_AUD`), not-before (`nbf`), expiration (`exp`), and allowed identities (`CF_ACCESS_ALLOWED_ADMINS`). Fails closed on any error. In local/restricted development, isolated Bearer token `dev-admin-token`. Public admin registration is non-existent, and password login in production is rejected with `403 Forbidden`.
 
 ---
 
@@ -126,12 +126,13 @@ Submits a customer reservation request. Computes tiered tokens independently on 
   - `customer.ageConfirmed`: boolean, must be `true`.
   - `items`: array, min 1 item.
   - `items[].quantity`: integer, between 1 and 50.
-  - No items with unconfirmed prices (`pricePaise === null`) allowed.
-  - **Shared Token Tier Rule:**
-    - Subtotal < ₹200 (`20,000 paise`): token amount is ₹50 (`5,000 paise`).
-    - Subtotal $\ge$ ₹200 (`20,000 paise`): token amount is ₹100 (`10,000 paise`).
-    - Exact ₹200 boundary belongs to ₹100 tier.
-    - Subtotals below token amount (e.g. ₹30): token capped at subtotal (`Math.min(subtotalPaise, 5000)` = ₹30), remaining balance is ₹0. Remaining balance is never negative.
+  - **Exact Token Policy & Boundary Invariants:**
+    - Subtotal < ₹200 (`20,000 paise`): token amount is strictly ₹50 (`5,000 paise`).
+    - Subtotal $\ge$ ₹200 (`20,000 paise`): token amount is strictly ₹100 (`10,000 paise`).
+    - Exact ₹200 boundary belongs to ₹100 tier (subtotal ₹200 $\rightarrow$ token ₹100, balance ₹100).
+    - Subtotal < ₹50 (`5,000 paise`): rejected with `400 Bad Request` (`SUBTOTAL_BELOW_MINIMUM_TOKEN`) with message: *"Order subtotal must be at least ₹50.00 because the required advance token is ₹50.00."* Silent reduction below ₹50 is strictly eliminated.
+    - Exact ₹50 boundary: token is ₹50, remaining balance is ₹0.
+    - Remaining balance is calculated as `Math.max(0, subtotalPaise - tokenAmountPaise)`.
 - **Response `201 Created`:**
 ```json
 {

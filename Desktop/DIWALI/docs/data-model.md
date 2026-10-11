@@ -181,8 +181,8 @@ CREATE TABLE IF NOT EXISTS orders (
         CHECK (operational_status IN ('SUBMITTED', 'CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'COMPLETED', 'CANCELLED')),
     payment_status TEXT NOT NULL DEFAULT 'UNPAID'
         CHECK (payment_status IN ('UNPAID', 'RECORDED_UNVERIFIED', 'FAILED')),
-    subtotal_paise INTEGER NOT NULL CHECK (subtotal_paise > 0),
-    token_amount_paise INTEGER NOT NULL,       -- Shared Tier Rule: < ₹200 -> ₹50 (or subtotal if < ₹50); >= ₹200 -> ₹100
+    subtotal_paise INTEGER NOT NULL CHECK (subtotal_paise >= 5000), -- Minimum order threshold: ₹50 (5,000 paise)
+    token_amount_paise INTEGER NOT NULL,       -- Strict Tier Rule: < ₹200 -> strictly ₹50 (5,000 paise); >= ₹200 -> strictly ₹100 (10,000 paise)
     remaining_balance_paise INTEGER NOT NULL CHECK (remaining_balance_paise >= 0),
     access_token TEXT NOT NULL UNIQUE,         -- Secret cryptographic UUID passed in X-Order-Token header
     idempotency_key TEXT UNIQUE,

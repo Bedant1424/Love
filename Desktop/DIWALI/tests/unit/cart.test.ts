@@ -7,6 +7,9 @@ import {
   TOKEN_TIER_THRESHOLD_PAISE,
   TOKEN_LOW_TIER_PAISE,
   TOKEN_HIGH_TIER_PAISE,
+  MIN_ORDER_SUBTOTAL_PAISE,
+  isOrderSubtotalEligible,
+  getSubtotalValidationError,
 } from '../../src/utils/tokenPolicy';
 
 describe('useCart Hook & Tiered Token Calculation Policy', () => {
@@ -19,31 +22,40 @@ describe('useCart Hook & Tiered Token Calculation Policy', () => {
       expect(TOKEN_TIER_THRESHOLD_PAISE).toBe(20000);
       expect(TOKEN_LOW_TIER_PAISE).toBe(5000);
       expect(TOKEN_HIGH_TIER_PAISE).toBe(10000);
+      expect(MIN_ORDER_SUBTOTAL_PAISE).toBe(5000);
     });
 
-    it('caps token amount to subtotal for subtotals below ₹50 so remaining balance is never negative', () => {
-      expect(calculateTokenAmountPaise(3000)).toBe(3000); // ₹30 subtotal -> ₹30 token
-      expect(calculateRemainingBalancePaise(3000, 3000)).toBe(0);
-      expect(calculateTokenAmountPaise(1000)).toBe(1000); // ₹10 subtotal -> ₹10 token
-      expect(calculateRemainingBalancePaise(1000, 1000)).toBe(0);
-    });
-
-    it('returns ₹50 (5,000 paise) token for subtotal below ₹200 (20,000 paise)', () => {
-      expect(calculateTokenAmountPaise(5000)).toBe(5000); // ₹50
-      expect(calculateTokenAmountPaise(15000)).toBe(5000); // ₹150
-      expect(calculateTokenAmountPaise(19900)).toBe(5000); // ₹199
+    it('enforces exact token policy with no silent reduction across all boundary values', () => {
+      // Subtotal < ₹200 strictly requires ₹50 (5,000 paise) token with no reduction below ₹50
+      expect(calculateTokenAmountPaise(0)).toBe(5000); // ₹0
+      expect(calculateTokenAmountPaise(3000)).toBe(5000); // ₹30
+      expect(calculateTokenAmountPaise(4999)).toBe(5000); // ₹49.99
+      expect(calculateTokenAmountPaise(5000)).toBe(5000); // ₹50.00
+      expect(calculateTokenAmountPaise(15000)).toBe(5000); // ₹150.00
+      expect(calculateTokenAmountPaise(19900)).toBe(5000); // ₹199.00
       expect(calculateTokenAmountPaise(19999)).toBe(5000); // ₹199.99
-    });
 
-    it('returns ₹100 (10,000 paise) token for exact ₹200 boundary', () => {
-      // Prompt: "Treat exactly ₹200 as belonging to the ₹100 tier."
-      expect(calculateTokenAmountPaise(20000)).toBe(10000); // ₹200.00
-    });
-
-    it('returns ₹100 (10,000 paise) token for subtotal strictly above ₹200', () => {
+      // Subtotal >= ₹200 strictly requires ₹100 (10,000 paise) token
+      expect(calculateTokenAmountPaise(20000)).toBe(10000); // ₹200.00 exact boundary
       expect(calculateTokenAmountPaise(20001)).toBe(10000); // ₹200.01
-      expect(calculateTokenAmountPaise(35000)).toBe(10000); // ₹350
-      expect(calculateTokenAmountPaise(100000)).toBe(10000); // ₹1,000
+      expect(calculateTokenAmountPaise(35000)).toBe(10000); // ₹350.00
+      expect(calculateTokenAmountPaise(100000)).toBe(10000); // ₹1,000.00
+    });
+
+    it('validates subtotal eligibility against ₹50 minimum advance token threshold', () => {
+      // Subtotals below ₹50 are ineligible because the required advance token (₹50) exceeds subtotal
+      expect(isOrderSubtotalEligible(0)).toBe(false);
+      expect(isOrderSubtotalEligible(3000)).toBe(false); // ₹30
+      expect(isOrderSubtotalEligible(4999)).toBe(false); // ₹49.99
+      expect(getSubtotalValidationError(4999)).toBe(
+        'Order subtotal must be at least ₹50.00 because the required advance token is ₹50.00.'
+      );
+
+      // Subtotals >= ₹50 are eligible
+      expect(isOrderSubtotalEligible(5000)).toBe(true); // ₹50
+      expect(isOrderSubtotalEligible(19999)).toBe(true); // ₹199.99
+      expect(isOrderSubtotalEligible(20000)).toBe(true); // ₹200
+      expect(getSubtotalValidationError(5000)).toBeNull();
     });
 
     it('computes exact remaining balance matching prompt specification table', () => {

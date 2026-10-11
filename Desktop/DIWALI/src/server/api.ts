@@ -4,7 +4,9 @@ import {
   TOKEN_TIER_THRESHOLD_PAISE,
   TOKEN_LOW_TIER_PAISE,
   TOKEN_HIGH_TIER_PAISE,
+  MIN_ORDER_SUBTOTAL_PAISE,
 } from '../utils/tokenPolicy';
+import { verifyCloudflareAccessJwt } from './accessJwt';
 import { getDb } from './db';
 import {
   ApiResponse,
@@ -78,13 +80,13 @@ interface AdminAuthResult {
 
 /**
  * Validates administrative requests.
- * In production: strictly enforces Cloudflare Access JWT Assertion verification.
- * In development: isolates dev auth tokens from production.
+ * In production: strictly enforces cryptographic Cloudflare Access JWT Assertion verification.
+ * In development: isolates dev auth tokens from production while supporting full JWT verification.
  */
-export function verifyAdminRequest(
+export async function verifyAdminRequest(
   request: Request,
   env?: any
-): AdminAuthResult {
+): Promise<AdminAuthResult> {
   const isProduction =
     env?.ENVIRONMENT === 'production' ||
     (typeof process !== 'undefined' && process.env?.NODE_ENV === 'production');
@@ -99,55 +101,38 @@ export function verifyAdminRequest(
     cfAssertion || (bearerToken && bearerToken.includes('.') ? bearerToken : null);
 
   if (jwtToken) {
-    const payload = parseJwtPayload(jwtToken);
-    if (!payload) {
+    const teamDomain = env?.CF_ACCESS_TEAM_DOMAIN;
+    const audience = env?.CF_ACCESS_AUD;
+    const allowedAdminsRaw = env?.CF_ACCESS_ALLOWED_ADMINS;
+    const allowedAdmins = Array.isArray(allowedAdminsRaw)
+      ? allowedAdminsRaw
+      : typeof allowedAdminsRaw === 'string'
+      ? allowedAdminsRaw.split(',').map((s: string) => s.trim()).filter(Boolean)
+      : undefined;
+
+    const jwksUrl = env?.CF_ACCESS_JWKS_URL;
+    const jwks = env?.CF_ACCESS_JWKS;
+
+    const result = await verifyCloudflareAccessJwt(jwtToken, {
+      teamDomain,
+      audience,
+      allowedAdmins,
+      jwksUrl,
+      jwks,
+    });
+
+    if (!result.valid) {
       return {
         authorized: false,
         operatorId: '',
-        error: 'Malformed or unparseable Cloudflare Access JWT.',
-        status: 401,
+        error: result.error,
+        status: result.status,
       };
     }
 
-    const nowSec = Math.floor(Date.now() / 1000);
-    if (payload.exp && payload.exp < nowSec) {
-      return {
-        authorized: false,
-        operatorId: '',
-        error: 'Cloudflare Access token has expired.',
-        status: 401,
-      };
-    }
-
-    // Verify audience if configured
-    const expectedAud = env?.CF_ACCESS_AUD;
-    if (expectedAud) {
-      const auds = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
-      if (!auds.includes(expectedAud)) {
-        return {
-          authorized: false,
-          operatorId: '',
-          error: 'JWT audience mismatch.',
-          status: 403,
-        };
-      }
-    }
-
-    // Verify team issuer domain if configured
-    const expectedTeam = env?.CF_ACCESS_TEAM_DOMAIN;
-    if (expectedTeam && payload.iss && !payload.iss.includes(expectedTeam)) {
-      return {
-        authorized: false,
-        operatorId: '',
-        error: 'JWT issuer mismatch.',
-        status: 403,
-      };
-    }
-
-    const operatorId = payload.email || payload.sub || 'CF-ACCESS-OPERATOR';
     return {
       authorized: true,
-      operatorId,
+      operatorId: result.operatorId || 'CF-ACCESS-OPERATOR',
     };
   }
 
@@ -399,8 +384,22 @@ export async function handleApiRequest(
       }
 
       // 3. Server-side Tiered Token Calculation
-      // Below ₹200 -> ₹50 (capped at subtotal if subtotal < ₹50 so remaining balance never negative).
-      // ₹200 or above -> ₹100.
+      // Subtotal < ₹50: reject because required advance token exceeds subtotal.
+      if (subtotalPaise < MIN_ORDER_SUBTOTAL_PAISE) {
+        return jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'SUBTOTAL_BELOW_MINIMUM_TOKEN',
+              message:
+                'Order subtotal must be at least ₹50.00 because the required advance token is ₹50.00.',
+            },
+          },
+          400
+        );
+      }
+
+      // Below ₹200 -> ₹50. ₹200 or above -> ₹100.
       const tokenDuePaise = calculateTokenAmountPaise(subtotalPaise);
       const balanceDuePaise = calculateRemainingBalancePaise(
         subtotalPaise,
@@ -781,7 +780,7 @@ export async function handleApiRequest(
       }
 
       // Every other admin route requires verified admin authentication
-      const auth = verifyAdminRequest(request, env);
+      const auth = await verifyAdminRequest(request, env);
       if (!auth.authorized) {
         return jsonResponse(
           {

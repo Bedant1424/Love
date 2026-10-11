@@ -5,6 +5,7 @@ import {
   CartTotals,
   calculateTokenAmountPaise,
   calculateRemainingBalancePaise,
+  MIN_ORDER_SUBTOTAL_PAISE,
 } from '../types/cart';
 import { PRODUCTS } from '../data/catalogueData';
 import { loadCartFromStorage, saveCartToStorage } from '../utils/storage';
@@ -79,7 +80,7 @@ export function useCart() {
       subtotalPaise,
       tokenAmountPaise
     );
-    const minOrderRequirementMet = subtotalPaise > 0;
+    const minOrderRequirementMet = subtotalPaise >= MIN_ORDER_SUBTOTAL_PAISE;
     const hasUnpricedItems = unpricedItemCount > 0;
 
     const canProceedToCheckout =
@@ -92,6 +93,9 @@ export function useCart() {
     } else if (totalQuantity === 0) {
       checkoutBlockedReason =
         'Your basket is currently empty. Add at least one cracker item to proceed.';
+    } else if (!minOrderRequirementMet) {
+      checkoutBlockedReason =
+        'Order subtotal must be at least ₹50.00 because the required advance token is ₹50.00.';
     }
 
     return {

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { generateKeyPair, exportJWK, SignJWT } from 'jose';
 import { handleApiRequest } from '../../src/server/api';
 import { globalMemoryDb } from '../../src/server/db';
 import {
@@ -88,7 +89,7 @@ describe('Cloudflare Backend API Route Suite (/api/v1)', () => {
     expect(json.error.code).toBe('UNPRICED_ITEM_IN_ORDER');
   });
 
-  it('POST /api/v1/orders enforces minimum subtotal threshold of ₹50', async () => {
+  it('POST /api/v1/orders rejects empty basket', async () => {
     const req = new Request('http://localhost/api/v1/orders', {
       method: 'POST',
       body: JSON.stringify({
@@ -103,6 +104,59 @@ describe('Cloudflare Backend API Route Suite (/api/v1)', () => {
     const res = await handleApiRequest(req);
     expect(res.status).toBe(400);
     expect(((await res.json()) as any).error.code).toBe('EMPTY_BASKET');
+  });
+
+  it('POST /api/v1/orders rejects orders with subtotal below ₹50 with SUBTOTAL_BELOW_MINIMUM_TOKEN', async () => {
+    // Set variant price to ₹30 (3,000 paise)
+    const variant = await globalMemoryDb.getVariantById('var_bijli_60');
+    if (variant) variant.demoPricePaise = 3000;
+
+    const req = new Request('http://localhost/api/v1/orders', {
+      method: 'POST',
+      body: JSON.stringify({
+        customer: {
+          fullName: 'Test Buyer',
+          mobileNumber: '9876543210',
+          ageConfirmed: true,
+        },
+        items: [{ variantId: 'var_bijli_60', quantity: 1 }],
+      }),
+    });
+    const res = await handleApiRequest(req);
+    expect(res.status).toBe(400);
+
+    const json = (await res.json()) as any;
+    expect(json.success).toBe(false);
+    expect(json.error.code).toBe('SUBTOTAL_BELOW_MINIMUM_TOKEN');
+    expect(json.error.message).toBe(
+      'Order subtotal must be at least ₹50.00 because the required advance token is ₹50.00.'
+    );
+  });
+
+  it('POST /api/v1/orders creates order at exact ₹50 boundary with ₹0 remaining balance', async () => {
+    // Set variant price to ₹50 (5,000 paise)
+    const variant = await globalMemoryDb.getVariantById('var_bijli_60');
+    if (variant) variant.demoPricePaise = 5000;
+
+    const req = new Request('http://localhost/api/v1/orders', {
+      method: 'POST',
+      body: JSON.stringify({
+        customer: {
+          fullName: 'Exact Fifty Buyer',
+          mobileNumber: '9876543210',
+          ageConfirmed: true,
+        },
+        items: [{ variantId: 'var_bijli_60', quantity: 1 }],
+      }),
+    });
+    const res = await handleApiRequest(req);
+    expect(res.status).toBe(201);
+
+    const json = (await res.json()) as any;
+    expect(json.success).toBe(true);
+    expect(json.data.subtotalPaise).toBe(5000);
+    expect(json.data.tokenDuePaise).toBe(5000); // ₹50 token
+    expect(json.data.balanceDuePaise).toBe(0); // ₹50 - ₹50 = ₹0 balance
   });
 
   it('POST /api/v1/orders applies ₹50 token when subtotal is below ₹200 (e.g. ₹180)', async () => {
@@ -459,5 +513,82 @@ describe('Cloudflare Backend API Route Suite (/api/v1)', () => {
     );
     const overrideRes = await handleApiRequest(overrideReq);
     expect(overrideRes.status).toBe(200);
+  });
+
+  it('Admin API: Enforces Cloudflare Access RS256 signature verification in production environment', async () => {
+    // 1. Generate test RSA key pair
+    const keyPair = await generateKeyPair('RS256', { extractable: true });
+    const publicJwk = await exportJWK(keyPair.publicKey);
+    publicJwk.kid = 'prod-key-1';
+    publicJwk.alg = 'RS256';
+    publicJwk.use = 'sig';
+
+    const jwks = { keys: [publicJwk] };
+    const teamDomain = 'nagarjuna-prod';
+    const aud = 'aud_nagarjuna_prod_123';
+
+    const prodEnv = {
+      ENVIRONMENT: 'production',
+      CF_ACCESS_TEAM_DOMAIN: teamDomain,
+      CF_ACCESS_AUD: aud,
+      CF_ACCESS_JWKS: jwks,
+      CF_ACCESS_ALLOWED_ADMINS: ['admin@nagarjuna.com'],
+    };
+
+    // 2. Reject dev token in production
+    const devTokenReq = new Request('http://localhost/api/v1/admin/dashboard', {
+      method: 'GET',
+      headers: { Authorization: 'Bearer dev-admin-token' },
+    });
+    const devTokenRes = await handleApiRequest(devTokenReq, prodEnv);
+    expect(devTokenRes.status).toBe(401);
+
+    // 3. Reject unsigned or forged JWT in production
+    const badReq = new Request('http://localhost/api/v1/admin/dashboard', {
+      method: 'GET',
+      headers: { 'Cf-Access-Jwt-Assertion': 'invalid.forged.jwt' },
+    });
+    const badRes = await handleApiRequest(badReq, prodEnv);
+    expect(badRes.status).toBe(401);
+
+    // 4. Accept cryptographically valid Cloudflare Access assertion
+    const validJwt = await new SignJWT({
+      email: 'admin@nagarjuna.com',
+      sub: 'admin-uuid',
+    })
+      .setProtectedHeader({ alg: 'RS256', kid: 'prod-key-1' })
+      .setIssuedAt()
+      .setIssuer('https://nagarjuna-prod.cloudflareaccess.com')
+      .setAudience(aud)
+      .setExpirationTime('1h')
+      .sign(keyPair.privateKey);
+
+    const validReq = new Request('http://localhost/api/v1/admin/dashboard', {
+      method: 'GET',
+      headers: { 'Cf-Access-Jwt-Assertion': validJwt },
+    });
+    const validRes = await handleApiRequest(validReq, prodEnv);
+    expect(validRes.status).toBe(200);
+    const validJson = (await validRes.json()) as any;
+    expect(validJson.success).toBe(true);
+
+    // 5. Reject validly signed token when user is not in CF_ACCESS_ALLOWED_ADMINS
+    const unauthorizedUserJwt = await new SignJWT({
+      email: 'outsider@otherdomain.com',
+      sub: 'outsider-uuid',
+    })
+      .setProtectedHeader({ alg: 'RS256', kid: 'prod-key-1' })
+      .setIssuedAt()
+      .setIssuer('https://nagarjuna-prod.cloudflareaccess.com')
+      .setAudience(aud)
+      .setExpirationTime('1h')
+      .sign(keyPair.privateKey);
+
+    const unauthReq = new Request('http://localhost/api/v1/admin/dashboard', {
+      method: 'GET',
+      headers: { 'Cf-Access-Jwt-Assertion': unauthorizedUserJwt },
+    });
+    const unauthRes = await handleApiRequest(unauthReq, prodEnv);
+    expect(unauthRes.status).toBe(403);
   });
 });

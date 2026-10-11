@@ -3,16 +3,22 @@ import {
   TOKEN_TIER_THRESHOLD_PAISE,
   TOKEN_LOW_TIER_PAISE,
   TOKEN_HIGH_TIER_PAISE,
+  MIN_ORDER_SUBTOTAL_PAISE,
   calculateTokenAmountPaise,
   calculateRemainingBalancePaise,
+  isOrderSubtotalEligible,
+  getSubtotalValidationError,
 } from '../utils/tokenPolicy';
 
 export {
   TOKEN_TIER_THRESHOLD_PAISE,
   TOKEN_LOW_TIER_PAISE,
   TOKEN_HIGH_TIER_PAISE,
+  MIN_ORDER_SUBTOTAL_PAISE,
   calculateTokenAmountPaise,
   calculateRemainingBalancePaise,
+  isOrderSubtotalEligible,
+  getSubtotalValidationError,
 };
 
 /**

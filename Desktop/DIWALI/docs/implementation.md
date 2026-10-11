@@ -83,3 +83,25 @@ To maintain repository safety and prevent accidental overrides:
 8. **Automated Verification:**
    - 69 Vitest tests passing across 11 test files (100% green).
    - Zero TypeScript compile errors (`npm run build` succeeds).
+
+---
+
+### Final Security Patch: Cloudflare Access JWT Verification & Exact Token Boundary Policy (COMPLETED)
+1. **Branch Safety:** Created `fix/nagarjuna-access-jwt-and-token-boundary` branched from `fix/nagarjuna-payment-flow-consistency`.
+2. **Cryptographic Cloudflare Access JWT Verification (`src/server/accessJwt.ts`):**
+   - Implemented cryptographic signature verification using the maintained, Workers-compatible `jose` library (`RS256`).
+   - Fetches and caches public signing keys from documented Cloudflare Access certs endpoint (`https://<team>.cloudflareaccess.com/cdn-cgi/access/certs`).
+   - Handles key rotation using key ID (`kid`).
+   - Validates issuer (`CF_ACCESS_TEAM_DOMAIN`), audience (`CF_ACCESS_AUD`), expiration (`exp`), and not-before (`nbf`).
+   - Validates authenticated operator identities against optional configured allowlist (`CF_ACCESS_ALLOWED_ADMINS`).
+   - Fails closed on any error (401, 403, 500).
+   - Segregates dev/test auth tokens from production.
+3. **Exact Token Boundary Policy (`src/utils/tokenPolicy.ts`):**
+   - Subtotal < ₹200: token strictly ₹50 (`5,000 paise`).
+   - Subtotal $\ge$ ₹200: token strictly ₹100 (`10,000 paise`).
+   - Subtotal < ₹50: rejected with `400 Bad Request` (`SUBTOTAL_BELOW_MINIMUM_TOKEN`) because required token exceeds subtotal. Removed silent reduction below ₹50.
+   - Exact ₹50 boundary: token ₹50, remaining balance ₹0.
+   - Exact ₹200 boundary: token ₹100, remaining balance ₹100.
+4. **Comprehensive Automated Verification:**
+   - 85 Vitest tests passing across 12 test files (100% green).
+   - `tsc --noEmit` and `npm run build` succeed with 0 errors.

@@ -81,6 +81,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
     isCustomerValid &&
     totals.totalQuantity > 0 &&
     totals.subtotalPaise > 0 &&
+    totals.minOrderRequirementMet &&
     !totals.hasUnpricedItems;
 
   const isPaymentAvailable = Boolean(
@@ -839,7 +840,9 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
       {/* Warnings & Action Button */}
       {!canProceedToPayment && (
         <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-800/40 text-xs text-amber-300">
-          ⚠️ Please ensure customer details are complete (including 18+ confirmation) and items are selected before proceeding.
+          {!totals.minOrderRequirementMet && totals.totalQuantity > 0
+            ? '⚠️ Order subtotal must be at least ₹50.00 because the required advance token is ₹50.00.'
+            : '⚠️ Please ensure customer details are complete (including 18+ confirmation) and items are selected before proceeding.'}
         </div>
       )}
 
