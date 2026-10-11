@@ -9,7 +9,7 @@ import {
 
 export interface VerifyCfAccessOptions {
   teamDomain?: string;
-  audience?: string;
+  audience?: string | string[];
   allowedAdmins?: string[];
   jwksUrl?: string;
   jwks?: JSONWebKeySet;
@@ -93,10 +93,12 @@ export async function verifyCloudflareAccessJwt(
   }
 
   const teamDomain = options.teamDomain?.trim();
-  const audience = options.audience?.trim();
+  const audience = Array.isArray(options.audience)
+    ? options.audience.map((a) => a.trim()).filter(Boolean)
+    : options.audience?.trim();
 
   // Fail closed if required Access configuration is missing
-  if (!teamDomain || !audience) {
+  if (!teamDomain || !audience || (Array.isArray(audience) && audience.length === 0)) {
     return {
       valid: false,
       status: 500,
@@ -126,12 +128,24 @@ export async function verifyCloudflareAccessJwt(
   }
 
   try {
-    const { payload } = await jwtVerify(jwt, keySet, {
+    const verifyOpts: any = {
       issuer: expectedIssuer,
-      audience: audience,
       algorithms: ['RS256'],
       clockTolerance: options.clockToleranceSeconds ?? 5,
-    });
+    };
+    if (audience && (Array.isArray(audience) ? audience.length > 0 : audience.length > 0)) {
+      verifyOpts.audience = audience;
+    }
+
+    const { payload } = await jwtVerify(jwt, keySet, verifyOpts);
+
+    if (!payload.aud) {
+      return {
+        valid: false,
+        status: 403,
+        error: 'JWT assertion missing audience claim.',
+      };
+    }
 
     // Check optional administrator allowlist
     const allowedAdmins = options.allowedAdmins;

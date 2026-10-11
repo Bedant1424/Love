@@ -60,6 +60,14 @@ async function executeApi<T>(
     ...(options.headers as Record<string, string> || {}),
   };
 
+  // Automatically check document cookie for Cloudflare Access token if not already stored
+  if (!currentAdminToken && typeof document !== 'undefined') {
+    const match = document.cookie.match(/CF_Authorization=([^;]+)/);
+    if (match) {
+      currentAdminToken = decodeURIComponent(match[1].trim());
+    }
+  }
+
   if (endpoint.startsWith('/admin') && currentAdminToken) {
     if (!headers['Authorization']) {
       headers['Authorization'] = `Bearer ${currentAdminToken}`;
@@ -73,6 +81,7 @@ async function executeApi<T>(
 
   try {
     response = await fetch(url, {
+      credentials: 'same-origin',
       ...options,
       headers,
     });
@@ -207,6 +216,17 @@ export const apiClient = {
       setAdminAuthToken(result.token);
     }
     return result;
+  },
+
+  async checkAdminAuthSession() {
+    return executeApi<{
+      authenticated: boolean;
+      operatorId?: string;
+      teamDomain: string;
+      error?: string;
+    }>('/admin/auth/session', {
+      method: 'GET',
+    });
   },
 
   async verifyCfAccessSession(token?: string) {

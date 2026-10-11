@@ -38,6 +38,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
   const [passphrase, setPassphrase] = useState<string>('');
   const [authError, setAuthError] = useState<string>('');
   const [operatorId, setOperatorId] = useState<string>('OP-NAGARJUNA');
+  const [teamDomain, setTeamDomain] = useState<string>('bedant');
 
   // Navigation State
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
@@ -169,13 +170,24 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
   useEffect(() => {
     // Probe for existing authenticated session (e.g. Cloudflare Access header/cookie or restored token)
     apiClient
-      .getDashboardKPIs()
-      .then((kpisData) => {
-        setKpis(kpisData);
-        setIsAuthenticated(true);
+      .checkAdminAuthSession()
+      .then((session) => {
+        if (session.teamDomain) {
+          setTeamDomain(session.teamDomain);
+        }
+        if (session.authenticated) {
+          if (session.operatorId) {
+            setOperatorId(session.operatorId);
+          }
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+          // Never display error notice on initial unauthenticated load
+          setAuthError('');
+        }
       })
       .catch(() => {
-        // Not pre-authenticated
+        setIsAuthenticated(false);
       });
   }, []);
 
@@ -185,14 +197,48 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
     }
   }, [isAuthenticated, reportRange]);
 
+  const handleSignInWithCloudflareAccess = async () => {
+    setAuthError('');
+    setLoading(true);
+    try {
+      // 1. Probe if browser now holds an authenticated session or cookie
+      const session = await apiClient.checkAdminAuthSession();
+      if (session.authenticated) {
+        if (session.operatorId) {
+          setOperatorId(session.operatorId);
+        }
+        setIsAuthenticated(true);
+        showNotification('Administrator session verified via Cloudflare Access.');
+        return;
+      }
+
+      // 2. Redirect to the Cloudflare Access sign-in portal
+      const targetTeam = session.teamDomain || teamDomain || 'bedant';
+      window.location.href = `https://${targetTeam}.cloudflareaccess.com`;
+    } catch (err: any) {
+      setAuthError(err?.message || 'Cloudflare Access sign-in failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleRetryAuth = async () => {
     setAuthError('');
     setLoading(true);
     try {
-      const kpisData = await apiClient.getDashboardKPIs();
-      setKpis(kpisData);
-      setIsAuthenticated(true);
-      showNotification('Administrator session verified.');
+      const session = await apiClient.checkAdminAuthSession();
+      if (session.authenticated) {
+        if (session.operatorId) {
+          setOperatorId(session.operatorId);
+        }
+        setIsAuthenticated(true);
+        showNotification('Administrator session verified.');
+      } else {
+        setAuthError(
+          session.error ||
+            'Cloudflare Access assertion required. Please click "Sign In with Cloudflare Access".'
+        );
+      }
     } catch (err: any) {
       setAuthError(err?.message || 'Access Not Authorised');
     } finally {
@@ -494,50 +540,60 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
     typeof window !== 'undefined' &&
     (window.location.hostname === 'localhost' ||
       window.location.hostname === '127.0.0.1' ||
-      (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') ||
-      import.meta.env.DEV ||
-      import.meta.env.MODE === 'test');
+      window.location.hostname === 'test.local');
 
-  // If not authenticated, render minimal "Access Not Authorised" card
+  // If not authenticated, render clean branded Owner Administration portal card
   if (!isAuthenticated) {
     return (
       <div className="max-w-md mx-auto my-16 px-4">
         <div className="bg-bg-surface border border-white/10 rounded-2xl p-6 md:p-8 shadow-xl text-center">
-          <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-festive-marigold/10 border border-festive-marigold/30 flex items-center justify-center text-festive-marigold shadow-inner">
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                strokeWidth={1.75}
+                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
               />
             </svg>
           </div>
-          <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-amber-950/60 text-amber-300 border border-amber-800/40 mb-3">
-            Store Operations Console
+          <span className="inline-block px-3 py-1 rounded-full text-[11px] font-semibold bg-amber-950/60 text-amber-300 border border-amber-800/40 mb-3 tracking-wide">
+            NAGARJUNA TRADERS • OWNER HUB
           </span>
           <h1 className="text-xl font-bold font-display text-content-primary mb-2">
-            Access Not Authorised
+            Owner Administration Portal
           </h1>
           <p className="text-xs text-content-secondary leading-relaxed mb-6">
-            This administration portal is reserved for authorized store operators. Access is protected by Cloudflare Access Zero Trust.
+            Secure administrative console for order management, catalogue verification, inventory adjustments, and sales reports. Protected by Cloudflare Access Zero Trust.
           </p>
 
           {authError && (
-            <div className="mb-4 p-3 rounded-xl bg-red-950/40 border border-red-900/60 text-xs text-red-300 text-left">
-              <strong className="block font-semibold mb-0.5">Authorization Notice:</strong>
-              {authError}
+            <div className="mb-5 p-3.5 rounded-xl bg-red-950/50 border border-red-800/60 text-xs text-red-200 text-left space-y-1">
+              <strong className="block font-semibold text-red-300">Authentication Notice:</strong>
+              <p className="leading-relaxed">{authError}</p>
             </div>
           )}
 
           <div className="space-y-3">
             <button
               type="button"
+              onClick={handleSignInWithCloudflareAccess}
+              disabled={loading}
+              className="w-full min-h-touch bg-festive-marigold hover:bg-festive-amber disabled:opacity-50 text-black font-semibold rounded-xl text-xs py-3 transition-transform active:scale-[0.98] shadow-md shadow-festive-marigold/10 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+              </svg>
+              {loading ? 'Verifying Credentials...' : 'Sign In with Cloudflare Access'}
+            </button>
+
+            <button
+              type="button"
               onClick={handleRetryAuth}
               disabled={loading}
-              className="w-full min-h-touch bg-festive-marigold hover:bg-festive-amber disabled:opacity-50 text-black font-semibold rounded-xl text-xs py-2.5 transition-transform active:scale-[0.98] shadow-md shadow-festive-marigold/10 flex items-center justify-center gap-2"
+              className="w-full text-xs text-content-secondary hover:text-content-primary py-1.5 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              {loading ? 'Verifying Session...' : 'Retry / Re-authenticate'}
+              <span>↻ Verify Active Session</span>
             </button>
 
             {isDevEnvironment && (
@@ -2229,7 +2285,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                   type="text"
                   value={uploadQrAccountName}
                   onChange={(e) => setUploadQrAccountName(e.target.value)}
-                  placeholder="e.g. NAGARJUNA TRADERS SIVAKASI"
+                  placeholder="e.g. NAGARJUNA TRADERS"
                   className="w-full bg-bg-elevated border border-white/10 rounded-xl px-4 py-2 text-xs text-content-primary focus:outline-none focus:ring-2 focus:ring-festive-marigold"
                   required
                 />

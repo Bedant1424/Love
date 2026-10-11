@@ -36,13 +36,13 @@ describe('CatalogueView Component', () => {
       />
     );
 
-    // Discrete priced item: Single Shot Skyshots (₹150)
-    expect(screen.getByText('Single Shot Skyshots')).toBeInTheDocument();
+    // Discrete priced item: Single Shot Sky shots (₹150)
+    expect(screen.getByText('Single Shot Sky shots')).toBeInTheDocument();
     expect(screen.getAllByText('₹150.00').length).toBeGreaterThan(0);
     expect(screen.getAllByText(/catalogue price/i).length).toBeGreaterThan(0);
 
-    // Range item with lower bound initial ordering price: Pandav Skyshots (Printed: ₹180 to ₹200)
-    expect(screen.getByText('Pandav Skyshots')).toBeInTheDocument();
+    // Range item with lower bound initial ordering price: Pandav Sky shots (Printed: ₹180 to ₹200)
+    expect(screen.getByText('Pandav Sky shots')).toBeInTheDocument();
     expect(screen.getAllByText(/range: ₹180 to ₹200/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText('₹180.00').length).toBeGreaterThan(0);
   });
@@ -83,7 +83,7 @@ describe('CatalogueView Component', () => {
     const searchInput = screen.getByPlaceholderText(/search products/i);
     await user.type(searchInput, 'elephant');
 
-    expect(screen.getByText('Elephant Skyshots')).toBeInTheDocument();
+    expect(screen.getByText('Elephant Sky shots')).toBeInTheDocument();
     expect(screen.queryByText(/Bigboss/i)).not.toBeInTheDocument();
   });
 

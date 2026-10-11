@@ -51,7 +51,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
             {/* Supporting Sentence */}
             <p className="text-base sm:text-lg text-stone-200 max-w-xl leading-relaxed">
-              Explore 6 traditional categories directly from our Sivakasi poster catalogue. Transparent printed pricing, fixed ₹50/₹100 token booking, and licensed counter collection.
+              Explore 6 traditional categories directly from our poster catalogue. Transparent printed pricing, advance booking, and collection at the campus.
             </p>
 
             {/* Action Buttons */}
@@ -77,13 +77,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
             {/* Micro Highlights */}
             <div className="pt-4 flex flex-wrap items-center gap-4 text-xs text-stone-300">
               <div className="flex items-center gap-1.5">
-                <span className="text-amber-400">✓</span> 100% Authentic Sivakasi Crackers
+                <span className="text-amber-400">✓</span> 100% Authentic Festive Crackers
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="text-amber-400">✓</span> Fixed Advance Token Policy
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-amber-400">✓</span> Clean Counter Pickup
+                <span className="text-amber-400">✓</span> Collection at the Campus
               </div>
             </div>
           </div>
@@ -335,7 +335,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </section>
 
-      {/* ── E. SHOPPING ASSISTANCE & COUNTER COLLECTION ──────────────── */}
+      {/* ── E. SHOPPING ASSISTANCE & CAMPUS COLLECTION ──────────────── */}
       <section className="max-w-7xl mx-auto px-4">
         <div className="rounded-3xl bg-amber-50/70 border border-amber-200/80 p-6 md:p-8 space-y-6">
           <div className="max-w-2xl">
@@ -354,7 +354,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               </div>
               <h3 className="text-sm font-bold text-stone-900">Browse & Select</h3>
               <p className="text-xs text-stone-600 leading-relaxed">
-                Choose items and variants from the authentic Sivakasi catalogue. Minimum order subtotal is ₹50.
+                Choose items and variants from our authentic catalogue. Minimum order subtotal is ₹50.
               </p>
             </div>
 
@@ -372,9 +372,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
               <div className="w-8 h-8 rounded-lg bg-amber-100 text-festive-marigold font-bold flex items-center justify-center text-sm">
                 3
               </div>
-              <h3 className="text-sm font-bold text-stone-900">Counter Collection</h3>
+              <h3 className="text-sm font-bold text-stone-900">Collection at the Campus</h3>
               <p className="text-xs text-stone-600 leading-relaxed">
-                Pick up your packed box at our licensed counter in Sivakasi and settle remaining balance.
+                Your order will be ready for collection at the campus. Collection details will be shared when your order is confirmed.
               </p>
             </div>
           </div>

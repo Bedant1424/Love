@@ -100,7 +100,7 @@ describe('useCart Hook & Tiered Token Calculation Policy', () => {
     });
 
     expect(result.current.items.length).toBe(1);
-    expect(result.current.items[0].productName).toBe('Bigboss Skyshots');
+    expect(result.current.items[0].productName).toBe('Bigboss Sky shots');
     expect(result.current.items[0].quantity).toBe(2);
     expect(result.current.items[0].pricePaise).toBe(40000);
     expect(result.current.items[0].lineSubtotalPaise).toBe(80000);
@@ -124,7 +124,7 @@ describe('useCart Hook & Tiered Token Calculation Policy', () => {
       });
 
       expect(result.current.items.length).toBe(1);
-      expect(result.current.items[0].productName).toBe('Pandav Skyshots');
+      expect(result.current.items[0].productName).toBe('Pandav Sky shots');
       expect(result.current.items[0].pricePaise).toBeNull();
       expect(result.current.items[0].lineSubtotalPaise).toBeNull();
       expect(result.current.items[0].priceStatus).toBe('PRICE_ON_ENQUIRY');

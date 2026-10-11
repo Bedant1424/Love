@@ -208,7 +208,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'prod_pandav',
     categoryId: 'skyshots',
-    name: 'Pandav Skyshots',
+    name: 'Pandav Sky shots',
     printedPriceText: '₹180 to ₹200',
     packInfo: '5 pcs pack',
     isPackInfoVerified: true,
@@ -237,7 +237,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'prod_single_shot',
     categoryId: 'skyshots',
-    name: 'Single Shot Skyshots',
+    name: 'Single Shot Sky shots',
     printedPriceText: '₹150',
     packInfo: '',
     isPackInfoVerified: false,
@@ -265,7 +265,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'prod_skyshot_bigboss',
     categoryId: 'skyshots',
-    name: 'Bigboss Skyshots',
+    name: 'Bigboss Sky shots',
     printedPriceText: '₹400 to ₹450',
     packInfo: '3 pcs pack',
     isPackInfoVerified: true,
@@ -293,7 +293,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'prod_skyshot_jj',
     categoryId: 'skyshots',
-    name: 'JJ Skyshots',
+    name: 'JJ Sky shots',
     printedPriceText: '₹450 to ₹500',
     packInfo: '3 pcs pack',
     isPackInfoVerified: true,
@@ -322,7 +322,7 @@ export const PRODUCTS: Product[] = [
   {
     id: 'prod_skyshot_elephant',
     categoryId: 'skyshots',
-    name: 'Elephant Skyshots',
+    name: 'Elephant Sky shots',
     printedPriceText: '₹550 to ₹600',
     packInfo: '3 pcs pack',
     isPackInfoVerified: true,

@@ -57,13 +57,13 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
         <div className="mb-6">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 border border-amber-200 text-amber-800 mb-2">
             <span>👤</span>
-            <span>Counter Collection Verification</span>
+            <span>Collection at the Campus</span>
           </div>
           <h2 className="text-2xl font-bold font-display text-stone-900">
             Customer Information
           </h2>
           <p className="text-xs sm:text-sm text-stone-500 mt-1 leading-relaxed">
-            Please enter your contact details for counter pickup reservation and order reference tracking.
+            Please enter your contact details. Your order will be ready for collection at the campus.
           </p>
         </div>
 
@@ -139,14 +139,14 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
               </p>
             )}
             <p className="text-[11px] text-stone-500 mt-1">
-              Required for pickup confirmation SMS and order reference identification.
+              Required for order confirmation updates and reference tracking.
             </p>
           </div>
 
           {/* Fulfilment Preference */}
           <div>
             <label className="block text-sm font-semibold text-stone-800 mb-1.5">
-              Pickup & Collection Preference
+              Collection Preference
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button
@@ -163,9 +163,9 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                     : 'bg-stone-50 border-stone-200 text-stone-600 hover:border-stone-300'
                 }`}
               >
-                <div className="font-bold text-sm text-stone-900">Store Counter Pickup</div>
+                <div className="font-bold text-sm text-stone-900">Collection at the campus</div>
                 <div className="text-stone-500 mt-0.5">
-                  Direct pickup at Sivakasi counter
+                  Collection details will be shared when your order is confirmed.
                 </div>
               </button>
 
@@ -209,7 +209,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
               onChange={(e) =>
                 setDetails((prev) => ({ ...prev, notes: e.target.value }))
               }
-              placeholder="e.g. Expected pickup date or packaging preferences."
+              placeholder="e.g. Preferred timing or packaging preferences."
               className="w-full p-3 rounded-xl bg-stone-50 border border-stone-300 text-stone-900 placeholder-stone-400 text-sm focus:outline-none focus:ring-2 focus:ring-festive-marigold focus:bg-white"
             />
             <div className="text-right text-[11px] text-stone-400 mt-1">

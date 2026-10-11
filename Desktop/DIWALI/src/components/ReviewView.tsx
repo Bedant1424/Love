@@ -330,7 +330,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
                 </span>
               </div>
               <p className="text-[11px] text-stone-500">
-                Our counter staff will review this ticket during your pickup verification. You can proceed with your order reference.
+                Our store staff will review this ticket during your order verification. You can proceed with your order reference.
               </p>
               <button
                 type="button"
@@ -919,7 +919,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
             <span className="text-stone-900 font-medium">
               {customer.fulfilmentPreference === 'SPECIAL_ENQUIRY'
                 ? 'Special Enquiry'
-                : 'Store Counter Pickup'}
+                : 'Collection at the campus'}
             </span>
           </div>
         </div>

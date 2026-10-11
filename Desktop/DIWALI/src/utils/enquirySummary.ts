@@ -25,7 +25,7 @@ export function generateEnquiryText(
   lines.push(
     `• Fulfilment: ${
       customer.fulfilmentPreference === 'COUNTER_PICKUP'
-        ? 'Store Counter Pickup'
+        ? 'Collection at the campus'
         : 'Wholesale Enquiry'
     }`
   );
@@ -47,7 +47,7 @@ export function generateEnquiryText(
       );
     } else {
       lines.push(
-        `   Price: Confirmation upon pickup (Printed: ${item.printedPriceText})`
+        `   Price: Confirmation upon collection (Printed: ${item.printedPriceText})`
       );
     }
     lines.push('');
@@ -56,7 +56,7 @@ export function generateEnquiryText(
   lines.push('FINANCIAL SUMMARY:');
   lines.push(`• Subtotal: ${formatPaise(totals.subtotalPaise)}`);
   lines.push(`• Advance Booking Token: ${formatPaise(totals.tokenAmountPaise)}`);
-  lines.push(`• Remaining Balance at Counter: ${formatPaise(totals.remainingBalancePaise)}`);
+  lines.push(`• Remaining Balance upon Collection: ${formatPaise(totals.remainingBalancePaise)}`);
   if (totals.unpricedItemCount > 0) {
     lines.push(
       `• Items Needing Price Confirmation: ${totals.unpricedItemCount} item(s)`

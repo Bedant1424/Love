@@ -11,12 +11,12 @@ describe('AdminView Component Suite', () => {
     globalMemoryDb.seed();
   });
 
-  it('renders Access Not Authorised prompt initially and prevents unauthorized access', () => {
+  it('renders Owner Administration Portal sign-in state initially and prevents unauthorized access', () => {
     render(<AdminView onBackToCustomerSite={mockBackToCustomer} />);
 
-    expect(screen.getByText('Access Not Authorised')).toBeInTheDocument();
+    expect(screen.getByText('Owner Administration Portal')).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /Retry \/ Re-authenticate/i })
+      screen.getByRole('button', { name: /Sign In with Cloudflare Access/i })
     ).toBeInTheDocument();
     expect(screen.getByLabelText(/Authorized Staff Passphrase/i)).toBeInTheDocument();
   });

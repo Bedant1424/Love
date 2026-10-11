@@ -25,8 +25,8 @@ describe('CustomerForm Component', () => {
     expect(screen.getByLabelText(/Full Name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/10-Digit Mobile Number/i)).toBeInTheDocument();
     expect(
-      screen.getByText(/Store Counter Pickup/i)
-    ).toBeInTheDocument();
+      screen.getAllByText(/Collection at the campus/i).length
+    ).toBeGreaterThan(0);
     expect(
       screen.getByText(/Wholesale Enquiry/i)
     ).toBeInTheDocument();

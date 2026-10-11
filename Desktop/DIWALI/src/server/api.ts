@@ -183,7 +183,7 @@ export async function verifyAdminRequest(
     : null;
   const cookieHeader = request.headers.get('Cookie') || '';
   const cookieMatch = cookieHeader.match(/CF_Authorization=([^;]+)/);
-  const cookieJwt = cookieMatch ? cookieMatch[1].trim() : null;
+  const cookieJwt = cookieMatch ? decodeURIComponent(cookieMatch[1].trim()) : null;
 
   // STRICT INVARIANT: The compromised token from previous tests is banned everywhere
   if (
@@ -205,7 +205,7 @@ export async function verifyAdminRequest(
     (cookieJwt && cookieJwt.includes('.') ? cookieJwt : null);
 
   if (jwtToken) {
-    const teamDomain = env?.CF_ACCESS_TEAM_DOMAIN;
+    const teamDomain = env?.CF_ACCESS_TEAM_DOMAIN || 'bedant';
     const audience = env?.CF_ACCESS_AUD;
     const allowedAdminsRaw = env?.CF_ACCESS_ALLOWED_ADMINS;
     const allowedAdmins = Array.isArray(allowedAdminsRaw)
@@ -470,7 +470,7 @@ export async function handleApiRequest(
           data: {
             issueReference: issue.issue_reference,
             message:
-              'Your payment support ticket has been recorded. Store counter staff will assist during order verification or pickup.',
+              'Your payment support ticket has been recorded. Store staff will assist during order verification or collection.',
             status: issue.status,
           },
         },
@@ -486,7 +486,7 @@ export async function handleApiRequest(
         data: {
           store: {
             name: 'Nagarjuna Traders',
-            location: 'Sivakasi / Counter Collection',
+            location: env?.STORE_LOCATION || 'Collection at the campus',
             checkoutEnabled: true,
             paymentCollectionEnabled: PAYMENT_COLLECTION_ENABLED,
             tokenTiers: DEFAULT_TOKEN_TIERS,
@@ -971,6 +971,28 @@ export async function handleApiRequest(
 
     // Auth gate for all /api/v1/admin/* endpoints
     if (path.startsWith('/api/v1/admin/')) {
+      // GET /api/v1/admin/auth/session (or /api/v1/admin/auth/status)
+      if (
+        (path === '/api/v1/admin/auth/session' ||
+          path === '/api/v1/admin/auth/status') &&
+        method === 'GET'
+      ) {
+        const auth = await verifyAdminRequest(request, env);
+        return jsonResponse(
+          {
+            success: true,
+            data: {
+              authenticated: auth.authorized,
+              operatorId: auth.authorized ? auth.operatorId : undefined,
+              teamDomain: env?.CF_ACCESS_TEAM_DOMAIN || 'bedant',
+              error: auth.authorized ? undefined : auth.error,
+            },
+          },
+          200,
+          true
+        );
+      }
+
       // Allow dev passphrase login endpoint to issue session token in dev only
       if (path === '/api/v1/admin/auth/login' && method === 'POST') {
         const isHosted =

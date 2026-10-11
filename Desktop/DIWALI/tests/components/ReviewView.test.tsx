@@ -86,7 +86,7 @@ describe('ReviewView Component (Screens 6 to 10)', () => {
       expect(screen.getByText('Ramesh Patel')).toBeInTheDocument();
     });
     expect(screen.getByText('+91 9876543210')).toBeInTheDocument();
-    expect(screen.getByText(/Counter Pickup/i)).toBeInTheDocument();
+    expect(screen.getByText(/Collection at the campus/i)).toBeInTheDocument();
 
     // Item info
     expect(

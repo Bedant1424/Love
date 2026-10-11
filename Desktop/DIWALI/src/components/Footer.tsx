@@ -48,7 +48,7 @@ export const Footer: React.FC<FooterProps> = ({ onSelectTab }) => {
         {/* Store Location & Hours */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-stone-500">
           <p>
-            Counter Collection: Sivakasi Store Counter
+            Collection: Collection at the campus
           </p>
           <p className="font-mono text-[11px]">
             Diwali Fireworks Catalogue 2026
