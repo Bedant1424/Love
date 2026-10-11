@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: #0F0E13;
+    color: #F9FAFB;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+}
+
+/* Ensure minimum touch targets for touch devices */
+@media (pointer: coarse) {
+  button, 
+  [role="button"],
+  input[type="checkbox"],
+  select {
+    min-height: 44px;
+  }
+}
+
+/* Accessible focus visible rings */
+:focus-visible {
+  outline: 2px solid #FF8800;
+  outline-offset: 2px;
+}

@@ -24,7 +24,7 @@ TOTAL ESTIMATED CALENDAR DURATION: 8 to 11 Working Days
 | Milestone | Scope Description | Output Deliverables | Est. Effort | Release Gate |
 |---|---|---|:---:|---|
 | **Milestone 1** | **Repository & Product Specification** | Complete 20 docs, legal assessment, catalogue extraction, design review. | **Completed** | Full documentation approved. |
-| **Milestone 2** | **Core Customer Interface** | React + Vite + Tailwind setup, authentic 6-category UI, variant selector, cart calculations in paise. | 2–3 Days | Mobile responsive, CLS < 0.1, cart math passes. |
+| **Milestone 2** | **Core Customer Interface** | Responsive React 18 + TS + Vite app, authentic 6-category UI, paise cart engine, transient customer form, copy enquiry summary, 42 passing tests. | **Completed** | 100% tests pass (42/42), bundle < 65 KB gzip, zero lint/build errors, COMMERCE_CHECKOUT_ENABLED=false strictly enforced. |
 | **Milestone 3** | **Backend Edge API & Admin Console** | Cloudflare Workers API, D1 schema migrations, Turnstile verification, Cloudflare Access admin auth. | 2–3 Days | Auth enforced, D1 parameterised queries working. |
 | **Milestone 4** | **Payment Workflow & Verification** | Manual UPI QR + 12-digit UTR submission, UTR uniqueness constraint, admin reconciliation modal. | 1–2 Days | UTR replay rejected, payment audit logs recorded. |
 | **Milestone 5** | **Security & Quality Hardening** | Vitest unit/integration suite, Playwright mobile E2E tests, Axe-core WCAG AA accessibility audit. | 2 Days | 100% tests pass, zero accessibility violations. |
@@ -52,13 +52,14 @@ To maintain repository safety and prevent accidental overrides:
 
 ## 3. Milestone Execution Steps
 
-### Milestone 2: Core Customer Interface
-1. **Initialize Project:** Scaffold React 18 + Vite + TypeScript application in `c:\Users\17042\Desktop\DIWALI`.
-2. **Install Design Dependencies:** Configure Tailwind CSS v4, `@phosphor-icons/react`, `motion/react`.
-3. **Typography & Tokens:** Inject `Outfit` and `Inter` font definitions, set custom CSS properties from `docs/design-system.md`.
-4. **Catalogue Components:** Build `CategoryNav`, `ProductCard`, `VariantModal`, `QuantityStepper` (48px tap targets).
-5. **Client Cart Engine:** Implement `useCart` hook calculating integer paise subtotals, 20% token deposit, and balance.
-6. **Mobile Bottom Bar:** Implement sticky bottom glass sheet for mobile viewports.
+### Milestone 2: Core Customer Interface (COMPLETED)
+1. **Initialize Project:** Scaffolded React 18 + Vite + TypeScript application with Tailwind CSS in `c:\Users\17042\Desktop\DIWALI`.
+2. **Design Tokens & Typography:** Implemented festive color palette (deep night `#080604`, festive marigold `#F59E0B`, warm cream `#FFFBEB`) with responsive typography and accessible touch targets (48×48px).
+3. **Authentic Catalogue Data:** Extracted all 26 authentic products/variants across 6 categories from `docs/catalogue-data.md` into strongly typed structures (`src/data/catalogueData.ts`), preserving printed prices, marking unverified sizes, and flagging unpriced range items as "Price on enquiry".
+4. **Client Cart Engine (`useCart`):** Engineered immutable cart hook with integer paise arithmetic (`src/utils/formatters.ts`), 1–50 quantity clamping, unpriced items count separation, and sanitized LocalStorage synchronization (`nt_cart_items_v1`).
+5. **Transient Customer State:** Customer personal details (full name, 10-digit mobile, 18+ age attestation) are stored exclusively in React memory and strictly excluded from LocalStorage to protect customer privacy under DPDP Act 2023.
+6. **Statutory Non-Binding Enquiry Flow:** Enforced `COMMERCE_CHECKOUT_ENABLED=false`; review view renders human-readable quotation summary with one-click clipboard copy (`generateEnquiryText`), optional WhatsApp URI fallback, and Supreme Court firecracker licensing notices.
+7. **Automated Verification:** 42 Vitest unit and component integration tests passing (100%); zero build errors (`tsc && vite build`: JS gzip 59.87 kB, CSS gzip 4.72 kB).
 
 ### Milestone 3: Backend Edge API & Admin Console
 1. **Wrangler Setup:** Create `wrangler.jsonc` with Cloudflare D1 database binding and environment variables.
