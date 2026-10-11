@@ -11,6 +11,7 @@ import {
   isOrderSubtotalEligible,
   getSubtotalValidationError,
 } from '../../src/utils/tokenPolicy';
+import { PRODUCTS } from '../../src/data/catalogueData';
 
 describe('useCart Hook & Tiered Token Calculation Policy', () => {
   beforeEach(() => {
@@ -93,17 +94,17 @@ describe('useCart Hook & Tiered Token Calculation Policy', () => {
   it('adds priced items and computes exact integer paise subtotal', () => {
     const { result } = renderHook(() => useCart());
 
-    // Skyshot Bigboss: 35000 paise (₹350.00)
+    // Skyshot Bigboss: 40000 paise (₹400.00)
     act(() => {
       result.current.addItem('prod_skyshot_bigboss', 'var_bigboss_3pcs', 2);
     });
 
     expect(result.current.items.length).toBe(1);
-    expect(result.current.items[0].productName).toBe('Skyshot - Bigboss');
+    expect(result.current.items[0].productName).toBe('Bigboss');
     expect(result.current.items[0].quantity).toBe(2);
-    expect(result.current.items[0].pricePaise).toBe(35000);
-    expect(result.current.items[0].lineSubtotalPaise).toBe(70000);
-    expect(result.current.totals.provisionalSubtotalPaise).toBe(70000);
+    expect(result.current.items[0].pricePaise).toBe(40000);
+    expect(result.current.items[0].lineSubtotalPaise).toBe(80000);
+    expect(result.current.totals.provisionalSubtotalPaise).toBe(80000);
     expect(result.current.totals.pricedItemCount).toBe(1);
     expect(result.current.totals.unpricedItemCount).toBe(0);
   });
@@ -111,20 +112,30 @@ describe('useCart Hook & Tiered Token Calculation Policy', () => {
   it('adds unpriced items without inventing a price', () => {
     const { result } = renderHook(() => useCart());
 
-    // Pandav (₹200 to ₹250 price range on poster -> pricePaise is null)
-    act(() => {
-      result.current.addItem('prod_pandav', 'var_pandav_5pcs', 1);
-    });
+    const pandavVariant = PRODUCTS.find((p) => p.id === 'prod_pandav')!.variants[0];
+    const originalPrice = pandavVariant.pricePaise;
+    const originalStatus = pandavVariant.priceStatus;
+    try {
+      (pandavVariant as any).pricePaise = null;
+      (pandavVariant as any).priceStatus = 'PRICE_ON_ENQUIRY';
 
-    expect(result.current.items.length).toBe(1);
-    expect(result.current.items[0].productName).toBe('Pandav');
-    expect(result.current.items[0].pricePaise).toBeNull();
-    expect(result.current.items[0].lineSubtotalPaise).toBeNull();
-    expect(result.current.items[0].priceStatus).toBe('PRICE_ON_ENQUIRY');
+      act(() => {
+        result.current.addItem('prod_pandav', 'var_pandav_5pcs', 1);
+      });
 
-    expect(result.current.totals.provisionalSubtotalPaise).toBe(0);
-    expect(result.current.totals.pricedItemCount).toBe(0);
-    expect(result.current.totals.unpricedItemCount).toBe(1);
+      expect(result.current.items.length).toBe(1);
+      expect(result.current.items[0].productName).toBe('Pandav');
+      expect(result.current.items[0].pricePaise).toBeNull();
+      expect(result.current.items[0].lineSubtotalPaise).toBeNull();
+      expect(result.current.items[0].priceStatus).toBe('PRICE_ON_ENQUIRY');
+
+      expect(result.current.totals.provisionalSubtotalPaise).toBe(0);
+      expect(result.current.totals.pricedItemCount).toBe(0);
+      expect(result.current.totals.unpricedItemCount).toBe(1);
+    } finally {
+      (pandavVariant as any).pricePaise = originalPrice;
+      (pandavVariant as any).priceStatus = originalStatus;
+    }
   });
 
   it('increments, decrements, and updates quantities safely within 1 to 50 limits', () => {
@@ -199,17 +210,17 @@ describe('useCart Hook & Tiered Token Calculation Policy', () => {
       expect(result.current.totals.canProceedToCheckout).toBe(true);
     });
 
-    it('applies ₹100 token when subtotal is above ₹200 (e.g., Skyshot Bigboss ₹350)', () => {
+    it('applies ₹100 token when subtotal is above ₹200 (e.g., Skyshot Bigboss ₹400)', () => {
       const { result } = renderHook(() => useCart());
 
-      // Skyshot Bigboss: ₹350 (35000 paise)
+      // Skyshot Bigboss: ₹400 (40000 paise)
       act(() => {
         result.current.addItem('prod_skyshot_bigboss', 'var_bigboss_3pcs', 1);
       });
 
-      expect(result.current.totals.subtotalPaise).toBe(35000);
+      expect(result.current.totals.subtotalPaise).toBe(40000);
       expect(result.current.totals.tokenAmountPaise).toBe(10000); // ₹100 tier
-      expect(result.current.totals.remainingBalancePaise).toBe(25000); // ₹350 - ₹100 = ₹250
+      expect(result.current.totals.remainingBalancePaise).toBe(30000); // ₹400 - ₹100 = ₹300
       expect(result.current.totals.minOrderRequirementMet).toBe(true);
       expect(result.current.totals.canProceedToCheckout).toBe(true);
     });
@@ -217,14 +228,22 @@ describe('useCart Hook & Tiered Token Calculation Policy', () => {
     it('blocks checkout when subtotal contains unpriced items', () => {
       const { result } = renderHook(() => useCart());
 
-      act(() => {
-        result.current.addItem('prod_skyshot_bigboss', 'var_bigboss_3pcs', 1);
-        result.current.addItem('prod_pandav', 'var_pandav_5pcs', 1);
-      });
+      const pandavVariant = PRODUCTS.find((p) => p.id === 'prod_pandav')!.variants[0];
+      const originalPrice = pandavVariant.pricePaise;
+      try {
+        (pandavVariant as any).pricePaise = null;
 
-      expect(result.current.totals.hasUnpricedItems).toBe(true);
-      expect(result.current.totals.canProceedToCheckout).toBe(false);
-      expect(result.current.totals.checkoutBlockedReason).toContain('must have a confirmed price');
+        act(() => {
+          result.current.addItem('prod_skyshot_bigboss', 'var_bigboss_3pcs', 1);
+          result.current.addItem('prod_pandav', 'var_pandav_5pcs', 1);
+        });
+
+        expect(result.current.totals.hasUnpricedItems).toBe(true);
+        expect(result.current.totals.canProceedToCheckout).toBe(false);
+        expect(result.current.totals.checkoutBlockedReason).toContain('must have a confirmed price');
+      } finally {
+        (pandavVariant as any).pricePaise = originalPrice;
+      }
     });
   });
 });

@@ -32,11 +32,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     ? getItemQuantity(product.id, activeVariant.id)
     : 0;
 
+  const activePrice = activeVariant
+    ? (activeVariant.pricePaise ?? activeVariant.demoPricePaise)
+    : null;
+
   const isPriced =
-    activeVariant &&
-    activeVariant.demoPricePaise !== null &&
-    activeVariant.demoPricePaise !== undefined &&
-    activeVariant.demoPricePaise > 0;
+    activePrice !== null &&
+    activePrice !== undefined &&
+    activePrice > 0;
 
   const productImage = getProductImage(product);
 
@@ -107,7 +110,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             >
               {product.variants.map((v) => {
                 const isSelected = v.id === selectedVariantId;
-                const vPrice = v.demoPricePaise ? formatPaise(v.demoPricePaise) : 'Enquiry';
+                const variantPrice = v.pricePaise ?? v.demoPricePaise;
+                const vPrice = variantPrice ? formatPaise(variantPrice) : 'Enquiry';
                 return (
                   <button
                     key={v.id}
@@ -136,10 +140,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Pricing & Add to Cart Action Footer */}
       <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
         <div>
-          <span className="text-[11px] text-stone-500 block">Catalogue Estimate</span>
+          <span className="text-[11px] text-stone-500 block">
+            {activeVariant && activeVariant.printedMinPaise && activeVariant.printedMaxPaise && activeVariant.printedMinPaise !== activeVariant.printedMaxPaise
+              ? `Range: ${activeVariant.printedPriceText}`
+              : 'Catalogue Price'}
+          </span>
           <span className="text-base sm:text-lg font-bold font-mono text-stone-900">
-            {isPriced && activeVariant?.demoPricePaise
-              ? formatPaise(activeVariant.demoPricePaise)
+            {isPriced && activePrice
+              ? formatPaise(activePrice)
               : 'Enquiry Only'}
           </span>
         </div>

@@ -317,13 +317,14 @@ export function generateR2ObjectKey(versionId: string, ext: string): string {
   return `qr-assets/${safeId}_${Date.now()}_${rand}.${ext}`;
 }
 
-/**
- * Resolves the active R2 bucket: uses server-side env binding if available,
- * falling back to the isolated simulated bucket in local/unconfigured environments.
- */
 export function getR2Bucket(env?: any): CloudflareR2Bucket {
   if (env?.QR_BUCKET && typeof env.QR_BUCKET.put === 'function') {
     return env.QR_BUCKET as CloudflareR2Bucket;
+  }
+  if (env?.CF_PAGES === '1' || env?.REQUIRE_R2 === 'true') {
+    throw new Error(
+      'Cloudflare R2 QR_BUCKET binding is unavailable at runtime. Persistent storage required.'
+    );
   }
   return fallbackR2Bucket;
 }

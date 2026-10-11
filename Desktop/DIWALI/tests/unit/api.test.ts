@@ -70,23 +70,39 @@ describe('Cloudflare Backend API Route Suite (/api/v1)', () => {
   });
 
   it('POST /api/v1/orders blocks orders with unpriced range items', async () => {
-    const req = new Request('http://localhost/api/v1/orders', {
-      method: 'POST',
-      body: JSON.stringify({
-        customer: {
-          fullName: 'Test Buyer',
-          mobileNumber: '9876543210',
-          ageConfirmed: true,
-        },
-        items: [{ variantId: 'var_pandav_5pcs', quantity: 1 }], // Unpriced range item (₹200 to ₹250)
-      }),
-    });
-    const res = await handleApiRequest(req);
-    expect(res.status).toBe(400);
+    const variant = await globalMemoryDb.getVariantById('var_pandav_5pcs');
+    const origDemo = variant?.demoPricePaise;
+    const origPrice = (variant as any)?.pricePaise;
 
-    const json = (await res.json()) as any;
-    expect(json.success).toBe(false);
-    expect(json.error.code).toBe('UNPRICED_ITEM_IN_ORDER');
+    try {
+      if (variant) {
+        variant.demoPricePaise = null;
+        (variant as any).pricePaise = null;
+      }
+
+      const req = new Request('http://localhost/api/v1/orders', {
+        method: 'POST',
+        body: JSON.stringify({
+          customer: {
+            fullName: 'Test Buyer',
+            mobileNumber: '9876543210',
+            ageConfirmed: true,
+          },
+          items: [{ variantId: 'var_pandav_5pcs', quantity: 1 }],
+        }),
+      });
+      const res = await handleApiRequest(req);
+      expect(res.status).toBe(400);
+
+      const json = (await res.json()) as any;
+      expect(json.success).toBe(false);
+      expect(json.error.code).toBe('UNPRICED_ITEM_IN_ORDER');
+    } finally {
+      if (variant) {
+        variant.demoPricePaise = origDemo ?? null;
+        (variant as any).pricePaise = origPrice ?? null;
+      }
+    }
   });
 
   it('POST /api/v1/orders rejects empty basket', async () => {
@@ -168,7 +184,7 @@ describe('Cloudflare Backend API Route Suite (/api/v1)', () => {
           mobileNumber: '9876543210',
           ageConfirmed: true,
         },
-        items: [{ variantId: 'var_sparklers_9cm_box', quantity: 1 }], // ₹180 subtotal (18,000 paise)
+        items: [{ variantId: 'var_pandav_5pcs', quantity: 1 }], // ₹180 subtotal (18,000 paise)
       }),
     });
     const res = await handleApiRequest(req);
@@ -184,7 +200,7 @@ describe('Cloudflare Backend API Route Suite (/api/v1)', () => {
     expect(json.data.paymentInstructions.amountInr).toBe('50.00');
   });
 
-  it('POST /api/v1/orders applies ₹100 token when subtotal is at or above ₹200 (e.g. ₹350)', async () => {
+  it('POST /api/v1/orders applies ₹100 token when subtotal is at or above ₹200 (e.g. ₹400)', async () => {
     const req = new Request('http://localhost/api/v1/orders', {
       method: 'POST',
       body: JSON.stringify({
@@ -193,7 +209,7 @@ describe('Cloudflare Backend API Route Suite (/api/v1)', () => {
           mobileNumber: '9876543210',
           ageConfirmed: true,
         },
-        items: [{ variantId: 'var_bigboss_3pcs', quantity: 1 }], // ₹350 subtotal (35,000 paise)
+        items: [{ variantId: 'var_bigboss_3pcs', quantity: 1 }], // ₹400 subtotal (40,000 paise)
       }),
     });
     const res = await handleApiRequest(req);
@@ -201,14 +217,14 @@ describe('Cloudflare Backend API Route Suite (/api/v1)', () => {
 
     const json = (await res.json()) as any;
     expect(json.success).toBe(true);
-    expect(json.data.subtotalPaise).toBe(35000);
+    expect(json.data.subtotalPaise).toBe(40000);
     expect(json.data.tokenDuePaise).toBe(10000); // ₹100 token tier for >= ₹200
-    expect(json.data.balanceDuePaise).toBe(25000); // ₹350 - ₹100 = ₹250
+    expect(json.data.balanceDuePaise).toBe(30000); // ₹400 - ₹100 = ₹300
     expect(json.data.paymentInstructions.amountInr).toBe('100.00');
   });
 
   it('POST /api/v1/orders applies ₹100 token at exact ₹200 boundary', async () => {
-    // 2 x Ground Chakri Medium (₹100 each = ₹200 total)
+    // 1 x Jurassic Bomb (₹200 = 20,000 paise)
     const req = new Request('http://localhost/api/v1/orders', {
       method: 'POST',
       body: JSON.stringify({
@@ -217,7 +233,7 @@ describe('Cloudflare Backend API Route Suite (/api/v1)', () => {
           mobileNumber: '9876543210',
           ageConfirmed: true,
         },
-        items: [{ variantId: 'var_chakri_medium', quantity: 2 }], // 2 * ₹100 = ₹200 (20,000 paise)
+        items: [{ variantId: 'var_jurassic_10pcs', quantity: 1 }], // ₹200 (20,000 paise)
       }),
     });
     const res = await handleApiRequest(req);
@@ -466,14 +482,14 @@ describe('Cloudflare Backend API Route Suite (/api/v1)', () => {
   it('Admin API: Enforces printed price bounds and records overrides with audit log', async () => {
     const variantId = 'var_kumpi_medium';
 
-    // 1. Updating within printed range (₹180 / 18,000 paise) succeeds normally
+    // 1. Updating within printed range (₹195 / 19,500 paise) succeeds normally
     const normalReq = new Request(
       `http://localhost/api/v1/admin/variants/${variantId}/demo-price`,
       {
         method: 'POST',
         headers: { Authorization: 'Bearer dev-admin-token' },
         body: JSON.stringify({
-          newPricePaise: 18000,
+          newPricePaise: 19500,
           operatorId: 'OP-NAGARJUNA',
         }),
       }

@@ -1163,9 +1163,9 @@ export async function handleApiRequest(
         );
       }
 
-      // POST /api/v1/admin/variants/:id/demo-price
+      // POST /api/v1/admin/variants/:id/demo-price or /api/v1/admin/variants/:id/price
       const adminPriceMatch = path.match(
-        /^\/api\/v1\/admin\/variants\/([^/]+)\/demo-price$/
+        /^\/api\/v1\/admin\/variants\/([^/]+)\/(?:demo-price|price)$/
       );
       if (adminPriceMatch && method === 'POST') {
         const variantId = adminPriceMatch[1];
@@ -1446,11 +1446,15 @@ export async function handleApiRequest(
           return jsonResponse({ success: true, data: finalRecord }, 201, true);
         } catch (err: any) {
           const msg = err?.message || 'Failed to process QR image upload';
-          const code = msg.includes('exceeds maximum 2MB')
+          const isR2Unavailable = msg.includes('QR_BUCKET binding is unavailable');
+          const code = isR2Unavailable
+            ? 'R2_STORAGE_UNAVAILABLE'
+            : msg.includes('exceeds maximum 2MB')
             ? 'FILE_TOO_LARGE'
             : msg.includes('rejected') || msg.includes('signature') || msg.includes('XML') || msg.includes('script')
             ? 'INVALID_IMAGE_TYPE'
             : 'QR_UPLOAD_FAILED';
+          const status = isR2Unavailable ? 503 : 400;
           return jsonResponse(
             {
               success: false,
@@ -1459,7 +1463,7 @@ export async function handleApiRequest(
                 message: msg,
               },
             },
-            400,
+            status,
             true
           );
         }

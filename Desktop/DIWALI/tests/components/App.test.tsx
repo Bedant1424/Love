@@ -38,9 +38,9 @@ describe('App End-to-End Integration Flow', () => {
       accessToken: 'token-uuid-9001',
       operationalStatus: 'SUBMITTED',
       paymentStatus: 'UNPAID',
-      subtotalPaise: 12000,
-      tokenDuePaise: 5000, // ₹50 token for ₹120 subtotal (< ₹200)
-      balanceDuePaise: 7000,
+      subtotalPaise: 10000,
+      tokenDuePaise: 5000, // ₹50 token for ₹100 subtotal (< ₹200)
+      balanceDuePaise: 5000,
       paymentInstructions: {
         vpa: 'test-fixture@nagarjunatraders',
         accountName: 'NAGARJUNA TRADERS (TEST)',
@@ -72,7 +72,7 @@ describe('App End-to-End Integration Flow', () => {
       screen.getByRole('tab', { name: /All Categories \(6\)/i })
     ).toBeInTheDocument();
 
-    // 2. Add first available product (Bijli Laddi: ₹60)
+    // 2. Add first available product (Bijli Laddi: ₹50)
     const addButtons = screen.getAllByRole('button', {
       name: /to enquiry basket/i,
     });
@@ -82,7 +82,7 @@ describe('App End-to-End Integration Flow', () => {
     // Sticky Cart bar should appear on mobile viewport
     expect(screen.getByText(/Review Box/i)).toBeInTheDocument();
 
-    // Increment quantity to 2 so subtotal = ₹120
+    // Increment quantity to 2 so subtotal = ₹100
     const increaseBtn = screen.getByRole('button', {
       name: /Increase quantity/i,
     });
@@ -127,8 +127,8 @@ describe('App End-to-End Integration Flow', () => {
     expect(screen.getByText('Order Review & Advance Token')).toBeInTheDocument();
     expect(screen.getByText('Kalyan Varma')).toBeInTheDocument();
     expect(screen.getByText('+91 9848022338')).toBeInTheDocument();
-    expect(screen.getAllByText(/₹120\.00/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/₹50\.00/i).length).toBeGreaterThan(0); // ₹50 token for ₹120
+    expect(screen.getAllByText(/₹100\.00/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/₹50\.00/i).length).toBeGreaterThan(0); // ₹50 token for ₹100
 
     // 7. Proceed to QR Payment Instructions (Step 7)
     const proceedToQrBtn = await screen.findByRole('button', {

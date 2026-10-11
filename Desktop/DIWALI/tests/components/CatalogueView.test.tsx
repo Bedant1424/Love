@@ -36,14 +36,15 @@ describe('CatalogueView Component', () => {
       />
     );
 
-    // Discrete priced item: Skyshot - Bigboss (₹350)
-    expect(screen.getByText('Skyshot - Bigboss')).toBeInTheDocument();
-    expect(screen.getAllByText('₹350.00').length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/catalogue estimate/i).length).toBeGreaterThan(0);
+    // Discrete priced item: Single Shot (₹150)
+    expect(screen.getByText('Single Shot')).toBeInTheDocument();
+    expect(screen.getAllByText('₹150.00').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/catalogue price/i).length).toBeGreaterThan(0);
 
-    // Unpriced range item: Pandav (Printed: ₹200 to ₹250)
+    // Range item with lower bound initial ordering price: Pandav (Printed: ₹180 to ₹200)
     expect(screen.getByText('Pandav')).toBeInTheDocument();
-    expect(screen.getAllByText(/price on enquiry/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/range: ₹180 to ₹200/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('₹180.00').length).toBeGreaterThan(0);
   });
 
   it('filters products when clicking a category tab', async () => {
@@ -65,7 +66,7 @@ describe('CatalogueView Component', () => {
     expect(screen.getByText('9 cm Sparklers')).toBeInTheDocument();
     expect(screen.getByText('15 cm Crackling Sparklers')).toBeInTheDocument();
     // Skyshot should not be in sparklers category
-    expect(screen.queryByText('Skyshot - Bigboss')).not.toBeInTheDocument();
+    expect(screen.queryByText('Bigboss')).not.toBeInTheDocument();
   });
 
   it('filters products using the search input', async () => {
@@ -82,8 +83,8 @@ describe('CatalogueView Component', () => {
     const searchInput = screen.getByPlaceholderText(/search products/i);
     await user.type(searchInput, 'elephant');
 
-    expect(screen.getByText('Skyshot - Elephant')).toBeInTheDocument();
-    expect(screen.queryByText('Skyshot - Bigboss')).not.toBeInTheDocument();
+    expect(screen.getByText('Elephant')).toBeInTheDocument();
+    expect(screen.queryByText('Bigboss')).not.toBeInTheDocument();
   });
 
   it('displays the environmental statutory notice for Category 1 (Laddis)', async () => {
