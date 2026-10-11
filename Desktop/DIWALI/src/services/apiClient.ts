@@ -159,6 +159,7 @@ export const apiClient = {
         amountInr?: string;
         transactionNote?: string;
         paymentCollectionEnabled: boolean;
+        qrImageUrl?: string;
         notice?: string;
       };
     }>('/orders', {

@@ -101,6 +101,7 @@ export interface PaymentConfig {
   message?: string;
   vpa?: string | null;
   accountName?: string | null;
+  qrImageUrl?: string | null;
   testFixture?: {
     qrPayload: string;
     vpa: string;

@@ -382,21 +382,46 @@ export async function handleApiRequest(
   try {
     // ── PUBLIC ENDPOINTS ─────────────────────────────────────────────
 
+    const isPaymentEnabled =
+      env?.PAYMENT_COLLECTION_ENABLED !== undefined
+        ? env.PAYMENT_COLLECTION_ENABLED === 'true' || env.PAYMENT_COLLECTION_ENABLED === true
+        : PAYMENT_COLLECTION_ENABLED;
+
     // GET /api/v1/payment-config
     if (path === '/api/v1/payment-config' && method === 'GET') {
-      const activeQr = await db.getActiveQrVersion();
-      const vpa = activeQr?.vpa || 'test-fixture@nagarjunatraders';
-      const accountName =
-        activeQr?.account_name || 'NAGARJUNA TRADERS (TEST FIXTURE)';
+      // In restricted test environment: provide non-payable test fixture
+      if (isRestricted) {
+        const activeQr = await db.getActiveQrVersion();
+        const vpa = activeQr?.vpa || 'test-fixture@nagarjunatraders';
+        const accountName =
+          activeQr?.account_name || 'NAGARJUNA TRADERS (TEST FIXTURE)';
+        return jsonResponse<PaymentConfig>({
+          success: true,
+          data: {
+            paymentCollectionEnabled: false,
+            isRestrictedEnv: true,
+            vpa,
+            accountName,
+            message:
+              'Payment collection is currently disabled. Test fixture provided for restricted workflow testing only.',
+            testFixture: {
+              qrPayload: `upi://pay?pa=${vpa}&pn=${encodeURIComponent(
+                accountName
+              )}&am=0&tn=TEST%20FIXTURE%20ONLY`,
+              vpa,
+              accountName,
+              isRestrictedEnv: true,
+              notice:
+                'Payment collection is currently disabled. Test fixture provided for restricted workflow testing only.',
+            },
+            tokenTiers: DEFAULT_TOKEN_TIERS,
+          },
+        });
+      }
 
-      // Gating: When payment collection is disabled in production / public environments,
-      // never expose test fixtures, test VPAs, or test accounts.
-      const isExplicitTestMode =
-        isRestricted &&
-        (env?.ENVIRONMENT === 'test' || env?.ENVIRONMENT === 'preview') &&
-        (env?.RESTRICTED_TEST_MODE === 'true' || env?.RESTRICTED_TEST_MODE === true);
-
-      if (!PAYMENT_COLLECTION_ENABLED && !isExplicitTestMode) {
+      // When payment collection is explicitly disabled in environment,
+      // return clean disabled state without exposing test fixtures.
+      if (!isPaymentEnabled) {
         return jsonResponse<PaymentConfig>({
           success: true,
           data: {
@@ -408,26 +433,20 @@ export async function handleApiRequest(
         });
       }
 
-      // In restricted test environment: provide non-payable test fixture
+      // Live genuine merchant payment configuration
+      const vpa = env?.STORE_UPI_VPA || 'jena2005@slc';
+      const accountName = env?.STORE_ACCOUNT_HOLDER || 'Mr Subham Jena';
+      const qrImageUrl = env?.PAYMENT_QR_IMAGE_URL || '/images/nagarjuna-payment-qr.jpeg';
+
       return jsonResponse<PaymentConfig>({
         success: true,
         data: {
-          paymentCollectionEnabled: false,
-          isRestrictedEnv: true,
+          paymentCollectionEnabled: true,
+          isRestrictedEnv: false,
           vpa,
           accountName,
-          message:
-            'Payment collection is currently disabled. Test fixture provided for restricted workflow testing only.',
-          testFixture: {
-            qrPayload: `upi://pay?pa=${vpa}&pn=${encodeURIComponent(
-              accountName
-            )}&am=0&tn=TEST%20FIXTURE%20ONLY`,
-            vpa,
-            accountName,
-            isRestrictedEnv: true,
-            notice:
-              'Payment collection is currently disabled. Test fixture provided for restricted workflow testing only.',
-          },
+          qrImageUrl,
+          message: 'Scan the UPI QR code using any UPI app to pay the advance token amount.',
           tokenTiers: DEFAULT_TOKEN_TIERS,
         },
       });
@@ -436,7 +455,7 @@ export async function handleApiRequest(
     // POST /api/v1/payment-issues
     if (path === '/api/v1/payment-issues' && method === 'POST') {
       // Reject complaints from arbitrary public visitors when public payment collection is disabled
-      if (!PAYMENT_COLLECTION_ENABLED && !isRestricted) {
+      if (!isPaymentEnabled && !isRestricted) {
         return jsonResponse(
           {
             success: false,
@@ -550,7 +569,7 @@ export async function handleApiRequest(
             name: 'Nagarjuna Traders',
             location: env?.STORE_LOCATION || 'Campus Pickup / Hostel Pickup',
             checkoutEnabled: true,
-            paymentCollectionEnabled: PAYMENT_COLLECTION_ENABLED,
+            paymentCollectionEnabled: isPaymentEnabled,
             tokenTiers: DEFAULT_TOKEN_TIERS,
           },
           categories,
@@ -731,7 +750,18 @@ export async function handleApiRequest(
             subtotalPaise: created.subtotal_paise,
             tokenDuePaise: created.token_amount_paise,
             balanceDuePaise: created.remaining_balance_paise,
-            paymentInstructions: isRestricted
+            paymentInstructions: isPaymentEnabled
+              ? {
+                  vpa: env?.STORE_UPI_VPA || 'jena2005@slc',
+                  accountName: env?.STORE_ACCOUNT_HOLDER || 'Mr Subham Jena',
+                  amountInr: (created.token_amount_paise / 100).toFixed(2),
+                  transactionNote: created.order_reference,
+                  qrImageUrl: env?.PAYMENT_QR_IMAGE_URL || '/images/nagarjuna-payment-qr.jpeg',
+                  paymentCollectionEnabled: true,
+                  notice:
+                    'Scan the UPI QR code using any UPI app to pay the exact advance token amount. After paying, submit your 12-digit UTR.',
+                }
+              : isRestricted
               ? {
                   vpa: 'test-fixture@nagarjunatraders',
                   accountName: 'NAGARJUNA TRADERS (TEST FIXTURE)',
@@ -901,7 +931,7 @@ export async function handleApiRequest(
       const reference = utrMatch[1];
 
       // Gating: When public collection is disabled, block public UTR submission
-      if (!PAYMENT_COLLECTION_ENABLED && !isRestricted) {
+      if (!isPaymentEnabled && !isRestricted) {
         return jsonResponse(
           {
             success: false,
@@ -1125,6 +1155,21 @@ export async function handleApiRequest(
       // 2. Login Endpoint: POST /api/v1/admin/auth/login
       if (path === '/api/v1/admin/auth/login' && method === 'POST') {
         const body = (await request.json().catch(() => ({}))) as any;
+        if (body.passphrase && !body.email) {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'PASSWORD_AUTH_DISABLED',
+                message:
+                  'Legacy passphrase authentication is permanently disabled.',
+              },
+            },
+            403,
+            true
+          );
+        }
+
         const email = (body.email || '').trim().toLowerCase();
         const password = body.password || '';
 

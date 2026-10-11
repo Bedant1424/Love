@@ -54,6 +54,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
   const [statusLookupError, setStatusLookupError] = useState<string | null>(null);
   const [statusPolling, setStatusPolling] = useState(false);
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
+  const [qrImgLoadError, setQrImgLoadError] = useState(false);
 
   // Payment Issue Reporting State
   const [showIssueModal, setShowIssueModal] = useState(false);
@@ -792,14 +793,73 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
             </p>
           </div>
 
-          {/* Test QR Code Fixture */}
-          <TestQrCode
-            vpa={paymentConfig?.vpa || 'test-fixture@nagarjunatraders'}
-            accountName={paymentConfig?.accountName || 'NAGARJUNA TRADERS (TEST)'}
-            amountInr={amountInr}
-            transactionNote={orderState.orderReference}
-            isRestricted={isRestricted}
-          />
+          {/* QR Code Section */}
+          {isRestricted ? (
+            <TestQrCode
+              vpa={paymentConfig?.vpa || 'test-fixture@nagarjunatraders'}
+              accountName={paymentConfig?.accountName || 'NAGARJUNA TRADERS (TEST)'}
+              amountInr={amountInr}
+              transactionNote={orderState.orderReference}
+              isRestricted={true}
+            />
+          ) : qrImgLoadError ? (
+            <div className="p-6 rounded-2xl bg-amber-50 border border-amber-300 text-center space-y-2 max-w-sm mx-auto">
+              <div className="w-10 h-10 mx-auto rounded-full bg-amber-100 flex items-center justify-center text-amber-800 text-xl font-bold">
+                ⚠️
+              </div>
+              <div className="font-bold text-sm text-stone-900">
+                Payment QR Code Unavailable
+              </div>
+              <p className="text-xs text-stone-600 leading-relaxed">
+                The payment QR code image failed to load. Online advance payment instructions are currently unavailable. Please refresh or contact store support.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center p-6 rounded-3xl bg-white text-stone-900 border border-stone-200 shadow-warm-sm max-w-sm mx-auto space-y-4">
+              <div className="text-center">
+                <div className="text-xs font-bold text-amber-700 uppercase tracking-wider font-mono">
+                  Official UPI Payment QR
+                </div>
+                <div className="text-xs font-semibold text-stone-600 mt-0.5">
+                  Scan with Google Pay, PhonePe, Paytm, or Slice
+                </div>
+              </div>
+
+              {/* Official Slice QR Image - Exactly as provided, uncropped, generous scan padding */}
+              <div className="bg-white p-3 rounded-2xl border-2 border-stone-200 shadow-inner flex items-center justify-center">
+                <img
+                  src={paymentConfig?.qrImageUrl || '/images/nagarjuna-payment-qr.jpeg'}
+                  alt="Nagarjuna Traders Official Slice UPI QR"
+                  className="w-56 h-auto max-w-full rounded-xl object-contain select-none"
+                  onError={() => setQrImgLoadError(true)}
+                />
+              </div>
+
+              {/* Account Holder & UPI ID */}
+              <div className="text-center space-y-1.5 w-full pt-2 border-t border-stone-100">
+                <div>
+                  <span className="text-[11px] text-stone-500 uppercase tracking-wider block">Account Holder</span>
+                  <span className="text-base font-bold text-stone-900 font-display">
+                    {paymentConfig?.accountName || 'Mr Subham Jena'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[11px] text-stone-500 uppercase tracking-wider block">Merchant UPI ID</span>
+                  <span className="inline-block mt-0.5 px-3 py-1 rounded-lg bg-amber-50 border border-amber-200/80 font-mono text-xs font-bold text-festive-marigold select-all">
+                    {paymentConfig?.vpa || 'jena2005@slc'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Token Amount Payable */}
+              <div className="w-full pt-2 border-t border-stone-100 flex justify-between items-center text-xs">
+                <span className="text-stone-500 font-medium">Exact Advance Token:</span>
+                <span className="font-mono font-bold text-base text-stone-900">
+                  ₹{amountInr}
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Payment Guidance Card */}
           <div className="p-4 rounded-2xl bg-[#FAF6EE] border border-stone-200 text-xs space-y-2">
@@ -810,8 +870,14 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
               </span>
             </div>
             <div className="flex justify-between items-center text-stone-600">
-              <span>Advance Token Required:</span>
+              <span>Order Subtotal:</span>
               <span className="font-mono font-bold text-stone-900">
+                {formatPaise(orderState.subtotalPaise)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-stone-600">
+              <span>Advance Token Required:</span>
+              <span className="font-mono font-bold text-festive-marigold">
                 ₹{amountInr} ({orderState.tokenDuePaise < 20000 ? 'Tier ₹50' : 'Tier ₹100'})
               </span>
             </div>
@@ -821,11 +887,12 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
                 {formatPaise(orderState.balanceDuePaise)} (Payable upon pickup)
               </span>
             </div>
-            {isRestricted && (
-              <div className="pt-2 border-t border-stone-200 text-[11px] text-amber-800 leading-relaxed">
-                ⚠️ Restricted Test Environment: Non-payable test QR fixture active. Real payment collection is disabled. Do not transfer actual money.
-              </div>
-            )}
+            <div className="pt-2 border-t border-stone-200 text-stone-600 leading-relaxed space-y-1">
+              <p className="font-semibold text-stone-800">Instructions:</p>
+              <p>1. Scan the QR code using Google Pay, PhonePe, Paytm, Slice, or BHIM.</p>
+              <p>2. Pay the exact advance token amount of <strong className="text-stone-900">₹{amountInr}</strong>.</p>
+              <p>3. After payment, copy the 12-digit UTR / UPI Ref from your bank receipt and click below to enter it.</p>
+            </div>
           </div>
 
           {/* Support Link */}
@@ -854,8 +921,9 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
 
             <button
               type="button"
+              disabled={qrImgLoadError}
               onClick={handleProceedToUtr}
-              className="w-full sm:flex-1 min-h-[48px] px-6 py-3 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 text-white font-bold text-base transition-transform flex items-center justify-center gap-2 shadow-md shadow-orange-500/20 focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+              className="w-full sm:flex-1 min-h-[48px] px-6 py-3 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 disabled:opacity-50 text-white font-bold text-base transition-transform flex items-center justify-center gap-2 shadow-md shadow-orange-500/20 focus:outline-none focus:ring-2 focus:ring-festive-marigold"
             >
               <span>I Have Paid / Enter 12-Digit UTR →</span>
             </button>

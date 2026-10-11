@@ -86,7 +86,7 @@ describe('ReviewView Component (Screens 6 to 10)', () => {
       expect(screen.getByText('Ramesh Patel')).toBeInTheDocument();
     });
     expect(screen.getByText('+91 9876543210')).toBeInTheDocument();
-    expect(screen.getByText(/Collection at the campus/i)).toBeInTheDocument();
+    expect(screen.getByText(/Campus Pickup/i)).toBeInTheDocument();
 
     // Item info
     expect(
@@ -283,7 +283,7 @@ describe('ReviewView Component (Screens 6 to 10)', () => {
     expect(screen.getByText(/Order Status Tracker/i)).toBeInTheDocument();
     expect(screen.getByText(/Fulfilment Progress/i)).toBeInTheDocument();
     expect(screen.getByText(/1\. Submitted/i)).toBeInTheDocument();
-    expect(screen.getByText(/Order Collection Information/i)).toBeInTheDocument();
+    expect(screen.getByText(/Order Pickup Information/i)).toBeInTheDocument();
   });
 
   it('disables proceed action when unpriced items exist', async () => {
@@ -296,10 +296,65 @@ describe('ReviewView Component (Screens 6 to 10)', () => {
         onEditCart={vi.fn()}
       />
     );
-
     const proceedBtn = await screen.findByRole('button', {
       name: /Proceed to QR Payment Instructions/i,
     });
     expect(proceedBtn).toBeDisabled();
   });
+
+  it('renders genuine Slice QR, merchant name, and UPI ID when payment collection is enabled in production', async () => {
+    vi.spyOn(apiClient, 'getPaymentConfig').mockResolvedValueOnce({
+      paymentCollectionEnabled: true,
+      isRestrictedEnv: false,
+      vpa: 'jena2005@slc',
+      accountName: 'Mr Subham Jena',
+      qrImageUrl: '/images/nagarjuna-payment-qr.jpeg',
+      message: 'Scan the approved Slice QR code below to pay the advance token amount.',
+    });
+
+    vi.spyOn(apiClient, 'createOrder').mockResolvedValueOnce({
+      orderReference: 'NT-9988',
+      accessToken: 'token-uuid-9988',
+      operationalStatus: 'SUBMITTED',
+      paymentStatus: 'UNPAID',
+      subtotalPaise: 36000,
+      tokenDuePaise: 10000,
+      balanceDuePaise: 26000,
+      paymentInstructions: {
+        vpa: 'jena2005@slc',
+        accountName: 'Mr Subham Jena',
+        amountInr: '100.00',
+        transactionNote: 'NT-9988',
+        paymentCollectionEnabled: true,
+        qrImageUrl: '/images/nagarjuna-payment-qr.jpeg',
+        notice: 'Official Slice payment QR for Nagarjuna Traders.',
+      },
+    });
+
+    render(
+      <ReviewView
+        customer={mockCustomer}
+        items={mockPricedItems}
+        totals={mockValidTotals}
+        onEditCustomer={vi.fn()}
+        onEditCart={vi.fn()}
+      />
+    );
+
+    const proceedBtn = await screen.findByRole('button', {
+      name: /Proceed to QR Payment Instructions/i,
+    });
+    fireEvent.click(proceedBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText('Mr Subham Jena')).toBeInTheDocument();
+      expect(screen.getByText('jena2005@slc')).toBeInTheDocument();
+      expect(screen.getByText('NT-9988')).toBeInTheDocument();
+    });
+
+    const qrImg = screen.getByAltText(/Nagarjuna Traders Official Slice UPI QR/i);
+    expect(qrImg).toBeInTheDocument();
+    expect(qrImg).toHaveAttribute('src', '/images/nagarjuna-payment-qr.jpeg');
+  });
 });
+
