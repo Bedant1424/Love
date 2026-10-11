@@ -29,26 +29,60 @@ export const DEFAULT_TOKEN_TIERS = {
 };
 
 /**
- * Checks whether the request is in a local or restricted testing environment.
+ * Checks whether the request is in an authorized restricted testing environment.
+ * STRICT SECURITY INVARIANT:
+ * - Client-supplied headers (e.g. X-Restricted-Test-Mode) NEVER enable test mode.
+ * - Production ALWAYS rejects test mode regardless of any client headers or caller input.
+ * - Restricted testing is strictly gated by verified server-side environment configuration.
+ * - Fails closed if the environment cannot be safely determined.
  */
 export function isRestrictedEnvironment(request: Request, env?: any): boolean {
-  if (env?.ENVIRONMENT === 'test' || env?.RESTRICTED_TEST_MODE === 'true') {
-    return true;
+  // 1. Explicit production check: Production MUST fail closed and NEVER permit test mode.
+  const isProduction =
+    env?.ENVIRONMENT === 'production' ||
+    (!env?.ENVIRONMENT &&
+      typeof process !== 'undefined' &&
+      process.env?.NODE_ENV === 'production');
+
+  if (isProduction) {
+    return false;
   }
-  if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') {
-    return true;
-  }
-  if (request.headers.get('X-Restricted-Test-Mode') === 'true') {
-    return true;
-  }
-  const url = new URL(request.url);
+
+  // 2. Server-side explicit restricted test flag (strictly enabled by server configuration)
   if (
-    url.hostname === 'localhost' ||
-    url.hostname === '127.0.0.1' ||
-    url.hostname === 'test.local'
+    env?.RESTRICTED_TEST_MODE === 'true' ||
+    env?.RESTRICTED_TEST_MODE === true
   ) {
     return true;
   }
+
+  // 3. Automated test runner execution (Vitest / local test environment)
+  if (
+    env?.ENVIRONMENT === 'test' ||
+    (!env?.ENVIRONMENT &&
+      typeof process !== 'undefined' &&
+      process.env?.NODE_ENV === 'test')
+  ) {
+    return true;
+  }
+
+  // 4. Local development hostnames (strictly when NOT production)
+  try {
+    const url = new URL(request.url);
+    if (
+      (env?.ENVIRONMENT === 'development' || !env?.ENVIRONMENT) &&
+      (url.hostname === 'localhost' ||
+        url.hostname === '127.0.0.1' ||
+        url.hostname === 'test.local')
+    ) {
+      return true;
+    }
+  } catch {
+    // If request URL cannot be safely parsed, fail closed
+    return false;
+  }
+
+  // 5. Fail closed for all other unconfirmed or public environments
   return false;
 }
 
@@ -136,8 +170,15 @@ export async function verifyAdminRequest(
     };
   }
 
-  // In development and testing only: allow isolated dev tokens
-  if (!isProduction) {
+  // In development and testing only: allow isolated dev tokens strictly if confirmed dev/test environment
+  const isDevOrTest =
+    !isProduction &&
+    (env?.ENVIRONMENT === 'development' ||
+      env?.ENVIRONMENT === 'test' ||
+      (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') ||
+      !env?.ENVIRONMENT);
+
+  if (isDevOrTest) {
     if (
       bearerToken === 'dev-admin-token' ||
       bearerToken === 'admin-jwt-session-nagarjuna'
@@ -179,7 +220,7 @@ export async function handleApiRequest(
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers':
-        'Content-Type, Authorization, X-Order-Token, X-Restricted-Test-Mode, Cf-Access-Jwt-Assertion',
+        'Content-Type, Authorization, X-Order-Token, Cf-Access-Jwt-Assertion',
     };
 
     if (noStore) {
@@ -200,7 +241,7 @@ export async function handleApiRequest(
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
         'Access-Control-Allow-Headers':
-          'Content-Type, Authorization, X-Order-Token, X-Restricted-Test-Mode, Cf-Access-Jwt-Assertion',
+          'Content-Type, Authorization, X-Order-Token, Cf-Access-Jwt-Assertion',
       },
     });
   }

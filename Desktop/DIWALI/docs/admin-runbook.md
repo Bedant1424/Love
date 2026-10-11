@@ -76,3 +76,96 @@ When the customer visits the counter to collect their order:
 4. **Verify Photo ID:** Confirm photo ID (18+) before handing over fireworks.
 5. **Collect Remaining Balance:** Collect remaining balance in cash or UPI at the collection desk.
 6. **Complete Handover:** Click **COMPLETED** to finalize the order record.
+
+---
+
+## 6. Cloudflare Deployment, Operations & Recovery
+
+### 6.1 Architecture Overview
+- **Hosting:** Cloudflare Pages (Static Assets + Vite React Bundle)
+- **Edge API Backend:** Cloudflare Pages Functions (`functions/api/[[route]].ts`) forwarding to `handleApiRequest(request, env)`.
+- **Database:** Cloudflare D1 distributed SQLite database bound to `env.DB`.
+- **Zero Trust Protection:** Cloudflare Access protecting `/admin` and `/api/v1/admin/*` with cryptographic RS256 JWT signature verification via `jose`.
+
+### 6.2 Environments & Wrangler Configuration (`wrangler.jsonc`)
+Two environments are maintained with strict fail-closed segregation:
+
+| Setting | Production (`wrangler.jsonc`) | Restricted Test (`env.test`) | Local Development |
+|---|---|---|---|
+| `ENVIRONMENT` | `"production"` | `"test"` | `"development"` |
+| `RESTRICTED_TEST_MODE` | `"false"` | `"true"` | Local hostname auto-detect |
+| `PAYMENT_COLLECTION_ENABLED` | `"false"` | `"false"` | `"false"` |
+| D1 Database Binding | `DB` (`nagarjuna-traders-d1-prod`) | `DB` (`nagarjuna-traders-d1-test`) | In-memory fallback / local SQLite |
+| Test QR Fixture | Never returned (`undefined`) | Provided for testing | Provided for testing |
+| UTR Submission | Blocked (`403 Forbidden`) | Accepted (`RECORDED_UNVERIFIED`) | Accepted (`RECORDED_UNVERIFIED`) |
+| Password Auth | Blocked (`403 Forbidden`) | Blocked (`403 Forbidden`) | Supported (`dev-admin-token`) |
+
+> [!IMPORTANT]
+> **Production Fail-Closed Invariant:**
+> Client-supplied headers (such as `X-Restricted-Test-Mode`) are completely ignored. In production, the system strictly disables test mode, hides test QR fixtures, and rejects public UTR submissions. Real payment collection remains disabled until explicit owner authorization.
+
+### 6.3 Cloudflare Secret Management
+Secrets and Zero Trust credentials must never be committed to git. Configure via Wrangler CLI:
+
+```bash
+# 1. Cloudflare Access Team Domain
+npx wrangler secret put CF_ACCESS_TEAM_DOMAIN
+
+# 2. Cloudflare Access Application Audience (AUD tag)
+npx wrangler secret put CF_ACCESS_AUD
+
+# 3. Optional Allowed Admin Emails (comma-separated)
+npx wrangler secret put CF_ACCESS_ALLOWED_ADMINS
+```
+
+### 6.4 D1 Database Migrations Workflow
+Database migrations are strictly sequential, parameterised, and idempotent:
+- `0001_initial_schema.sql`: Base categories, products, variants, audit logs, and settings.
+- `0002_seed_catalogue.sql`: 6 authentic categories and 26 poster variants (`INSERT OR IGNORE`).
+- `0003_payment_flow_schema.sql`: Payment submissions and status history tables.
+- `0004_orders_schema_alignment.sql`: Canonical orders and items schema with `CHECK (subtotal_paise >= 5000)`.
+
+**Commands:**
+```bash
+# Apply migrations locally for testing:
+npx wrangler d1 migrations apply DB --local
+
+# Apply migrations to remote test environment:
+npx wrangler d1 migrations apply DB --env test --remote
+
+# Apply migrations to production database:
+npx wrangler d1 migrations apply DB --remote
+```
+
+### 6.5 Operational Inspection & Telemetry Rules
+1. **PII and Financial Privacy Protection:**
+   - Never log full customer mobile numbers or full 12-digit UTR references to Cloudflare Logs / Workers Tail.
+   - Audit logs store masked UTR (`******${utr.slice(-4)}`).
+   - Order retrieval responses enforce `Cache-Control: no-store, no-cache, must-revalidate`.
+
+2. **D1 Database Health Check:**
+```bash
+# Check order counts and status breakdown
+npx wrangler d1 execute DB --remote --command "SELECT operational_status, payment_status, count(*) FROM orders GROUP BY operational_status, payment_status;"
+
+# Inspect recent audit logs
+npx wrangler d1 execute DB --remote --command "SELECT id, action, operator_id, reason, created_at FROM price_audit_logs ORDER BY created_at DESC LIMIT 10;"
+```
+
+3. **Cloudflare Free-Tier Resource Quotas:**
+   - **Cloudflare Pages:** Unlimited requests; 500 deployments per month.
+   - **Cloudflare Workers / Pages Functions:** 100,000 requests per day (Free tier).
+   - **Cloudflare D1:** 5 million row reads per day, 100,000 row writes per day, 5 GB storage.
+   - **Cloudflare Access:** Up to 50 free seats for Zero Trust team members.
+   - *Total recurring software and hosting charges: ₹0.*
+
+### 6.6 Emergency Rollback & Disaster Recovery
+1. **Frontend / Function Instant Rollback:**
+   - In Cloudflare Pages dashboard: Go to **Deployments** $\rightarrow$ select the previous known good deployment $\rightarrow$ click **Rollback to this deployment**.
+   - Or via CLI: `npx wrangler pages deployment rollback <deployment-id>`.
+2. **Database Backup & Restoration:**
+   - Periodic SQL export: `npx wrangler d1 export DB --remote --output backup_$(date +%Y%m%d).sql`.
+   - Restore from snapshot if needed: `npx wrangler d1 execute DB --remote --file backup_YYYYMMDD.sql`.
+3. **Emergency Credential Rotation:**
+   - If Cloudflare Access audience or signing credentials leak, rotate the Access Application in Zero Trust dashboard and update `CF_ACCESS_AUD` immediately using `npx wrangler secret put CF_ACCESS_AUD`.
+

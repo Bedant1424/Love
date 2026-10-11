@@ -7,6 +7,8 @@
 - Public Endpoints: Public / Rate-limited + Cloudflare Turnstile Verification
 - Customer Order Access: Strictly require header `X-Order-Token: <token>`. URL query parameter tokens (`?token=...`) are prohibited and rejected with `401 Unauthorized` to prevent token leakage in browser history, proxy logs, and referrer headers.
 - Admin Endpoints: In production, strictly validated with cryptographic RS256 signature verification of Cloudflare Access JWT Assertion (`Cf-Access-Jwt-Assertion`) via `jose` against documented JWKS endpoint (`https://<team>.cloudflareaccess.com/cdn-cgi/access/certs`), validating issuer (`CF_ACCESS_TEAM_DOMAIN`), audience (`CF_ACCESS_AUD`), not-before (`nbf`), expiration (`exp`), and allowed identities (`CF_ACCESS_ALLOWED_ADMINS`). Fails closed on any error. In local/restricted development, isolated Bearer token `dev-admin-token`. Public admin registration is non-existent, and password login in production is rejected with `403 Forbidden`.
+- **Server-Side Environment Security Gating:** The restricted test environment is determined strictly by verified server-side configuration (`env.RESTRICTED_TEST_MODE === 'true'` or `env.ENVIRONMENT === 'test'`). Client headers (such as `X-Restricted-Test-Mode`) are completely ignored and stripped from CORS allowed headers. Production (`ENVIRONMENT: 'production'`) unconditionally fails closed.
+- **Runtime & Database:** Cloudflare Pages Functions (`functions/api/[[route]].ts`) forwarding to `handleApiRequest(request, env)`. Data access runs through `D1DatabaseAdapter` bound to `env.DB` with 100% parameterised prepared statements and atomic batch executions.
 
 ---
 

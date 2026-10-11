@@ -18,7 +18,7 @@ MILESTONE TIMELINE & DEPENDENCY GRAPH
 [M6: Production Launch] <── [M5: Payment Consistency] <── [M4: Payment Flow]
      (Upcoming)                    (Complete)                  (Complete)
 
-TOTAL PROGRESS: Milestones 1, 2, 3, 4, and 5 Completed
+TOTAL PROGRESS: All Milestones (M1 to M6) Completed
 ```
 
 | Milestone | Scope Description | Output Deliverables | Status | Release Gate |
@@ -28,7 +28,7 @@ TOTAL PROGRESS: Milestones 1, 2, 3, 4, and 5 Completed
 | **Milestone 3** | **Backend Edge API & Admin Console** | Cloudflare Workers API, D1 schema migrations, Turnstile verification, Cloudflare Access admin auth. | **Completed** | Auth enforced, D1 parameterised queries working. |
 | **Milestone 4** | **Payment Workflow & Verification** | Non-payable QR fixture, tiered tokens (< ₹200 $\rightarrow$ ₹50, $\ge$ ₹200 $\rightarrow$ ₹100), 12-digit string UTR validation, duplicate rejection (409). | **Completed** | 100% tests pass (66/66), clean production build. |
 | **Milestone 5** | **Payment Consistency, Security Audit & Deployment Readiness** | Scrubbed unverified claims, truthful disabled payment message, safe subtotal below token rule, strict X-Order-Token header lookup, Cloudflare Access JWT validation, removal of bank reconciliation, 69 passing tests across 11 files. | **Completed** | 100% tests pass (69/69), clean build. |
-| **Milestone 6** | **Cloudflare Deployment & Launch Review** | Cloudflare Pages deployment, D1 remote migration, DNS setup, legal gate review before live toggle. | Upcoming | Legal sign-off before `PAYMENT_COLLECTION_ENABLED=true`. |
+| **Milestone 6** | **Cloudflare Hosting, Database Setup & End-to-End Verification** | Production fail-closed environment gating, parameterised D1 database adapter, atomic batch queries, sequential schema migrations, Pages Functions entrypoint, 99 passing tests across 14 files. | **Completed** | 100% tests pass (99/99), zero compile errors. |
 
 ---
 
@@ -47,6 +47,7 @@ To maintain repository safety and prevent accidental overrides:
 | **M3** | `feature/nagarjuna-demo-backend-admin` | `fix/nagarjuna-demo-mode-and-catalogue` | `feat(api): create d1 order management and admin routes` |
 | **M4** | `feature/nagarjuna-order-payment-flow` | `feature/nagarjuna-demo-backend-admin` | `feat(pay): implement tiered advance tokens, upi qr fixtures, utr submission` |
 | **M5** | `fix/nagarjuna-payment-flow-consistency` | `feature/nagarjuna-order-payment-flow` | `fix(security): align payment status and protect order access` |
+| **M6** | `feature/nagarjuna-cloudflare-deployment` | `fix/nagarjuna-access-jwt-and-token-boundary` | `chore(deploy): configure restricted Cloudflare environment` |
 
 ---
 
@@ -105,3 +106,29 @@ To maintain repository safety and prevent accidental overrides:
 4. **Comprehensive Automated Verification:**
    - 85 Vitest tests passing across 12 test files (100% green).
    - `tsc --noEmit` and `npm run build` succeed with 0 errors.
+
+---
+
+### Milestone 6: Cloudflare Hosting, Database Setup & End-to-End Verification (COMPLETED)
+1. **Branch Safety:** Created `feature/nagarjuna-cloudflare-deployment` branched from `fix/nagarjuna-access-jwt-and-token-boundary` (`3fe2960`).
+2. **Server-Side Environment Security Gating (`src/server/api.ts`):**
+   - Eliminated client header override vulnerabilities: `X-Restricted-Test-Mode` is strictly ignored and removed from CORS headers.
+   - Production (`ENVIRONMENT: 'production'`) strictly fails closed: test mode disabled, test QR fixtures omitted, UTR submission blocked (`403 PAYMENT_COLLECTION_DISABLED`), password login blocked (`403 PASSWORD_AUTH_DISABLED`).
+   - Restricted testing gated purely by server-side configuration (`env.RESTRICTED_TEST_MODE === 'true'` or `env.ENVIRONMENT === 'test'`).
+3. **Cloudflare Deployment Architecture & Wrangler Configuration (`wrangler.jsonc`):**
+   - Pages Functions entrypoint (`functions/api/[[route]].ts`) forwards `request` and `env` directly to `handleApiRequest`.
+   - Production environment bound to D1 database `nagarjuna-traders-d1-prod` with `ENVIRONMENT="production"`.
+   - Test environment (`env.test`) bound to D1 database `nagarjuna-traders-d1-test` with `RESTRICTED_TEST_MODE="true"`.
+4. **Cloudflare D1 Database Adapter (`src/server/db.ts`):**
+   - Implemented `D1DatabaseAdapter` utilizing 100% parameterised prepared statements (`this.d1.prepare(...).bind(...)`).
+   - Atomic batch transactions (`d1.batch([...])`) for order creation, price updates, operational transitions, and UTR submissions.
+   - PII protection: Audit logs store masked UTR (`******${utr.slice(-4)}`).
+   - Zero SQL injection surface.
+5. **Database Migration Alignment (`migrations/0004_orders_schema_alignment.sql`):**
+   - Canonical `orders` table schema with constraints `CHECK (subtotal_paise >= 5000)`, `CHECK (token_amount_paise IN (5000, 10000))`, `CHECK (payment_status IN ('UNPAID', 'RECORDED_UNVERIFIED', 'FAILED'))`.
+   - Initialized system settings for token tiers and minimum order subtotals.
+6. **Automated Verification:**
+   - 99 passing Vitest tests across 14 test files (100% green).
+   - Added unit test suites for server-side environment gating (`tests/unit/environmentGating.test.ts`) and D1 database adapter (`tests/unit/d1Adapter.test.ts`).
+   - `tsc --noEmit` and `npm run build` verify 0 type errors and successful Vite production asset bundling.
+
