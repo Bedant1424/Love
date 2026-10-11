@@ -734,8 +734,8 @@ export async function handleApiRequest(
         customer_mobile: mobileClean,
         fulfilment_preference:
           body.customer.fulfilmentPreference === 'HOSTEL_PICKUP'
-            ? 'HOSTEL_PICKUP'
-            : 'CAMPUS_PICKUP',
+            ? 'SPECIAL_ENQUIRY'
+            : 'COUNTER_PICKUP',
         operational_status: 'SUBMITTED',
         payment_status: 'UNPAID',
         subtotal_paise: subtotalPaise,
