@@ -11,6 +11,12 @@
       "database_id": "aace32a4-8ec3-487e-b202-a98e898868bc"
     }
   ],
+  "r2_buckets": [
+    {
+      "binding": "QR_BUCKET",
+      "bucket_name": "nagarjuna-qr-images"
+    }
+  ],
   "vars": {
     "ENVIRONMENT": "production",
     "PAYMENT_COLLECTION_ENABLED": "false",

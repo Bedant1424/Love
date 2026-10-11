@@ -1,20 +1,20 @@
 # Nagarjuna Traders: Cloudflare R2 Persistent QR Storage Setup Guide
 
-## 1. Executive Summary & Current Verification State
+## 1. Executive Summary & Verification State
 
 - **Cloudflare Account ID**: `f5007499f208d03d531ad81e9d1f33aa`
-- **Current CLI Verification Result**:
+- **CLI Verification Result**:
   ```bash
   $ npx wrangler r2 bucket list
-  X [ERROR] A request to the Cloudflare API (/accounts/f5007499f208d03d531ad81e9d1f33aa/r2/buckets) failed.
-  Please enable R2 through the Cloudflare Dashboard. [code: 10042]
+  name:           nagarjuna-qr-images
+  creation_date:  2026-10-11T11:23:06.212Z
   ```
-- **Operational Reality**: Cloudflare R2 subscription has not yet been activated in the Cloudflare Dashboard for this account. As per project security standards, **R2 is never falsely claimed as active** until verified via API.
+- **Operational Reality**: Cloudflare R2 has been successfully enabled on the account. Dedicated bucket `nagarjuna-qr-images` is active and bound as `QR_BUCKET`.
 - **Architectural Solution**:
-  1. The server codebase (`src/server/qrStorage.ts` and `src/server/api.ts`) is fully implemented and tested against Cloudflare Workers `R2Bucket` binding specifications.
-  2. The server seamlessly binds to `env.QR_BUCKET` when configured.
-  3. While dashboard enablement is pending, an isolated in-memory deterministic fallback preserves preview availability and test isolation without crashing the application.
-  4. Binary images are completely decoupled from SQLite rows: base64 data URLs are no longer persisted in D1 database records.
+  1. The server codebase (`src/server/qrStorage.ts` and `src/server/api.ts`) binds directly to `env.QR_BUCKET`.
+  2. Binary raster images are persisted in `nagarjuna-qr-images` object storage under keys `qr-assets/<version_id>_<timestamp>_<rand>.<ext>`.
+  3. D1 database stores only decoupled metadata (R2 key, SHA-256 hash, content type, file size). No base64 data URLs in SQLite.
+  4. Binary images are served via proxy route `/api/v1/qr-images/:id` with strict security headers.
 
 ---
 
