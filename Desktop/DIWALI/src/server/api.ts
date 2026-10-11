@@ -26,7 +26,7 @@ import {
   UploadQrRequest,
 } from './types';
 
-export const PAYMENT_COLLECTION_ENABLED = true;
+export const PAYMENT_COLLECTION_ENABLED = false;
 
 export const DEFAULT_TOKEN_TIERS = {
   thresholdPaise: TOKEN_TIER_THRESHOLD_PAISE,
