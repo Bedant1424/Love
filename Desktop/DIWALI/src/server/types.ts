@@ -198,6 +198,12 @@ export interface DbQrVersion {
   vpa: string;
   account_name: string;
   image_url: string;
+  r2_object_key?: string | null;
+  content_type?: string | null;
+  file_size_bytes?: number | null;
+  sha256_checksum?: string | null;
+  merchant_category_code?: string | null;
+  merchant_id?: string | null;
   is_active: number;
   upload_operator_id: string;
   activation_notes?: string | null;

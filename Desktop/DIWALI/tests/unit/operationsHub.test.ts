@@ -9,7 +9,7 @@ describe('Operations Hub: Inventory, QR, Support Issues, and Sales Reporting', (
 
   const adminHeaders = {
     'Content-Type': 'application/json',
-    'Authorization': 'Bearer admin-jwt-session-nagarjuna',
+    'Authorization': 'Bearer dev-admin-token',
     'CF-Access-Authenticated-User-Email': 'bedant@nagarjunatraders.internal',
   };
 
@@ -17,6 +17,71 @@ describe('Operations Hub: Inventory, QR, Support Issues, and Sales Reporting', (
     ENVIRONMENT: 'test',
     RESTRICTED_TEST_MODE: 'true',
   };
+
+  describe('Authentication & Preview Security Boundaries', () => {
+    it('strictly rejects revoked compromised session token admin-jwt-session-nagarjuna with 401', async () => {
+      const compromisedReq = new Request('http://localhost/api/v1/admin/inventory', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer admin-jwt-session-nagarjuna',
+        },
+      });
+
+      const res = await handleApiRequest(compromisedReq, restrictedEnv);
+      expect(res.status).toBe(401);
+      const json = await res.json();
+      expect(json.success).toBe(false);
+      expect(json.error.message).toContain('Compromised administrative session token is permanently revoked');
+    });
+
+    it('strictly rejects fixed bearer tokens when request is on hosted preview domain (*.pages.dev)', async () => {
+      const hostedReq = new Request('https://preview-123.nagarjuna-traders-test.pages.dev/api/v1/admin/inventory', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer dev-admin-token',
+        },
+      });
+
+      const hostedEnv = {
+        ENVIRONMENT: 'test',
+        RESTRICTED_TEST_MODE: 'true',
+        IS_HOSTED: 'true',
+      };
+
+      const res = await handleApiRequest(hostedReq, hostedEnv);
+      expect(res.status).toBe(401);
+      const json = await res.json();
+      expect(json.success).toBe(false);
+      expect(json.error.message).toContain('Cloudflare Access JWT Assertion is required');
+    });
+
+    it('rejects unauthenticated requests to admin routes with 401', async () => {
+      const unauthReq = new Request('https://preview-123.nagarjuna-traders-test.pages.dev/api/v1/admin/inventory', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const res = await handleApiRequest(unauthReq, restrictedEnv);
+      expect(res.status).toBe(401);
+      const json = await res.json();
+      expect(json.success).toBe(false);
+    });
+
+    it('disables password-based login route on hosted preview deployments with 403', async () => {
+      const loginReq = new Request('https://preview-123.nagarjuna-traders-test.pages.dev/api/v1/admin/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passphrase: 'nagarjuna-demo-2026' }),
+      });
+
+      const res = await handleApiRequest(loginReq, { IS_HOSTED: 'true' });
+      expect(res.status).toBe(403);
+      const json = await res.json();
+      expect(json.error.code).toBe('PASSWORD_AUTH_DISABLED');
+    });
+  });
 
   describe('Inventory Management', () => {
     it('returns zero uninitialized stock for real inventory, and allows seeding synthetic test stock', async () => {
@@ -206,7 +271,7 @@ describe('Operations Hub: Inventory, QR, Support Issues, and Sales Reporting', (
       expect(res.status).toBe(400);
       const json = await res.json();
       expect(json.error.code).toBe('INVALID_IMAGE_TYPE');
-      expect(json.error.message).toContain('SVG, XML, and scripts are strictly rejected');
+      expect(json.error.message).toContain('script payloads are strictly rejected');
     });
 
     it('allows uploading a new draft version and activating it with rotation', async () => {
@@ -229,6 +294,20 @@ describe('Operations Hub: Inventory, QR, Support Issues, and Sales Reporting', (
       expect(uploadJson.data.version_number).toBe(2);
 
       const draftId = uploadJson.data.id;
+      expect(uploadJson.data.image_url).toBe(`/api/v1/qr-images/${draftId}`);
+      expect(uploadJson.data.r2_object_key).toMatch(/^qr-assets\//);
+      expect(uploadJson.data.content_type).toBe('image/png');
+      expect(uploadJson.data.sha256_checksum).toHaveLength(64);
+
+      // Verify controlled image route serves bytes with secure headers
+      const imgReq = new Request(`http://localhost/api/v1/qr-images/${draftId}`, {
+        method: 'GET',
+      });
+      const imgRes = await handleApiRequest(imgReq, restrictedEnv);
+      expect(imgRes.status).toBe(200);
+      expect(imgRes.headers.get('Content-Type')).toBe('image/png');
+      expect(imgRes.headers.get('X-Content-Type-Options')).toBe('nosniff');
+      expect(imgRes.headers.get('Content-Security-Policy')).toBe("default-src 'none'");
 
       // Activate the new QR version
       const activateReq = new Request(

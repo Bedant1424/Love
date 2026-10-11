@@ -18,6 +18,8 @@
     "STORE_NAME": "NAGARJUNA TRADERS (RESTRICTED TEST)",
     "STORE_LOCATION": "Sivakasi / Counter Collection (Restricted Test)",
     "STORE_UPI_VPA": "test-fixture@nagarjunatraders",
-    "STORE_PHONE": "+919876543210"
+    "STORE_PHONE": "+919876543210",
+    "CF_ACCESS_TEAM_DOMAIN": "nagarjuna-traders",
+    "CF_ACCESS_AUD": "aud_nagarjuna_test_preview_tag_12345"
   }
 }

@@ -90,7 +90,12 @@ class InMemoryDemoDatabase {
         label: 'Default Testing Fixture QR (v1)',
         vpa: 'test-fixture@nagarjunatraders',
         account_name: 'NAGARJUNA TRADERS (TEST)',
-        image_url: '/images/test-qr-v1.png',
+        image_url: '/api/v1/qr-images/qr_v1_seed',
+        r2_object_key: 'qr-assets/qr_v1_seed.png',
+        content_type: 'image/png',
+        file_size_bytes: 67,
+        sha256_checksum:
+          'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
         is_active: 1,
         upload_operator_id: 'SYSTEM',
         activation_notes: 'Initial active restricted test fixture QR',
@@ -584,24 +589,44 @@ class InMemoryDemoDatabase {
     return this.qrVersions.find((q) => q.is_active === 1) || null;
   }
 
+  public async getQrVersionById(id: string): Promise<DbQrVersion | null> {
+    return this.qrVersions.find((q) => q.id === id) || null;
+  }
+
   public async uploadQrVersion(
     label: string,
     vpa: string,
     accountName: string,
     imageUrl: string,
-    operatorId: string = 'OP-ADMIN'
+    operatorId: string = 'OP-ADMIN',
+    metadata?: {
+      r2ObjectKey?: string | null;
+      contentType?: string | null;
+      fileSizeBytes?: number | null;
+      sha256Checksum?: string | null;
+      merchantCategoryCode?: string | null;
+      merchantId?: string | null;
+      id?: string;
+    }
   ): Promise<DbQrVersion> {
     const nextVer = this.qrVersions.length
       ? Math.max(...this.qrVersions.map((q) => q.version_number)) + 1
       : 1;
     const now = new Date().toISOString();
+    const id = metadata?.id || `qr_v${nextVer}_${Date.now()}`;
     const newVer: DbQrVersion = {
-      id: `qr_v${nextVer}_${Date.now()}`,
+      id,
       version_number: nextVer,
       label,
       vpa,
       account_name: accountName,
       image_url: imageUrl,
+      r2_object_key: metadata?.r2ObjectKey || null,
+      content_type: metadata?.contentType || null,
+      file_size_bytes: metadata?.fileSizeBytes ?? null,
+      sha256_checksum: metadata?.sha256Checksum || null,
+      merchant_category_code: metadata?.merchantCategoryCode || null,
+      merchant_id: metadata?.merchantId || null,
       is_active: 0,
       upload_operator_id: operatorId,
       activation_notes: null,
@@ -1589,24 +1614,59 @@ export class D1DatabaseAdapter {
     ).first<DbQrVersion>();
   }
 
+  public async getQrVersionById(id: string): Promise<DbQrVersion | null> {
+    return this.d1.prepare(
+      'SELECT * FROM qr_versions WHERE id = ?'
+    ).bind(id).first<DbQrVersion>();
+  }
+
   public async uploadQrVersion(
     label: string,
     vpa: string,
     accountName: string,
     imageUrl: string,
-    operatorId: string = 'OP-ADMIN'
+    operatorId: string = 'OP-ADMIN',
+    metadata?: {
+      r2ObjectKey?: string | null;
+      contentType?: string | null;
+      fileSizeBytes?: number | null;
+      sha256Checksum?: string | null;
+      merchantCategoryCode?: string | null;
+      merchantId?: string | null;
+      id?: string;
+    }
   ): Promise<DbQrVersion> {
     const maxRes = await this.d1.prepare(
       'SELECT MAX(version_number) as max_ver FROM qr_versions'
     ).first<{ max_ver: number | null }>();
     const nextVer = (maxRes?.max_ver || 0) + 1;
     const now = new Date().toISOString();
-    const id = `qr_v${nextVer}_${Date.now()}`;
+    const id = metadata?.id || `qr_v${nextVer}_${Date.now()}`;
 
     await this.d1.prepare(`
-      INSERT INTO qr_versions (id, version_number, label, vpa, account_name, image_url, is_active, upload_operator_id, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
-    `).bind(id, nextVer, label, vpa, accountName, imageUrl, operatorId, now).run();
+      INSERT INTO qr_versions (
+        id, version_number, label, vpa, account_name, image_url,
+        r2_object_key, content_type, file_size_bytes, sha256_checksum,
+        merchant_category_code, merchant_id,
+        is_active, upload_operator_id, created_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+    `).bind(
+      id,
+      nextVer,
+      label,
+      vpa,
+      accountName,
+      imageUrl,
+      metadata?.r2ObjectKey || null,
+      metadata?.contentType || null,
+      metadata?.fileSizeBytes ?? null,
+      metadata?.sha256Checksum || null,
+      metadata?.merchantCategoryCode || null,
+      metadata?.merchantId || null,
+      operatorId,
+      now
+    ).run();
 
     return {
       id,
@@ -1615,6 +1675,12 @@ export class D1DatabaseAdapter {
       vpa,
       account_name: accountName,
       image_url: imageUrl,
+      r2_object_key: metadata?.r2ObjectKey || null,
+      content_type: metadata?.contentType || null,
+      file_size_bytes: metadata?.fileSizeBytes ?? null,
+      sha256_checksum: metadata?.sha256Checksum || null,
+      merchant_category_code: metadata?.merchantCategoryCode || null,
+      merchant_id: metadata?.merchantId || null,
       is_active: 0,
       upload_operator_id: operatorId,
       activation_notes: null,

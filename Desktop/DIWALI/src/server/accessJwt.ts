@@ -99,7 +99,7 @@ export async function verifyCloudflareAccessJwt(
   if (!teamDomain || !audience) {
     return {
       valid: false,
-      status: 500,
+      status: 401,
       error:
         'Cloudflare Access server configuration missing: CF_ACCESS_TEAM_DOMAIN and CF_ACCESS_AUD are required.',
     };
@@ -119,7 +119,7 @@ export async function verifyCloudflareAccessJwt(
     } catch (urlErr: any) {
       return {
         valid: false,
-        status: 500,
+        status: 401,
         error: `Failed to initialize Cloudflare Access JWKS endpoint: ${urlErr.message}`,
       };
     }

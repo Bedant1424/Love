@@ -357,5 +357,36 @@ describe('Cloudflare Access JWT Cryptographic Verification Suite', () => {
       expect(auth.status).toBe(401);
       expect(auth.error).toContain('signature');
     });
+
+    it('rejects revoked compromised token admin-jwt-session-nagarjuna across all environments', async () => {
+      const req = new Request('http://localhost/api/v1/admin/dashboard', {
+        headers: {
+          Authorization: 'Bearer admin-jwt-session-nagarjuna',
+        },
+      });
+
+      // Even in test/dev environment, it must fail with 401
+      const auth = await verifyAdminRequest(req, { ENVIRONMENT: 'test' });
+      expect(auth.authorized).toBe(false);
+      expect(auth.status).toBe(401);
+      expect(auth.error).toContain('Compromised administrative session token is permanently revoked');
+    });
+
+    it('rejects dev tokens when running on a hosted *.pages.dev preview URL', async () => {
+      const req = new Request('https://e7b281f5.nagarjuna-traders-test.pages.dev/api/v1/admin/dashboard', {
+        headers: {
+          Authorization: 'Bearer dev-admin-token',
+        },
+      });
+
+      const auth = await verifyAdminRequest(req, {
+        ENVIRONMENT: 'test',
+        RESTRICTED_TEST_MODE: 'true',
+      });
+      expect(auth.authorized).toBe(false);
+      expect(auth.status).toBe(401);
+      expect(auth.error).toContain('Cloudflare Access JWT Assertion is required');
+    });
   });
 });
+

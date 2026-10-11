@@ -8,6 +8,7 @@ import {
 } from '../utils/tokenPolicy';
 import { verifyCloudflareAccessJwt } from './accessJwt';
 import { getDb } from './db';
+import { storeQrImageInR2, getQrImageFromR2 } from './qrStorage';
 import {
   ApiResponse,
   CreateOrderRequest,
@@ -125,17 +126,41 @@ export async function verifyAdminRequest(
   request: Request,
   env?: any
 ): Promise<AdminAuthResult> {
-  const isProduction =
-    env?.ENVIRONMENT === 'production' ||
-    (!env?.ENVIRONMENT &&
-      typeof process !== 'undefined' &&
-      process.env?.NODE_ENV === 'production');
+  const url = (() => {
+    try {
+      return new URL(request.url);
+    } catch {
+      return null;
+    }
+  })();
+
+  const isHosted = Boolean(
+    (url &&
+      (url.hostname.includes('.pages.dev') ||
+        url.hostname.includes('workers.dev'))) ||
+      env?.IS_HOSTED === 'true' ||
+      env?.IS_HOSTED === true ||
+      env?.ENVIRONMENT === 'production' ||
+      (!env?.ENVIRONMENT &&
+        typeof process !== 'undefined' &&
+        process.env?.NODE_ENV === 'production')
+  );
 
   const cfAssertion = request.headers.get('Cf-Access-Jwt-Assertion');
   const authHeader = request.headers.get('Authorization') || '';
   const bearerToken = authHeader.startsWith('Bearer ')
     ? authHeader.slice(7).trim()
     : null;
+
+  // STRICT INVARIANT: The compromised token from previous tests is banned everywhere
+  if (bearerToken === 'admin-jwt-session-nagarjuna') {
+    return {
+      authorized: false,
+      operatorId: '',
+      error: 'Compromised administrative session token is permanently revoked.',
+      status: 401,
+    };
+  }
 
   const jwtToken =
     cfAssertion || (bearerToken && bearerToken.includes('.') ? bearerToken : null);
@@ -176,18 +201,28 @@ export async function verifyAdminRequest(
     };
   }
 
-  // In development and testing only: allow isolated dev tokens strictly if confirmed dev/test environment
+  // On any hosted environment (including preview *.pages.dev), fixed bearer tokens are strictly forbidden
+  if (isHosted) {
+    return {
+      authorized: false,
+      operatorId: '',
+      error:
+        'Cloudflare Access JWT Assertion is required on protected administrative routes in hosted environments.',
+      status: 401,
+    };
+  }
+
+  // In local development and automated test runner only: allow local dev token
   const isDevOrTest =
-    !isProduction &&
-    (env?.ENVIRONMENT === 'development' ||
-      env?.ENVIRONMENT === 'test' ||
-      (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') ||
-      !env?.ENVIRONMENT);
+    env?.ENVIRONMENT === 'development' ||
+    env?.ENVIRONMENT === 'test' ||
+    (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') ||
+    !env?.ENVIRONMENT;
 
   if (isDevOrTest) {
     if (
       bearerToken === 'dev-admin-token' ||
-      bearerToken === 'admin-jwt-session-nagarjuna'
+      bearerToken === 'local-test-token'
     ) {
       return {
         authorized: true,
@@ -199,9 +234,7 @@ export async function verifyAdminRequest(
   return {
     authorized: false,
     operatorId: '',
-    error: isProduction
-      ? 'Cloudflare Access JWT Assertion is required on protected administrative routes.'
-      : 'Admin authorization header required.',
+    error: 'Admin authorization header required.',
     status: 401,
   };
 }
@@ -882,25 +915,55 @@ export async function handleApiRequest(
       }
     }
 
+    // GET /api/v1/qr-images/:id
+    const qrImageMatch = path.match(/^\/api\/v1\/qr-images\/([^/]+)$/);
+    if (qrImageMatch && method === 'GET') {
+      const versionId = qrImageMatch[1];
+      const qrRecord = await db.getQrVersionById(versionId);
+      if (!qrRecord) {
+        return new Response('QR image not found', { status: 404 });
+      }
+
+      const objectKey = qrRecord.r2_object_key || `qr-assets/${versionId}.png`;
+      const asset = await getQrImageFromR2(objectKey, env);
+      if (!asset) {
+        return new Response('QR image asset not found in storage', { status: 404 });
+      }
+
+      return new Response(asset.bytes, {
+        status: 200,
+        headers: {
+          'Content-Type': qrRecord.content_type || asset.contentType || 'image/png',
+          'X-Content-Type-Options': 'nosniff',
+          'Cache-Control': 'private, no-transform, max-age=86400',
+          'Content-Security-Policy': "default-src 'none'",
+        },
+      });
+    }
+
     // ── PROTECTED ADMIN ENDPOINTS ────────────────────────────────────
 
     // Auth gate for all /api/v1/admin/* endpoints
     if (path.startsWith('/api/v1/admin/')) {
       // Allow dev passphrase login endpoint to issue session token in dev only
       if (path === '/api/v1/admin/auth/login' && method === 'POST') {
-        const isProduction =
+        const isHosted =
+          url.hostname.includes('.pages.dev') ||
+          url.hostname.includes('workers.dev') ||
+          env?.IS_HOSTED === 'true' ||
+          env?.IS_HOSTED === true ||
           env?.ENVIRONMENT === 'production' ||
           (typeof process !== 'undefined' &&
             process.env?.NODE_ENV === 'production');
 
-        if (isProduction) {
+        if (isHosted) {
           return jsonResponse(
             {
               success: false,
               error: {
                 code: 'PASSWORD_AUTH_DISABLED',
                 message:
-                  'Password-based login is disabled in production. Administration is protected by Cloudflare Access Zero Trust.',
+                  'Password-based login is disabled in hosted environments. Administration is protected by Cloudflare Access Zero Trust.',
               },
             },
             403,
@@ -908,7 +971,7 @@ export async function handleApiRequest(
           );
         }
 
-        const body = (await request.json()) as { passphrase?: string };
+        const body = (await request.json().catch(() => ({}))) as { passphrase?: string };
         if (
           body.passphrase === 'nagarjuna-demo-2026' ||
           body.passphrase === 'admin'
@@ -917,7 +980,7 @@ export async function handleApiRequest(
             {
               success: true,
               data: {
-                token: 'admin-jwt-session-nagarjuna',
+                token: 'dev-admin-token',
                 operatorId: 'DEV-ADMIN',
                 role: 'ADMINISTRATOR',
                 expiresIn: 43200,
@@ -1316,7 +1379,7 @@ export async function handleApiRequest(
 
       // POST /api/v1/admin/qr/upload
       if (path === '/api/v1/admin/qr/upload' && method === 'POST') {
-        const body = (await request.json()) as UploadQrRequest;
+        const body = (await request.json().catch(() => ({}))) as UploadQrRequest;
         if (
           !body.label?.trim() ||
           !body.vpa?.includes('@') ||
@@ -1337,60 +1400,50 @@ export async function handleApiRequest(
           );
         }
 
-        const uri = body.imageDataUri.trim();
-        const uriLower = uri.toLowerCase();
-        const containsScriptOrSvg =
-          uriLower.includes('<svg') ||
-          uriLower.includes('<script') ||
-          uriLower.includes('<html') ||
-          uriLower.includes('<?xml') ||
-          uriLower.includes('javascript:');
+        try {
+          const tempId = `qr_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+          const operator = body.operatorId || auth.operatorId || 'OP-ADMIN';
+          const storedAsset = await storeQrImageInR2(
+            tempId,
+            body.imageDataUri,
+            env,
+            operator
+          );
 
-        const isValidRasterImage =
-          !containsScriptOrSvg &&
-          (uri.startsWith('data:image/png;base64,') ||
-            uri.startsWith('data:image/jpeg;base64,') ||
-            uri.startsWith('data:image/webp;base64,') ||
-            uri.startsWith('/images/') ||
-            uri.startsWith('https://'));
-
-        if (!isValidRasterImage) {
+          const created = await db.uploadQrVersion(
+            body.label.trim(),
+            body.vpa.trim(),
+            body.accountName.trim(),
+            storedAsset.url,
+            operator,
+            {
+              id: tempId,
+              r2ObjectKey: storedAsset.objectKey,
+              contentType: storedAsset.contentType,
+              fileSizeBytes: storedAsset.sizeBytes,
+              sha256Checksum: storedAsset.sha256Checksum,
+            }
+          );
+          return jsonResponse({ success: true, data: created }, 201, true);
+        } catch (err: any) {
+          const msg = err?.message || 'Failed to process QR image upload';
+          const code = msg.includes('exceeds maximum 2MB')
+            ? 'FILE_TOO_LARGE'
+            : msg.includes('rejected') || msg.includes('signature') || msg.includes('XML') || msg.includes('script')
+            ? 'INVALID_IMAGE_TYPE'
+            : 'QR_UPLOAD_FAILED';
           return jsonResponse(
             {
               success: false,
               error: {
-                code: 'INVALID_IMAGE_TYPE',
-                message:
-                  'Only raster PNG, JPEG, and WebP images are allowed. SVG, XML, and scripts are strictly rejected.',
+                code,
+                message: msg,
               },
             },
             400,
             true
           );
         }
-
-        if (uri.length > 2_000_000) {
-          return jsonResponse(
-            {
-              success: false,
-              error: {
-                code: 'FILE_TOO_LARGE',
-                message: 'Image size exceeds maximum 2MB payload limit.',
-              },
-            },
-            400,
-            true
-          );
-        }
-
-        const created = await db.uploadQrVersion(
-          body.label.trim(),
-          body.vpa.trim(),
-          body.accountName.trim(),
-          uri,
-          body.operatorId || auth.operatorId
-        );
-        return jsonResponse({ success: true, data: created }, 201, true);
       }
 
       // POST /api/v1/admin/qr/:id/activate
