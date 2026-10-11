@@ -233,6 +233,75 @@ CREATE TABLE IF NOT EXISTS price_audit_logs (
 CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON price_audit_logs(entity_type, entity_id);
 ```
 
+### 2.7 `inventory_audit_logs` (Stock Movement Audit)
+```sql
+CREATE TABLE IF NOT EXISTS inventory_audit_logs (
+    id TEXT PRIMARY KEY,
+    variant_id TEXT NOT NULL,
+    action TEXT NOT NULL CHECK (action IN ('INITIAL_SEED', 'MANUAL_ADJUST', 'ORDER_RESERVED', 'ORDER_CANCELLED_RELEASED', 'ORDER_COMPLETED_COMMIT')),
+    quantity_delta INTEGER NOT NULL,
+    stock_before INTEGER NOT NULL,
+    stock_after INTEGER NOT NULL,
+    operator_id TEXT NOT NULL,
+    reason TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_inventory_audit_variant ON inventory_audit_logs(variant_id);
+```
+
+### 2.8 `qr_versions` (UPI QR Code Version History)
+```sql
+CREATE TABLE IF NOT EXISTS qr_versions (
+    id TEXT PRIMARY KEY,
+    version_number INTEGER NOT NULL UNIQUE,
+    label TEXT NOT NULL,
+    vpa TEXT NOT NULL,
+    account_name TEXT NOT NULL,
+    image_url TEXT NOT NULL,
+    is_active INTEGER NOT NULL DEFAULT 0,
+    upload_operator_id TEXT NOT NULL,
+    activation_notes TEXT,
+    activated_at TEXT,
+    deactivated_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_qr_versions_active ON qr_versions(is_active);
+```
+
+### 2.9 `payment_issues` (Support Assistance Requests)
+```sql
+CREATE TABLE IF NOT EXISTS payment_issues (
+    id TEXT PRIMARY KEY,
+    issue_reference TEXT NOT NULL UNIQUE,
+    order_reference TEXT,
+    customer_name TEXT NOT NULL,
+    customer_mobile TEXT NOT NULL,
+    issue_type TEXT NOT NULL CHECK (issue_type IN ('QR_LIMIT_REACHED', 'QR_NOT_SCANNING', 'APP_CANNOT_OPEN', 'PAYMENT_APP_ERROR', 'UTR_SUBMISSION_FAILED', 'OTHER')),
+    description TEXT,
+    status TEXT NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN', 'IN_PROGRESS', 'RESOLVED', 'DISMISSED')),
+    staff_notes TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_payment_issues_status ON payment_issues(status);
+```
+
+### 2.10 `customers` (Normalized Directory)
+```sql
+CREATE TABLE IF NOT EXISTS customers (
+    id TEXT PRIMARY KEY,
+    mobile_number TEXT NOT NULL UNIQUE,
+    full_name TEXT NOT NULL,
+    total_orders INTEGER NOT NULL DEFAULT 1,
+    lifetime_spent_paise INTEGER NOT NULL DEFAULT 0,
+    last_order_date TEXT,
+    notes TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_customers_mobile ON customers(mobile_number);
+```
+
 ---
 
 ## 3. Tiered Token Calculation Specification

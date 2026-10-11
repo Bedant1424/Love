@@ -281,53 +281,65 @@ Assigns exact prices in paise to specific sizes/variants.
 ## 15. Order List & Filters (`/admin/orders`)
 
 ### 15.1 Purpose
-Triage and search orders.
+Triage, search, and manage customer orders.
 
 ### 15.2 Layout
-- Filter Bar: Date Range, Operational Status (`ALL`, `SUBMITTED`, `CONFIRMED`, `READY`, `COMPLETED`, `CANCELLED`), Payment Status (`ALL`, `UNPAID`, `PENDING_VERIFICATION`, `VERIFIED_TOKEN`, `VERIFIED_FULL`).
-- Search Bar: Search by Order Reference (`NT-...`), Customer Phone, or UTR.
-- Order Table: Order ID, Date/Time, Customer Name, Mobile, Subtotal, Token, Status Badges, Action button ("View Details").
+- Filter Bar: Operational Status (`ALL`, `SUBMITTED`, `CONFIRMED`, `PREPARING`, `READY_FOR_PICKUP`, `COMPLETED`).
+- Search Bar: Search by Order Reference (`NT-...`), Customer Phone, or Name.
+- Order Table: Reference, Customer Name & Mobile, Items count, Subtotal, Token, Remaining Balance, 12-Digit UTR, UTR Status (`RECORDED_UNVERIFIED`), Operational Status, Manage Action.
 
 ---
 
-## 16. Order Details Modal / Page (`/admin/orders/{id}`)
+## 16. Order Details Modal (`/admin/orders/{id}`)
 
 ### 16.1 Purpose
 Complete operational view of an individual customer order.
 
 ### 16.2 Layout
-- Customer Information: Name, Phone (with one-click Call / WhatsApp link), Pickup preference.
-- Line Items Table: Frozen price snapshots, quantities, subtotals.
-- Audit Log Timeline: Shows timestamp and operator for every status change.
-- Status Action Dropdown: Enforces allowed state transitions (e.g. cannot transition to `CONFIRMED` until payment is `VERIFIED`).
+- Customer Information: Name, Mobile, Fulfilment preference (`COUNTER_PICKUP`), Customer notes.
+- Line Items Snapshot: Product name, variant size, quantity, unit price, line subtotal.
+- Financial Breakdown: Subtotal, advance token required, remaining balance payable at counter.
+- UTR Submission Card: Customer 12-digit UTR, submission timestamp, and truthful notice that payment is unverified.
+- Operational Status Progression: Advance through `CONFIRMED` → `PREPARING` → `READY_FOR_PICKUP` → `COMPLETED`.
 
 ---
 
-## 17. Payment Verification Interface (`/admin/orders/{id}/verify-payment`)
+## 17. Inventory Management & Stock Adjustments (`/admin/inventory`)
 
 ### 17.1 Purpose
-Reconcile customer-submitted UTR with merchant bank statements.
+Manage physical on-hand stock, view active reservations, and log stock adjustments.
 
 ### 17.2 Layout
-- Expected Token Amount: `₹XXX.00` (`XXXXX paise`).
-- Customer Submitted UTR: `123456789012` (with "Copy UTR" button).
-- Operator Verification Controls:
-  - Button 1: "Approve Payment (Mark Verified)" -> Prompts for confirmation.
-  - Button 2: "Flag Invalid UTR / Mismatch" -> Opens note field.
-  - Button 3: "Record Partial / Full Cash Receipt" (Counter adjustment).
-- History Record: Captures operator identity and timestamp permanently.
+- Stats Bar: Total variant count, Low Stock alert count.
+- Filter Bar: Toggle between All Variants and Low Stock Alerts Only; instant search by variant/product name.
+- Stock Table: Variant ID, Product & Variant name, Current Stock, Reserved Stock, Available Stock, Threshold, Low Stock Badge, Adjust Action.
+- Stock Adjustment Modal: Input for new physical count, mandatory audit reason (e.g. "Physical count verification", "Restock delivery"), operator ID.
+- Movement Audit Stream: Chronological log of stock deltas and reasons.
 
 ---
 
-## 18. Inventory Adjustment (`/admin/inventory`)
+## 18. QR Rotation, Support Issues & Sales Analytics (`/admin`)
 
-### 18.1 Purpose
-Real-time stock auditing during peak sales.
+### 18.1 QR Versions & Rotation
+- Active QR banner with VPA, Account Name, and activation timestamp.
+- Version history table with status badges and activate/deactivate controls.
+- Draft QR Upload Modal: Label, VPA, Account Name, raster image picker (PNG/JPEG only; SVG strictly rejected).
 
-### 18.2 Layout
-- Quick-edit tabular grid for fast inline number updates.
-- Low stock highlight (< 5 units).
-- Instant "Mark Out of Stock" toggle button.
+### 18.2 Payment Support Tickets (`ISS-XXXX`)
+- Support queue for customers reporting payment difficulties.
+- Filter by status (`OPEN`, `IN_PROGRESS`, `RESOLVED`, `DISMISSED`).
+- Manage Ticket Modal: Status dropdown, customer details, and staff contact notes.
+
+### 18.3 Customer Directory & Purchase History
+- Searchable customer directory with lifetime spend (₹), total orders, and contact details.
+- Customer Profile Drawer: Complete historical order list for returning customers.
+
+### 18.4 Sales Reports & RFC 4180 CSV Export
+- Range selectors: Today, 7 Days, 30 Days, All Time.
+- Summary Cards: Total Orders, Gross Order Value, Verified Bank Funds (₹0.00 — Zero Hallucinated Revenue), Average Order Value.
+- Daily Trend Table: Date, orders count, gross booked value, verified funds.
+- Product Sales Breakdown Table: Top items ordered and revenue generated.
+- CSV Export: Download RFC 4180 formatted CSV spreadsheet.
 
 ---
 

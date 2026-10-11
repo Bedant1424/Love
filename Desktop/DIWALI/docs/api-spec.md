@@ -220,13 +220,37 @@ Submits a 12-digit UTR reference in restricted test mode.
 }
 ```
 
+### 2.7 `POST /api/v1/payment-issues`
+Allows customers experiencing payment troubles to submit assistance requests.
+- **Request Body:**
+```json
+{
+  "orderReference": "NT-4829",
+  "customerName": "Ramesh Kumar",
+  "customerMobile": "9876543210",
+  "issueType": "QR_LIMIT_REACHED",
+  "description": "GPay daily bank limit reached"
+}
+```
+- **Response `201 Created`:**
+```json
+{
+  "success": true,
+  "data": {
+    "issueReference": "ISS-B8A1",
+    "message": "Payment issue reported successfully. Store staff will assist you.",
+    "status": "OPEN"
+  }
+}
+```
+
 ---
 
 ## 3. Protected Admin Endpoints
 
 All administrative endpoints require authentication:
 - In production: Valid Cloudflare Access JWT Assertion (`Cf-Access-Jwt-Assertion`).
-- In local development: Isolated Bearer token (`dev-admin-token`).
+- In local development: Isolated Bearer token (`dev-admin-token` or `admin-jwt-session-nagarjuna`).
 - Requests without credentials return `401 Unauthorized`.
 
 ### 3.1 `GET /api/v1/admin/dashboard`
@@ -252,3 +276,26 @@ Manages variant pricing within printed catalogue bounds, requiring audit justifi
 
 ### 3.6 `GET /api/v1/admin/audit-logs`
 Audit log stream tracking price changes, overrides, operational status changes, and order events.
+
+### 3.7 `GET /api/v1/admin/inventory` & `POST /api/v1/admin/inventory/adjust` & `GET /api/v1/admin/inventory/audit-logs`
+- `GET /api/v1/admin/inventory`: Returns variants with physical `current_stock`, `reserved_stock`, `available_stock`, `low_stock_threshold`, and `is_low_stock` flag.
+- `POST /api/v1/admin/inventory/adjust`: Manually adjusts on-hand physical stock with required operator and audit reason.
+- `GET /api/v1/admin/inventory/audit-logs`: Returns chronological inventory movement log.
+
+### 3.8 `GET /api/v1/admin/qr`, `POST /api/v1/admin/qr/upload`, `POST /api/v1/admin/qr/:id/activate`, `POST /api/v1/admin/qr/:id/deactivate`
+- `GET /api/v1/admin/qr`: Returns list of all QR versions with active indicator.
+- `POST /api/v1/admin/qr/upload`: Uploads draft QR version with raster image (PNG/JPEG; SVG strictly rejected).
+- `POST /api/v1/admin/qr/:id/activate`: Atomically activates version and deactivates prior active versions.
+- `POST /api/v1/admin/qr/:id/deactivate`: Deactivates version.
+
+### 3.9 `GET /api/v1/admin/payment-issues` & `PATCH /api/v1/admin/payment-issues/:id`
+- `GET /api/v1/admin/payment-issues`: Lists customer payment support tickets with optional `?status=` filter.
+- `PATCH /api/v1/admin/payment-issues/:id`: Updates ticket status (`OPEN`, `IN_PROGRESS`, `RESOLVED`, `DISMISSED`) and records staff contact notes.
+
+### 3.10 `GET /api/v1/admin/customers` & `GET /api/v1/admin/customers/:id`
+- `GET /api/v1/admin/customers`: Returns customer directory with lifetime spend, total orders, and search by mobile or name.
+- `GET /api/v1/admin/customers/:id`: Returns customer details and full historical order list.
+
+### 3.11 `GET /api/v1/admin/reports/sales` & `GET /api/v1/admin/reports/export`
+- `GET /api/v1/admin/reports/sales?range=(today|7d|30d|all)`: Returns sales analytics cleanly segregating Gross Order Value from Verified Bank Funds (Zero Hallucinated Revenue invariant).
+- `GET /api/v1/admin/reports/export?range=(today|7d|30d|all)`: Returns RFC 4180 CSV export with header `Content-Type: text/csv`.

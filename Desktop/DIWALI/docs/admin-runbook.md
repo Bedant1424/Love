@@ -79,15 +79,57 @@ When the customer visits the counter to collect their order:
 
 ---
 
-## 6. Cloudflare Deployment, Operations & Recovery
+## 6. Inventory & Stock Management
 
-### 6.1 Architecture Overview
+Staff can manage physical inventory in the **Inventory & Stock** tab:
+1. **Stock Tracking:** Real-time visibility into `Current Stock` (on-hand physical stock), `Reserved` (stock in unfulfilled orders), and `Available` (`Current - Reserved`).
+2. **Low-Stock Warnings:** Items with available stock $\le$ `low_stock_threshold` are badged with a prominent red `LOW STOCK ALERT`.
+3. **Manual Adjustments:** Click **Adjust** on any variant to update the on-hand physical stock count. An audit reason (e.g. *"Physical count verification"*, *"Restock shipment arrived"*) is mandatory and recorded in `inventory_audit_logs`.
+4. **Movement Audit Trail:** The bottom drawer displays all stock events chronologically (`MANUAL_ADJUST`, `ORDER_RESERVED`, `ORDER_CANCELLED_RELEASED`, `ORDER_COMPLETED_COMMIT`).
+
+---
+
+## 7. UPI QR Code Management & Version Rotation
+
+1. **Active QR Fixture:** View the currently active QR version with VPA, Account Name, and activation timestamp.
+2. **Uploading Draft QR:**
+   - Click **+ Upload New QR Version**.
+   - Enter Label (e.g. *"Counter Terminal 2"*), VPA ID, and Account Name.
+   - Select a QR image file. **Format Restriction:** Only raster image formats (`image/png`, `image/jpeg`) are accepted. SVG and non-raster formats are strictly rejected.
+   - Click **Upload Draft QR**. The version is created in draft mode (`is_active = 0`).
+3. **Activating a Version:** Click **Activate** on any draft QR version and provide activation notes. The system atomically deactivates previous versions and activates the target version.
+
+---
+
+## 8. Customer Payment Support Tickets
+
+When a customer encounters an issue scanning the QR or completing their token transfer, they submit a report through the "Facing an issue?" modal:
+1. **Support Queue:** Open the **Payment Issues** tab to view open tickets (`ISS-XXXX`).
+2. **Status Toggles:** Staff can toggle status: `OPEN` $\rightarrow$ `IN_PROGRESS` $\rightarrow$ `RESOLVED` or `DISMISSED`.
+3. **Staff Notes:** Record internal notes (e.g. *"Assisted customer with cash at counter"* or *"Customer re-scanned successfully"*).
+
+---
+
+## 9. Customer Directory & Sales Analytics
+
+1. **Customer Directory:** View customer records sorted by lifetime spend, total orders, and contact details. Click **View History** to inspect an individual customer's entire order history.
+2. **Sales Analytics:**
+   - Filter by date range: `Today`, `7 Days`, `30 Days`, `All Time`.
+   - **Zero Hallucinated Revenue Invariant:** Unverified customer UTR references are strictly segregated from verified bank receipts. Verified funds remain ₹0.00 until authenticated against bank statement entries.
+   - **Daily Trends & Product Breakdown:** Inspect daily sales patterns and top-performing products.
+   - **RFC 4180 CSV Export:** Click **⬇ Download CSV** to generate a clean, spreadsheet-ready CSV report for accounting.
+
+---
+
+## 10. Cloudflare Deployment, Operations & Recovery
+
+### 10.1 Architecture Overview
 - **Hosting:** Cloudflare Pages (Static Assets + Vite React Bundle)
 - **Edge API Backend:** Cloudflare Pages Functions (`functions/api/[[route]].ts`) forwarding to `handleApiRequest(request, env)`.
 - **Database:** Cloudflare D1 distributed SQLite database bound to `env.DB`.
 - **Zero Trust Protection:** Cloudflare Access protecting `/admin` and `/api/v1/admin/*` with cryptographic RS256 JWT signature verification via `jose`.
 
-### 6.2 Environments & Wrangler Configuration (`wrangler.jsonc`)
+### 10.2 Environments & Wrangler Configuration (`wrangler.jsonc`)
 Two environments are maintained with strict fail-closed segregation:
 
 | Setting | Production (`wrangler.jsonc`) | Restricted Test (`env.test`) | Local Development |
@@ -104,7 +146,7 @@ Two environments are maintained with strict fail-closed segregation:
 > **Production Fail-Closed Invariant:**
 > Client-supplied headers (such as `X-Restricted-Test-Mode`) are completely ignored. In production, the system strictly disables test mode, hides test QR fixtures, and rejects public UTR submissions. Real payment collection remains disabled until explicit owner authorization.
 
-### 6.3 Cloudflare Secret Management
+### 10.3 Cloudflare Secret Management
 Secrets and Zero Trust credentials must never be committed to git. Configure via Wrangler CLI:
 
 ```bash
@@ -118,12 +160,13 @@ npx wrangler secret put CF_ACCESS_AUD
 npx wrangler secret put CF_ACCESS_ALLOWED_ADMINS
 ```
 
-### 6.4 D1 Database Migrations Workflow
+### 10.4 D1 Database Migrations Workflow
 Database migrations are strictly sequential, parameterised, and idempotent:
 - `0001_initial_schema.sql`: Base categories, products, variants, audit logs, and settings.
 - `0002_seed_catalogue.sql`: 6 authentic categories and 26 poster variants (`INSERT OR IGNORE`).
 - `0003_payment_flow_schema.sql`: Payment submissions and status history tables.
 - `0004_orders_schema_alignment.sql`: Canonical orders and items schema with `CHECK (subtotal_paise >= 5000)`.
+- `0005_inventory_and_qr_management.sql`: Inventory stock tracking, QR versions, payment support issues, and customer directory.
 
 **Commands:**
 ```bash
