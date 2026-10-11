@@ -151,7 +151,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 quantity={currentQuantity}
                 onIncrement={() => activeVariant && onIncrement(product.id, activeVariant.id)}
                 onDecrement={() => activeVariant && onDecrement(product.id, activeVariant.id)}
-                ariaLabelPrefix={`${product.name} ${activeVariant?.name || ''}`}
+                productName={`${product.name} ${activeVariant?.name || ''}`}
               />
             ) : (
               <button

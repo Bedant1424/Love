@@ -2,9 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { apiClient } from '../services/apiClient';
 import {
   AdminDashboardKPIs,
+  DbCustomerDirectoryItem,
+  DbInventoryAuditLog,
+  DbInventoryItem,
+  DbPaymentIssue,
+  DbQrVersion,
   DemoOrderRecordWithItems,
   OperationalStatus,
+  PaymentIssueStatus,
   PriceAuditLog,
+  SalesReportResponse,
 } from '../server/types';
 import { ProductVariant } from '../types/catalogue';
 import { formatPaiseToRupees } from '../utils/formatters';
@@ -13,7 +20,17 @@ interface AdminViewProps {
   onBackToCustomerSite: () => void;
 }
 
-type AdminTab = 'dashboard' | 'orders' | 'catalogue' | 'audit' | 'settings';
+type AdminTab =
+  | 'dashboard'
+  | 'orders'
+  | 'inventory'
+  | 'qr'
+  | 'support'
+  | 'customers'
+  | 'reports'
+  | 'catalogue'
+  | 'audit'
+  | 'settings';
 
 export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) => {
   // Authentication State
@@ -25,28 +42,63 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
   // Navigation State
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
 
-  // Data State
+  // Core Data State
   const [kpis, setKpis] = useState<AdminDashboardKPIs | null>(null);
   const [orders, setOrders] = useState<DemoOrderRecordWithItems[]>([]);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [auditLogs, setAuditLogs] = useState<PriceAuditLog[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<DbInventoryItem[]>([]);
+  const [inventoryAuditLogs, setInventoryAuditLogs] = useState<DbInventoryAuditLog[]>([]);
+  const [qrVersions, setQrVersions] = useState<DbQrVersion[]>([]);
+  const [paymentIssues, setPaymentIssues] = useState<DbPaymentIssue[]>([]);
+  const [customers, setCustomers] = useState<DbCustomerDirectoryItem[]>([]);
+  const [salesReport, setSalesReport] = useState<SalesReportResponse | null>(null);
+
   const [loading, setLoading] = useState<boolean>(false);
-  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(
-    null
-  );
+  const [notification, setNotification] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
   // Filters State
   const [orderStatusFilter, setOrderStatusFilter] = useState<string>('all');
   const [orderSearchQuery, setOrderSearchQuery] = useState<string>('');
+  const [inventorySearchQuery, setInventorySearchQuery] = useState<string>('');
+  const [inventoryLowStockOnly, setInventoryLowStockOnly] = useState<boolean>(false);
+  const [issueStatusFilter, setIssueStatusFilter] = useState<string>('all');
+  const [customerSearchQuery, setCustomerSearchQuery] = useState<string>('');
+  const [reportRange, setReportRange] = useState<'today' | '7d' | '30d' | 'all'>('today');
 
-  // Selected Order for Modal
+  // Modals & Selected Items
   const [selectedOrder, setSelectedOrder] = useState<DemoOrderRecordWithItems | null>(null);
-
-  // Price Editing Modal State
   const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null);
   const [newPriceRupees, setNewPriceRupees] = useState<string>('');
   const [overrideReason, setOverrideReason] = useState<string>('');
   const [allowOverride, setAllowOverride] = useState<boolean>(false);
+
+  // Inventory Adjustment Modal
+  const [adjustingItem, setAdjustingItem] = useState<DbInventoryItem | null>(null);
+  const [adjustNewStock, setAdjustNewStock] = useState<string>('');
+  const [adjustReason, setAdjustReason] = useState<string>('Physical count verification');
+
+  // QR Upload Form
+  const [showQrUploadModal, setShowQrUploadModal] = useState<boolean>(false);
+  const [uploadQrLabel, setUploadQrLabel] = useState<string>('');
+  const [uploadQrVpa, setUploadQrVpa] = useState<string>('');
+  const [uploadQrAccountName, setUploadQrAccountName] = useState<string>('');
+  const [uploadQrImageDataUri, setUploadQrImageDataUri] = useState<string>('');
+  const [uploadQrError, setUploadQrError] = useState<string>('');
+
+  // Payment Issue Manage Modal
+  const [managingIssue, setManagingIssue] = useState<DbPaymentIssue | null>(null);
+  const [issueNewStatus, setIssueNewStatus] = useState<PaymentIssueStatus>('IN_PROGRESS');
+  const [issueStaffNotes, setIssueStaffNotes] = useState<string>('');
+
+  // Customer Detail Drawer
+  const [selectedCustomerDetail, setSelectedCustomerDetail] = useState<{
+    customer: DbCustomerDirectoryItem;
+    orders: DemoOrderRecordWithItems[];
+  } | null>(null);
 
   const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
     setNotification({ type, message });
@@ -56,16 +108,40 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
   const loadAllData = async () => {
     setLoading(true);
     try {
-      const [kpisData, ordersData, variantsData, auditData] = await Promise.all([
+      const [
+        kpisData,
+        ordersData,
+        variantsData,
+        auditData,
+        invData,
+        invLogsData,
+        qrData,
+        issuesData,
+        custData,
+        reportData,
+      ] = await Promise.all([
         apiClient.getDashboardKPIs(),
         apiClient.getAdminOrders(),
         apiClient.getAdminVariants(),
         apiClient.getAuditLogs(),
+        apiClient.getAdminInventory().catch(() => []),
+        apiClient.getInventoryAuditLogs().catch(() => []),
+        apiClient.getAdminQrVersions().catch(() => []),
+        apiClient.getAdminPaymentIssues().catch(() => []),
+        apiClient.getAdminCustomers().catch(() => []),
+        apiClient.getAdminSalesReport(reportRange).catch(() => null),
       ]);
+
       setKpis(kpisData);
       setOrders(ordersData);
       setVariants(variantsData);
       setAuditLogs(auditData);
+      setInventoryItems(invData);
+      setInventoryAuditLogs(invLogsData);
+      setQrVersions(qrData);
+      setPaymentIssues(issuesData);
+      setCustomers(custData);
+      setSalesReport(reportData);
     } catch (err: any) {
       showNotification(err?.message || 'Failed to refresh admin data', 'error');
     } finally {
@@ -77,7 +153,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
     if (isAuthenticated) {
       loadAllData();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, reportRange]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,6 +222,173 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
     }
   };
 
+  // Inventory Stock Adjustment
+  const openStockAdjustModal = (item: DbInventoryItem) => {
+    setAdjustingItem(item);
+    setAdjustNewStock(item.current_stock.toString());
+    setAdjustReason('Physical count verification');
+  };
+
+  const handleSaveStockAdjustment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adjustingItem) return;
+
+    const stockNum = parseInt(adjustNewStock, 10);
+    if (isNaN(stockNum) || stockNum < 0) {
+      showNotification('Stock level must be a non-negative number.', 'error');
+      return;
+    }
+
+    try {
+      await apiClient.adjustInventoryStock(
+        adjustingItem.variant_id,
+        stockNum,
+        operatorId,
+        adjustReason
+      );
+      showNotification(`Stock for variant adjusted to ${stockNum} units.`);
+      setAdjustingItem(null);
+      loadAllData();
+    } catch (err: any) {
+      showNotification(err?.message || 'Failed to adjust stock', 'error');
+    }
+  };
+
+  // QR Version Management
+  const handleQrImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUploadQrError('');
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/png') && !file.type.startsWith('image/jpeg')) {
+      setUploadQrError('Only PNG and JPEG raster image formats are allowed (SVG rejected).');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (uploadEvt) => {
+      const result = uploadEvt.target?.result as string;
+      if (result) {
+        setUploadQrImageDataUri(result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUploadNewQr = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUploadQrError('');
+
+    if (!uploadQrLabel.trim() || !uploadQrVpa.trim() || !uploadQrAccountName.trim()) {
+      setUploadQrError('Please fill in all QR metadata fields.');
+      return;
+    }
+
+    if (!uploadQrImageDataUri) {
+      setUploadQrError('Please choose a valid PNG or JPEG image file.');
+      return;
+    }
+
+    try {
+      await apiClient.uploadAdminQr({
+        label: uploadQrLabel.trim(),
+        vpa: uploadQrVpa.trim(),
+        accountName: uploadQrAccountName.trim(),
+        imageDataUri: uploadQrImageDataUri,
+        operatorId,
+      });
+
+      showNotification('New draft QR version uploaded successfully.');
+      setShowQrUploadModal(false);
+      setUploadQrLabel('');
+      setUploadQrVpa('');
+      setUploadQrAccountName('');
+      setUploadQrImageDataUri('');
+      loadAllData();
+    } catch (err: any) {
+      setUploadQrError(err?.message || 'Upload failed.');
+    }
+  };
+
+  const handleActivateQrVersion = async (qrId: string) => {
+    const notes = window.prompt('Enter optional activation notes / change reason:') || undefined;
+    try {
+      await apiClient.activateAdminQr(qrId, notes);
+      showNotification('QR version activated successfully.');
+      loadAllData();
+    } catch (err: any) {
+      showNotification(err?.message || 'Failed to activate QR version', 'error');
+    }
+  };
+
+  const handleDeactivateQrVersion = async (qrId: string) => {
+    if (!window.confirm('Are you sure you want to deactivate this QR version?')) return;
+    try {
+      await apiClient.deactivateAdminQr(qrId);
+      showNotification('QR version deactivated.');
+      loadAllData();
+    } catch (err: any) {
+      showNotification(err?.message || 'Failed to deactivate QR version', 'error');
+    }
+  };
+
+  // Payment Support Issue Actions
+  const openManageIssueModal = (issue: DbPaymentIssue) => {
+    setManagingIssue(issue);
+    setIssueNewStatus(issue.status);
+    setIssueStaffNotes(issue.staff_notes || '');
+  };
+
+  const handleSavePaymentIssue = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!managingIssue) return;
+
+    try {
+      await apiClient.updatePaymentIssueStatus(
+        managingIssue.id,
+        issueNewStatus,
+        issueStaffNotes.trim() || undefined
+      );
+      showNotification(`Ticket ${managingIssue.issue_reference} marked as ${issueNewStatus}.`);
+      setManagingIssue(null);
+      loadAllData();
+    } catch (err: any) {
+      showNotification(err?.message || 'Failed to update issue status', 'error');
+    }
+  };
+
+  // Customer Detail Drawer
+  const openCustomerDetail = async (custId: string) => {
+    try {
+      const details = await apiClient.getAdminCustomerDetails(custId);
+      setSelectedCustomerDetail(details);
+    } catch (err: any) {
+      showNotification(err?.message || 'Failed to load customer profile', 'error');
+    }
+  };
+
+  // Export Sales Report CSV
+  const handleExportCsv = async () => {
+    try {
+      const csvText = await apiClient.exportAdminSalesReportCsv(reportRange);
+      const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute(
+        'download',
+        `nagarjuna-sales-${reportRange}-${new Date().toISOString().slice(0, 10)}.csv`
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showNotification('Sales report exported to CSV successfully.');
+    } catch (err: any) {
+      showNotification(err?.message || 'Failed to export CSV', 'error');
+    }
+  };
+
   // Filtered orders list
   const filteredOrders = orders.filter((o) => {
     if (orderStatusFilter !== 'all' && o.operational_status !== orderStatusFilter) {
@@ -160,6 +403,46 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
     }
     return true;
   });
+
+  // Filtered inventory list
+  const filteredInventory = inventoryItems.filter((it) => {
+    if (inventoryLowStockOnly && !it.is_low_stock) {
+      return false;
+    }
+    if (inventorySearchQuery.trim()) {
+      const q = inventorySearchQuery.toLowerCase();
+      const matchId = it.variant_id.toLowerCase().includes(q);
+      const matchName = it.variant_name.toLowerCase().includes(q);
+      const matchProd = it.product_name.toLowerCase().includes(q);
+      return matchId || matchName || matchProd;
+    }
+    return true;
+  });
+
+  // Filtered payment issues
+  const filteredIssues = paymentIssues.filter((iss) => {
+    if (issueStatusFilter !== 'all' && iss.status !== issueStatusFilter) {
+      return false;
+    }
+    return true;
+  });
+
+  // Filtered customers list
+  const filteredCustomers = customers.filter((c) => {
+    if (customerSearchQuery.trim()) {
+      const q = customerSearchQuery.toLowerCase();
+      return (
+        c.full_name.toLowerCase().includes(q) ||
+        c.mobile_number.includes(q)
+      );
+    }
+    return true;
+  });
+
+  const lowStockCount = inventoryItems.filter((i) => i.is_low_stock).length;
+  const openIssuesCount = paymentIssues.filter(
+    (i) => i.status === 'OPEN' || i.status === 'IN_PROGRESS'
+  ).length;
 
   // If not authenticated, render Login Screen
   if (!isAuthenticated) {
@@ -253,7 +536,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={loadAllData}
             disabled={loading}
@@ -277,22 +560,23 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
       </div>
 
       {/* Admin Nav Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-3 border-b border-white/10">
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-3 border-b border-white/10 text-xs font-semibold">
         <button
           onClick={() => setActiveTab('dashboard')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
+          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors ${
             activeTab === 'dashboard'
-              ? 'bg-festive-marigold text-black'
+              ? 'bg-festive-marigold text-black font-bold'
               : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
           }`}
         >
-          Overview & KPIs
+          Overview &amp; KPIs
         </button>
+
         <button
           onClick={() => setActiveTab('orders')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
             activeTab === 'orders'
-              ? 'bg-festive-marigold text-black'
+              ? 'bg-festive-marigold text-black font-bold'
               : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
           }`}
         >
@@ -301,31 +585,102 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
             {orders.length}
           </span>
         </button>
+
         <button
-          onClick={() => setActiveTab('catalogue')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
-            activeTab === 'catalogue'
-              ? 'bg-festive-marigold text-black'
+          onClick={() => setActiveTab('inventory')}
+          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+            activeTab === 'inventory'
+              ? 'bg-festive-marigold text-black font-bold'
               : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
           }`}
         >
-          Catalogue & Pricing ({variants.length})
+          <span>Inventory &amp; Stock</span>
+          {lowStockCount > 0 && (
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-rose-900/80 text-rose-200 border border-rose-700/60">
+              {lowStockCount} LOW
+            </span>
+          )}
         </button>
+
+        <button
+          onClick={() => setActiveTab('qr')}
+          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+            activeTab === 'qr'
+              ? 'bg-festive-marigold text-black font-bold'
+              : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
+          }`}
+        >
+          <span>QR Versions</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-emerald-950/60 text-emerald-300 border border-emerald-800/40">
+            Active v{qrVersions.find((q) => q.is_active === 1)?.version_number || 1}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('support')}
+          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+            activeTab === 'support'
+              ? 'bg-festive-marigold text-black font-bold'
+              : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
+          }`}
+        >
+          <span>Payment Issues</span>
+          {openIssuesCount > 0 && (
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-amber-900/80 text-amber-200">
+              {openIssuesCount} OPEN
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setActiveTab('customers')}
+          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+            activeTab === 'customers'
+              ? 'bg-festive-marigold text-black font-bold'
+              : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
+          }`}
+        >
+          <span>Customers ({customers.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('reports')}
+          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors ${
+            activeTab === 'reports'
+              ? 'bg-festive-marigold text-black font-bold'
+              : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
+          }`}
+        >
+          Sales Reports
+        </button>
+
+        <button
+          onClick={() => setActiveTab('catalogue')}
+          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors ${
+            activeTab === 'catalogue'
+              ? 'bg-festive-marigold text-black font-bold'
+              : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
+          }`}
+        >
+          Catalogue &amp; Pricing ({variants.length})
+        </button>
+
         <button
           onClick={() => setActiveTab('audit')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
+          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors ${
             activeTab === 'audit'
-              ? 'bg-festive-marigold text-black'
+              ? 'bg-festive-marigold text-black font-bold'
               : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
           }`}
         >
           Audit Logs ({auditLogs.length})
         </button>
+
         <button
           onClick={() => setActiveTab('settings')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
+          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors ${
             activeTab === 'settings'
-              ? 'bg-festive-marigold text-black'
+              ? 'bg-festive-marigold text-black font-bold'
               : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
           }`}
         >
@@ -336,13 +691,13 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
       {/* ── TAB 1: OVERVIEW & KPIS ─────────────────────────────────── */}
       {activeTab === 'dashboard' && kpis && (
         <div className="py-6 space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             <div className="bg-bg-surface border border-white/10 rounded-2xl p-4">
               <p className="text-xs font-medium text-content-muted">Total Orders</p>
               <p className="text-2xl font-bold font-mono text-content-primary mt-1">
                 {kpis.totalOrders}
               </p>
-              <p className="text-[11px] text-content-muted mt-1">Total reservations placed</p>
+              <p className="text-[11px] text-content-muted mt-1">Total reservations</p>
             </div>
 
             <div className="bg-bg-surface border border-amber-500/20 rounded-2xl p-4">
@@ -357,16 +712,41 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                 }}
                 className="text-[11px] text-amber-400 hover:underline mt-1 block"
               >
-                View orders queue →
+                View queue →
               </button>
             </div>
 
-            <div className="bg-bg-surface border border-blue-500/20 rounded-2xl p-4">
-              <p className="text-xs font-medium text-blue-400">Awaiting UTR</p>
-              <p className="text-2xl font-bold font-mono text-blue-300 mt-1">
-                {kpis.awaitingUtrCount}
+            <div className="bg-bg-surface border border-emerald-500/20 rounded-2xl p-4">
+              <p className="text-xs font-medium text-emerald-400">Verified Bank Funds</p>
+              <p className="text-2xl font-bold font-mono text-emerald-300 mt-1">₹0.00</p>
+              <p className="text-[11px] text-emerald-400/80 mt-1">Zero Hallucinated Revenue</p>
+            </div>
+
+            <div className="bg-bg-surface border border-rose-500/20 rounded-2xl p-4">
+              <p className="text-xs font-medium text-rose-400">Low Stock Alerts</p>
+              <p className="text-2xl font-bold font-mono text-rose-300 mt-1">{lowStockCount}</p>
+              <button
+                onClick={() => {
+                  setInventoryLowStockOnly(true);
+                  setActiveTab('inventory');
+                }}
+                className="text-[11px] text-rose-400 hover:underline mt-1 block"
+              >
+                Manage stock →
+              </button>
+            </div>
+
+            <div className="bg-bg-surface border border-amber-500/20 rounded-2xl p-4">
+              <p className="text-xs font-medium text-amber-300">Open Support Issues</p>
+              <p className="text-2xl font-bold font-mono text-amber-200 mt-1">
+                {openIssuesCount}
               </p>
-              <p className="text-[11px] text-content-muted mt-1">Pending submission</p>
+              <button
+                onClick={() => setActiveTab('support')}
+                className="text-[11px] text-amber-300 hover:underline mt-1 block"
+              >
+                Support queue →
+              </button>
             </div>
 
             <div className="bg-bg-surface border border-white/10 rounded-2xl p-4">
@@ -421,7 +801,6 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
       {/* ── TAB 2: ORDERS MANAGEMENT ───────────────────────────────── */}
       {activeTab === 'orders' && (
         <div className="py-6 space-y-4">
-          {/* Filters Bar */}
           <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center bg-bg-surface p-3 rounded-xl border border-white/10">
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
               <span className="text-xs text-content-muted whitespace-nowrap">Status:</span>
@@ -453,7 +832,6 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
             </div>
           </div>
 
-          {/* Orders Table */}
           {filteredOrders.length === 0 ? (
             <div className="bg-bg-surface border border-white/10 rounded-2xl p-8 text-center text-content-muted text-xs">
               No orders found matching your filters.
@@ -545,12 +923,683 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
         </div>
       )}
 
-      {/* ── TAB 3: CATALOGUE & PRICING ─────────────────────────────── */}
+      {/* ── TAB 3: INVENTORY & STOCK MANAGEMENT ────────────────────── */}
+      {activeTab === 'inventory' && (
+        <div className="py-6 space-y-4">
+          <div className="bg-bg-surface p-4 rounded-2xl border border-white/10 text-xs text-content-secondary flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+              <p className="font-semibold text-content-primary text-sm">
+                Variant Inventory &amp; Stock Levels
+              </p>
+              <p className="text-content-muted mt-0.5">
+                Tracks physical on-hand stock, active reservations, and automated low-stock warnings.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-content-muted">
+                Items: {inventoryItems.length}
+              </span>
+              {lowStockCount > 0 && (
+                <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-rose-950/80 text-rose-300 border border-rose-800/60">
+                  {lowStockCount} Low Stock
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center bg-bg-surface p-3 rounded-xl border border-white/10 text-xs">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setInventoryLowStockOnly(false)}
+                className={`px-3 py-1.5 rounded-lg font-semibold transition-colors ${
+                  !inventoryLowStockOnly
+                    ? 'bg-festive-marigold text-black'
+                    : 'bg-bg-elevated text-content-muted hover:text-content-primary'
+                }`}
+              >
+                All Variants ({inventoryItems.length})
+              </button>
+              <button
+                onClick={() => setInventoryLowStockOnly(true)}
+                className={`px-3 py-1.5 rounded-lg font-semibold transition-colors flex items-center gap-1.5 ${
+                  inventoryLowStockOnly
+                    ? 'bg-rose-700 text-white'
+                    : 'bg-bg-elevated text-rose-300 hover:text-rose-100'
+                }`}
+              >
+                <span>Low Stock Alerts</span>
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-rose-950">
+                  {lowStockCount}
+                </span>
+              </button>
+            </div>
+
+            <div className="relative">
+              <input
+                type="text"
+                value={inventorySearchQuery}
+                onChange={(e) => setInventorySearchQuery(e.target.value)}
+                placeholder="Search variant name or SKU..."
+                className="w-full sm:w-64 bg-bg-elevated border border-white/10 rounded-lg px-3 py-1.5 text-xs text-content-primary placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-festive-marigold"
+              />
+            </div>
+          </div>
+
+          {/* Inventory Table */}
+          <div className="bg-bg-surface border border-white/10 rounded-2xl overflow-hidden shadow-lg">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-bg-elevated border-b border-white/10 text-content-muted uppercase tracking-wider font-semibold">
+                  <tr>
+                    <th className="p-3.5">SKU / ID</th>
+                    <th className="p-3.5">Product &amp; Variant</th>
+                    <th className="p-3.5">Pack Info</th>
+                    <th className="p-3.5">Current Stock</th>
+                    <th className="p-3.5">Reserved</th>
+                    <th className="p-3.5">Available</th>
+                    <th className="p-3.5">Threshold</th>
+                    <th className="p-3.5">Stock Status</th>
+                    <th className="p-3.5 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {filteredInventory.map((item) => (
+                    <tr
+                      key={item.variant_id}
+                      className={`hover:bg-white/[0.02] transition-colors ${
+                        item.is_low_stock ? 'bg-rose-950/10' : ''
+                      }`}
+                    >
+                      <td className="p-3.5 font-mono text-content-muted text-[11px]">
+                        {item.variant_id}
+                      </td>
+                      <td className="p-3.5">
+                        <p className="font-semibold text-content-primary">{item.variant_name}</p>
+                        <p className="text-content-muted text-[11px]">{item.product_name}</p>
+                      </td>
+                      <td className="p-3.5 text-content-secondary">{item.variant_name}</td>
+                      <td className="p-3.5 font-mono font-bold text-content-primary">
+                        {item.current_stock}
+                      </td>
+                      <td className="p-3.5 font-mono text-amber-400">{item.reserved_stock}</td>
+                      <td className="p-3.5 font-mono font-bold text-emerald-400">
+                        {item.available_stock}
+                      </td>
+                      <td className="p-3.5 font-mono text-content-muted">
+                        &le; {item.low_stock_threshold}
+                      </td>
+                      <td className="p-3.5">
+                        {item.is_low_stock ? (
+                          <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-rose-950/80 text-rose-300 border border-rose-800/60">
+                            LOW STOCK
+                          </span>
+                        ) : (
+                          <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-950/60 text-emerald-300 border border-emerald-800/40">
+                            HEALTHY
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-3.5 text-right">
+                        <button
+                          onClick={() => openStockAdjustModal(item)}
+                          className="px-3 py-1 rounded-lg text-xs font-semibold bg-bg-elevated hover:bg-festive-marigold hover:text-black text-content-primary border border-white/10 transition-colors"
+                        >
+                          Adjust
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Inventory Audit Logs Stream */}
+          <div className="mt-8 space-y-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-content-muted">
+              Inventory Movement Audit Log ({inventoryAuditLogs.length})
+            </h4>
+            <div className="bg-bg-surface border border-white/10 rounded-2xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs font-mono">
+                  <thead className="bg-bg-elevated border-b border-white/10 text-content-muted uppercase tracking-wider text-[11px]">
+                    <tr>
+                      <th className="p-3">Timestamp</th>
+                      <th className="p-3">Variant ID</th>
+                      <th className="p-3">Action</th>
+                      <th className="p-3">Change</th>
+                      <th className="p-3">Before / After</th>
+                      <th className="p-3">Operator</th>
+                      <th className="p-3">Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5 text-[11px]">
+                    {inventoryAuditLogs.slice(0, 15).map((log) => (
+                      <tr key={log.id} className="hover:bg-white/[0.02]">
+                        <td className="p-3 text-content-muted font-sans">
+                          {new Date(log.created_at).toLocaleString('en-IN')}
+                        </td>
+                        <td className="p-3 text-content-secondary">{log.variant_id}</td>
+                        <td className="p-3 text-festive-marigold font-bold">{log.action}</td>
+                        <td className="p-3 font-bold text-content-primary">
+                          {log.quantity_delta > 0 ? `+${log.quantity_delta}` : log.quantity_delta}
+                        </td>
+                        <td className="p-3 text-content-muted">
+                          {log.stock_before} &rarr; {log.stock_after}
+                        </td>
+                        <td className="p-3 text-content-primary font-semibold">{log.operator_id}</td>
+                        <td className="p-3 font-sans text-content-secondary max-w-xs truncate">
+                          {log.reason || '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 4: QR VERSIONS & ROTATION ──────────────────────────── */}
+      {activeTab === 'qr' && (
+        <div className="py-6 space-y-6">
+          <div className="bg-bg-surface p-4 rounded-2xl border border-white/10 text-xs text-content-secondary flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+              <p className="font-semibold text-content-primary text-sm">
+                UPI QR Code Management &amp; Version Rotation
+              </p>
+              <p className="text-content-muted mt-0.5">
+                Manage counter QR fixtures. Version history is tracked with activation notes and timestamps.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowQrUploadModal(true)}
+              className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-festive-marigold hover:bg-festive-amber text-black transition-transform active:scale-95"
+            >
+              + Upload New QR Version
+            </button>
+          </div>
+
+          {/* Active QR Spotlight */}
+          {qrVersions.find((q) => q.is_active === 1) && (() => {
+            const active = qrVersions.find((q) => q.is_active === 1)!;
+            return (
+              <div className="bg-gradient-to-br from-amber-950/40 via-bg-surface to-bg-surface border border-amber-600/30 rounded-2xl p-5 shadow-xl flex flex-col md:flex-row items-center gap-6">
+                <div className="w-36 h-36 bg-white p-2.5 rounded-xl flex items-center justify-center shrink-0 border-2 border-festive-marigold">
+                  <img
+                    src={active.image_url}
+                    alt={active.label}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <div className="space-y-2 flex-1 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700">
+                      CURRENTLY ACTIVE
+                    </span>
+                    <span className="font-mono text-content-muted">
+                      Version #{active.version_number}
+                    </span>
+                  </div>
+                  <h3 className="text-base font-bold text-content-primary">{active.label}</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-xs text-content-secondary">
+                    <p>
+                      VPA:{' '}
+                      <span className="font-bold text-festive-marigold">{active.vpa}</span>
+                    </p>
+                    <p>
+                      Account: <span className="font-bold">{active.account_name}</span>
+                    </p>
+                    <p className="text-content-muted">
+                      Activated:{' '}
+                      {active.activated_at
+                        ? new Date(active.activated_at).toLocaleString('en-IN')
+                        : '—'}
+                    </p>
+                    <p className="text-content-muted">
+                      Notes: {active.activation_notes || 'Initial active fixture'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* All QR Versions List */}
+          <div className="bg-bg-surface border border-white/10 rounded-2xl overflow-hidden shadow-lg">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-bg-elevated border-b border-white/10 text-content-muted uppercase tracking-wider font-semibold">
+                  <tr>
+                    <th className="p-3.5">Version</th>
+                    <th className="p-3.5">Label</th>
+                    <th className="p-3.5">UPI VPA</th>
+                    <th className="p-3.5">Account Name</th>
+                    <th className="p-3.5">Status</th>
+                    <th className="p-3.5">Activated At</th>
+                    <th className="p-3.5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {qrVersions.map((v) => (
+                    <tr key={v.id} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="p-3.5 font-mono font-bold text-festive-marigold">
+                        v{v.version_number}
+                      </td>
+                      <td className="p-3.5 font-semibold text-content-primary">{v.label}</td>
+                      <td className="p-3.5 font-mono text-festive-amber">{v.vpa}</td>
+                      <td className="p-3.5 text-content-secondary">{v.account_name}</td>
+                      <td className="p-3.5">
+                        {v.is_active === 1 ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-800">
+                            ACTIVE
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-white/5 text-content-muted">
+                            INACTIVE
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-3.5 text-content-muted font-mono text-[11px]">
+                        {v.activated_at ? new Date(v.activated_at).toLocaleString('en-IN') : '—'}
+                      </td>
+                      <td className="p-3.5 text-right space-x-2">
+                        {v.is_active === 0 && (
+                          <button
+                            onClick={() => handleActivateQrVersion(v.id)}
+                            className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-800"
+                          >
+                            Activate
+                          </button>
+                        )}
+                        {v.is_active === 1 && (
+                          <button
+                            onClick={() => handleDeactivateQrVersion(v.id)}
+                            className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-950/60 hover:bg-red-900 text-red-300 border border-red-800"
+                          >
+                            Deactivate
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 5: PAYMENT SUPPORT ISSUES ──────────────────────────── */}
+      {activeTab === 'support' && (
+        <div className="py-6 space-y-4">
+          <div className="bg-bg-surface p-4 rounded-2xl border border-white/10 text-xs text-content-secondary flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+              <p className="font-semibold text-content-primary text-sm">
+                Customer Payment Support Tickets
+              </p>
+              <p className="text-content-muted mt-0.5">
+                Issues reported via the customer "Facing an issue?" flow during token payment.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-content-muted">Filter:</span>
+              {(['all', 'OPEN', 'IN_PROGRESS', 'RESOLVED', 'DISMISSED'] as const).map((st) => (
+                <button
+                  key={st}
+                  onClick={() => setIssueStatusFilter(st)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                    issueStatusFilter === st
+                      ? 'bg-festive-marigold text-black font-semibold'
+                      : 'bg-bg-elevated text-content-muted hover:text-content-primary'
+                  }`}
+                >
+                  {st}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {filteredIssues.length === 0 ? (
+            <div className="bg-bg-surface border border-white/10 rounded-2xl p-8 text-center text-content-muted text-xs">
+              No payment issues found.
+            </div>
+          ) : (
+            <div className="bg-bg-surface border border-white/10 rounded-2xl overflow-hidden shadow-lg">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-bg-elevated border-b border-white/10 text-content-muted uppercase tracking-wider font-semibold">
+                    <tr>
+                      <th className="p-3.5">Ticket Ref</th>
+                      <th className="p-3.5">Reported At</th>
+                      <th className="p-3.5">Customer</th>
+                      <th className="p-3.5">Issue Type</th>
+                      <th className="p-3.5">Order Ref</th>
+                      <th className="p-3.5">Description</th>
+                      <th className="p-3.5">Status</th>
+                      <th className="p-3.5">Staff Notes</th>
+                      <th className="p-3.5 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {filteredIssues.map((iss) => (
+                      <tr key={iss.id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="p-3.5 font-mono font-bold text-festive-amber">
+                          {iss.issue_reference}
+                        </td>
+                        <td className="p-3.5 text-content-muted font-mono text-[11px]">
+                          {new Date(iss.created_at).toLocaleString('en-IN')}
+                        </td>
+                        <td className="p-3.5">
+                          <p className="font-semibold text-content-primary">{iss.customer_name}</p>
+                          <p className="font-mono text-content-muted text-[11px]">
+                            {iss.customer_mobile}
+                          </p>
+                        </td>
+                        <td className="p-3.5">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-white/5 text-content-secondary">
+                            {iss.issue_type.replace(/_/g, ' ')}
+                          </span>
+                        </td>
+                        <td className="p-3.5 font-mono text-festive-marigold font-semibold">
+                          {iss.order_reference || '—'}
+                        </td>
+                        <td className="p-3.5 text-content-secondary max-w-xs truncate">
+                          {iss.description}
+                        </td>
+                        <td className="p-3.5">
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              iss.status === 'OPEN'
+                                ? 'bg-rose-950/80 text-rose-300 border border-rose-800'
+                                : iss.status === 'IN_PROGRESS'
+                                ? 'bg-amber-950/80 text-amber-300 border border-amber-800'
+                                : iss.status === 'RESOLVED'
+                                ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800'
+                                : 'bg-white/5 text-content-muted'
+                            }`}
+                          >
+                            {iss.status}
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-content-muted text-[11px] max-w-xs truncate">
+                          {iss.staff_notes || '—'}
+                        </td>
+                        <td className="p-3.5 text-right">
+                          <button
+                            onClick={() => openManageIssueModal(iss)}
+                            className="px-3 py-1 rounded-lg text-xs font-semibold bg-bg-elevated hover:bg-festive-marigold hover:text-black text-content-primary border border-white/10 transition-colors"
+                          >
+                            Manage
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── TAB 6: CUSTOMER DIRECTORY ──────────────────────────────── */}
+      {activeTab === 'customers' && (
+        <div className="py-6 space-y-4">
+          <div className="bg-bg-surface p-4 rounded-2xl border border-white/10 text-xs text-content-secondary flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+              <p className="font-semibold text-content-primary text-sm">
+                Customer Directory &amp; Purchase History
+              </p>
+              <p className="text-content-muted mt-0.5">
+                Directory of customers with lifetime spend, booking counts, and order histories.
+              </p>
+            </div>
+            <div className="relative">
+              <input
+                type="text"
+                value={customerSearchQuery}
+                onChange={(e) => setCustomerSearchQuery(e.target.value)}
+                placeholder="Search customer name or mobile..."
+                className="w-full sm:w-64 bg-bg-elevated border border-white/10 rounded-lg px-3 py-1.5 text-xs text-content-primary placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-festive-marigold"
+              />
+            </div>
+          </div>
+
+          {filteredCustomers.length === 0 ? (
+            <div className="bg-bg-surface border border-white/10 rounded-2xl p-8 text-center text-content-muted text-xs">
+              No customers found.
+            </div>
+          ) : (
+            <div className="bg-bg-surface border border-white/10 rounded-2xl overflow-hidden shadow-lg">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-bg-elevated border-b border-white/10 text-content-muted uppercase tracking-wider font-semibold">
+                    <tr>
+                      <th className="p-3.5">Customer Name</th>
+                      <th className="p-3.5">Mobile</th>
+                      <th className="p-3.5">Fulfilment Pref</th>
+                      <th className="p-3.5">Total Orders</th>
+                      <th className="p-3.5">Lifetime Spend</th>
+                      <th className="p-3.5">First Order</th>
+                      <th className="p-3.5">Last Order</th>
+                      <th className="p-3.5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {filteredCustomers.map((c) => (
+                      <tr key={c.id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="p-3.5 font-semibold text-content-primary">{c.full_name}</td>
+                        <td className="p-3.5 font-mono text-content-secondary">
+                          {c.mobile_number}
+                        </td>
+                        <td className="p-3.5 text-content-muted">
+                          {c.notes || 'Direct Customer'}
+                        </td>
+                        <td className="p-3.5 font-mono font-bold text-content-primary">
+                          {c.total_orders}
+                        </td>
+                        <td className="p-3.5 font-mono font-bold text-festive-marigold">
+                          {formatPaiseToRupees(c.lifetime_spent_paise)}
+                        </td>
+                        <td className="p-3.5 text-content-muted font-mono text-[11px]">
+                          {c.created_at ? new Date(c.created_at).toLocaleDateString('en-IN') : '—'}
+                        </td>
+                        <td className="p-3.5 text-content-muted font-mono text-[11px]">
+                          {c.last_order_date ? new Date(c.last_order_date).toLocaleDateString('en-IN') : '—'}
+                        </td>
+                        <td className="p-3.5 text-right">
+                          <button
+                            onClick={() => openCustomerDetail(c.id)}
+                            className="px-3 py-1 rounded-lg text-xs font-semibold bg-bg-elevated hover:bg-festive-marigold hover:text-black text-content-primary border border-white/10 transition-colors"
+                          >
+                            View History
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── TAB 7: SALES REPORTS & ANALYTICS ───────────────────────── */}
+      {activeTab === 'reports' && (
+        <div className="py-6 space-y-6">
+          <div className="bg-bg-surface p-4 rounded-2xl border border-white/10 text-xs text-content-secondary flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+              <p className="font-semibold text-content-primary text-sm">
+                Sales Analytics &amp; RFC 4180 CSV Export
+              </p>
+              <p className="text-content-muted mt-0.5">
+                Audited sales performance distinguishing Gross Booked Value from Verified Funds.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 bg-bg-elevated p-1 rounded-xl border border-white/5">
+                {(['today', '7d', '30d', 'all'] as const).map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setReportRange(r)}
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
+                      reportRange === r
+                        ? 'bg-festive-marigold text-black'
+                        : 'text-content-muted hover:text-content-primary'
+                    }`}
+                  >
+                    {r === 'today'
+                      ? 'Today'
+                      : r === '7d'
+                      ? '7 Days'
+                      : r === '30d'
+                      ? '30 Days'
+                      : 'All Time'}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={handleExportCsv}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-700 hover:bg-emerald-600 text-white transition-transform active:scale-95 flex items-center gap-1.5"
+              >
+                <span>⬇ Download CSV</span>
+              </button>
+            </div>
+          </div>
+
+          {salesReport && (
+            <div className="space-y-6">
+              {/* Financial KPI Banner */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-bg-surface border border-white/10 rounded-2xl p-4">
+                  <p className="text-xs font-medium text-content-muted">Total Orders</p>
+                  <p className="text-2xl font-bold font-mono text-content-primary mt-1">
+                    {salesReport.summary.totalOrders}
+                  </p>
+                  <p className="text-[11px] text-content-muted mt-1">Booked orders in period</p>
+                </div>
+
+                <div className="bg-bg-surface border border-amber-500/20 rounded-2xl p-4">
+                  <p className="text-xs font-medium text-amber-400">Gross Order Value</p>
+                  <p className="text-2xl font-bold font-mono text-amber-300 mt-1">
+                    {formatPaiseToRupees(salesReport.summary.totalGrossOrderPaise)}
+                  </p>
+                  <p className="text-[11px] text-amber-400/70 mt-1">Booked customer total</p>
+                </div>
+
+                <div className="bg-bg-surface border border-emerald-500/20 rounded-2xl p-4">
+                  <p className="text-xs font-medium text-emerald-400">Verified Bank Funds</p>
+                  <p className="text-2xl font-bold font-mono text-emerald-300 mt-1">
+                    {formatPaiseToRupees(salesReport.summary.totalVerifiedFundsPaise)}
+                  </p>
+                  <p className="text-[11px] text-emerald-400/80 mt-1">Zero Hallucinated Revenue</p>
+                </div>
+
+                <div className="bg-bg-surface border border-white/10 rounded-2xl p-4">
+                  <p className="text-xs font-medium text-content-muted">Average Order Value</p>
+                  <p className="text-2xl font-bold font-mono text-festive-marigold mt-1">
+                    {formatPaiseToRupees(salesReport.summary.averageOrderValuePaise)}
+                  </p>
+                  <p className="text-[11px] text-content-muted mt-1">Per transaction</p>
+                </div>
+              </div>
+
+              {/* Zero Hallucinated Revenue Invariant Callout */}
+              <div className="bg-emerald-950/20 border border-emerald-800/40 rounded-2xl p-4 text-xs text-emerald-200 flex items-start gap-3">
+                <span className="text-lg">🛡</span>
+                <div>
+                  <p className="font-bold">Strict Accounting Invariant: Zero Hallucinated Revenue</p>
+                  <p className="text-emerald-300/80 mt-0.5 leading-relaxed">
+                    Unverified 12-digit customer UTR references are strictly segregated from verified bank receipts.
+                    Verified funds remain ₹0.00 until authenticated against bank statement records.
+                  </p>
+                </div>
+              </div>
+
+              {/* Daily Trend Table */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-content-muted">
+                  Daily Sales Trend
+                </h4>
+                <div className="bg-bg-surface border border-white/10 rounded-2xl overflow-hidden shadow-lg">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-bg-elevated border-b border-white/10 text-content-muted uppercase tracking-wider font-semibold">
+                        <tr>
+                          <th className="p-3.5">Date</th>
+                          <th className="p-3.5">Orders Placed</th>
+                          <th className="p-3.5">Gross Order Value</th>
+                          <th className="p-3.5">Verified Bank Funds</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5 font-mono">
+                        {salesReport.dailyTrends.map((trend) => (
+                          <tr key={trend.date} className="hover:bg-white/[0.02]">
+                            <td className="p-3.5 font-bold text-content-primary">{trend.date}</td>
+                            <td className="p-3.5 text-content-secondary">{trend.orderCount}</td>
+                            <td className="p-3.5 font-bold text-amber-300">
+                              {formatPaiseToRupees(trend.grossPaise)}
+                            </td>
+                            <td className="p-3.5 font-bold text-emerald-400">
+                              {formatPaiseToRupees(trend.verifiedPaise)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              {/* Product Breakdown Table */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-content-muted">
+                  Top Product Breakdown
+                </h4>
+                <div className="bg-bg-surface border border-white/10 rounded-2xl overflow-hidden shadow-lg">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-bg-elevated border-b border-white/10 text-content-muted uppercase tracking-wider font-semibold">
+                        <tr>
+                          <th className="p-3.5">Product Name</th>
+                          <th className="p-3.5">Units Ordered</th>
+                          <th className="p-3.5">Gross Revenue</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {salesReport.productBreakdown.map((prod) => (
+                          <tr key={prod.productName} className="hover:bg-white/[0.02]">
+                            <td className="p-3.5 font-semibold text-content-primary">
+                              {prod.productName}
+                            </td>
+                            <td className="p-3.5 font-mono text-content-secondary">
+                              {prod.quantitySold}
+                            </td>
+                            <td className="p-3.5 font-mono font-bold text-festive-marigold">
+                              {formatPaiseToRupees(prod.totalRevenuePaise)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── TAB 8: CATALOGUE & PRICING ─────────────────────────────── */}
       {activeTab === 'catalogue' && (
         <div className="py-6 space-y-4">
           <div className="bg-bg-surface p-4 rounded-2xl border border-white/10 text-xs text-content-secondary flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div>
-              <p className="font-semibold text-content-primary">Diwali Poster Inventory & Pricing</p>
+              <p className="font-semibold text-content-primary">Diwali Poster Inventory &amp; Pricing</p>
               <p className="text-content-muted mt-0.5">
                 Printed prices remain immutable. Admin may configure prices within printed bounds.
               </p>
@@ -565,7 +1614,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
               <table className="w-full text-left text-xs">
                 <thead className="bg-bg-elevated border-b border-white/10 text-content-muted uppercase tracking-wider font-semibold">
                   <tr>
-                    <th className="p-3.5">SKU & Item</th>
+                    <th className="p-3.5">SKU &amp; Item</th>
                     <th className="p-3.5">Pack Info</th>
                     <th className="p-3.5">Printed Price Text</th>
                     <th className="p-3.5">Printed Bounds</th>
@@ -630,7 +1679,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
         </div>
       )}
 
-      {/* ── TAB 4: AUDIT LOGS ─────────────────────────────────────── */}
+      {/* ── TAB 9: AUDIT LOGS ─────────────────────────────────────── */}
       {activeTab === 'audit' && (
         <div className="py-6 space-y-4">
           <div className="bg-bg-surface p-4 rounded-2xl border border-white/10 text-xs text-content-secondary">
@@ -683,7 +1732,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
         </div>
       )}
 
-      {/* ── TAB 5: SYSTEM SETTINGS ───────────────────────────────── */}
+      {/* ── TAB 10: SYSTEM SETTINGS ──────────────────────────────── */}
       {activeTab === 'settings' && (
         <div className="py-6 max-w-2xl space-y-4">
           <div className="bg-bg-surface border border-white/10 rounded-2xl p-6 space-y-4">
@@ -707,6 +1756,16 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                 </div>
                 <span className="px-3 py-1 rounded-full font-mono font-bold bg-emerald-950/60 text-emerald-300 border border-emerald-800/40">
                   ₹50 (&lt; ₹200) / ₹100 (&ge; ₹200)
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-bg-elevated border border-white/5">
+                <div>
+                  <p className="font-semibold text-content-primary">Database Persistence</p>
+                  <p className="text-content-muted">Cloudflare D1 with parallel In-Memory test fallback.</p>
+                </div>
+                <span className="px-3 py-1 rounded-full font-mono font-bold bg-blue-950/60 text-blue-300 border border-blue-800/40">
+                  D1 COMPATIBLE
                 </span>
               </div>
             </div>
@@ -791,7 +1850,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
               </div>
             </div>
 
-            {/* UTR Information Card (Without Claims of Verification) */}
+            {/* UTR Information Card */}
             <div className="border border-white/10 bg-bg-elevated rounded-xl p-4 space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold text-content-secondary">
@@ -820,7 +1879,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
               </p>
             </div>
 
-            {/* Operational Status Transitions */}
+            {/* Operational Status Progression */}
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-content-muted mb-2">
                 Operational Status Progression
@@ -942,6 +2001,380 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── STOCK ADJUSTMENT MODAL ─────────────────────────────────── */}
+      {adjustingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-bg-surface border border-white/10 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-content-primary">Adjust Stock Level</h3>
+                <p className="text-xs text-content-muted">{adjustingItem.variant_name}</p>
+              </div>
+              <button
+                onClick={() => setAdjustingItem(null)}
+                className="text-content-muted hover:text-content-primary text-xl p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveStockAdjustment} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3 text-xs bg-bg-elevated p-3 rounded-xl border border-white/5">
+                <div>
+                  <span className="text-content-muted block">Current Stock:</span>
+                  <span className="font-mono font-bold text-content-primary text-sm">
+                    {adjustingItem.current_stock}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-content-muted block">Reserved:</span>
+                  <span className="font-mono font-bold text-amber-300 text-sm">
+                    {adjustingItem.reserved_stock}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="new-stock-input"
+                  className="block text-xs font-semibold uppercase tracking-wider text-content-secondary mb-1"
+                >
+                  New Physical Stock Count
+                </label>
+                <input
+                  id="new-stock-input"
+                  type="number"
+                  min="0"
+                  max="100000"
+                  value={adjustNewStock}
+                  onChange={(e) => setAdjustNewStock(e.target.value)}
+                  className="w-full bg-bg-elevated border border-white/10 rounded-xl px-4 py-2.5 text-sm font-mono text-content-primary focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+                  required
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="adjust-reason-input"
+                  className="block text-xs font-semibold uppercase tracking-wider text-content-secondary mb-1"
+                >
+                  Adjustment Audit Reason
+                </label>
+                <input
+                  id="adjust-reason-input"
+                  type="text"
+                  value={adjustReason}
+                  onChange={(e) => setAdjustReason(e.target.value)}
+                  placeholder="e.g. Physical inventory verification, Restock delivery"
+                  className="w-full bg-bg-elevated border border-white/10 rounded-xl px-4 py-2 text-xs text-content-primary focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+                  required
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setAdjustingItem(null)}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-bg-elevated text-content-secondary hover:bg-white/10 border border-white/10"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-festive-marigold hover:bg-festive-amber text-black"
+                >
+                  Update Stock
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── UPLOAD NEW QR MODAL ────────────────────────────────────── */}
+      {showQrUploadModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-bg-surface border border-white/10 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-content-primary">Upload New QR Version</h3>
+                <p className="text-xs text-content-muted">Draft version until activated</p>
+              </div>
+              <button
+                onClick={() => setShowQrUploadModal(false)}
+                className="text-content-muted hover:text-content-primary text-xl p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleUploadNewQr} className="space-y-3.5">
+              {uploadQrError && (
+                <p className="text-xs text-rose-300 bg-rose-950/40 border border-rose-800 p-2.5 rounded-xl">
+                  {uploadQrError}
+                </p>
+              )}
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-content-secondary mb-1">
+                  Label
+                </label>
+                <input
+                  type="text"
+                  value={uploadQrLabel}
+                  onChange={(e) => setUploadQrLabel(e.target.value)}
+                  placeholder="e.g. Counter Terminal 2, Diwali Special QR"
+                  className="w-full bg-bg-elevated border border-white/10 rounded-xl px-4 py-2 text-xs text-content-primary focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-content-secondary mb-1">
+                  UPI VPA ID
+                </label>
+                <input
+                  type="text"
+                  value={uploadQrVpa}
+                  onChange={(e) => setUploadQrVpa(e.target.value)}
+                  placeholder="e.g. nagarjunatraders@okaxis"
+                  className="w-full bg-bg-elevated border border-white/10 rounded-xl px-4 py-2 text-xs font-mono text-content-primary focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-content-secondary mb-1">
+                  Account Name
+                </label>
+                <input
+                  type="text"
+                  value={uploadQrAccountName}
+                  onChange={(e) => setUploadQrAccountName(e.target.value)}
+                  placeholder="e.g. NAGARJUNA TRADERS SIVAKASI"
+                  className="w-full bg-bg-elevated border border-white/10 rounded-xl px-4 py-2 text-xs text-content-primary focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-content-secondary mb-1">
+                  QR Image File (PNG / JPEG only)
+                </label>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg"
+                  onChange={handleQrImageSelect}
+                  className="w-full text-xs text-content-secondary file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-bg-elevated file:text-content-primary hover:file:bg-white/10 cursor-pointer"
+                  required
+                />
+              </div>
+
+              {uploadQrImageDataUri && (
+                <div className="flex items-center gap-3 p-3 bg-bg-elevated rounded-xl border border-white/5">
+                  <img
+                    src={uploadQrImageDataUri}
+                    alt="Preview"
+                    className="w-16 h-16 object-contain rounded bg-white p-1"
+                  />
+                  <div className="text-xs text-content-muted">
+                    <p className="font-semibold text-content-primary">Raster Image Selected</p>
+                    <p className="text-[11px]">Ready for base64 storage.</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowQrUploadModal(false)}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-bg-elevated text-content-secondary hover:bg-white/10 border border-white/10"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-festive-marigold hover:bg-festive-amber text-black"
+                >
+                  Upload Draft QR
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MANAGE PAYMENT ISSUE MODAL ─────────────────────────────── */}
+      {managingIssue && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-bg-surface border border-white/10 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-content-primary">
+                  Manage Support Ticket
+                </h3>
+                <p className="text-xs font-mono text-festive-amber">
+                  {managingIssue.issue_reference}
+                </p>
+              </div>
+              <button
+                onClick={() => setManagingIssue(null)}
+                className="text-content-muted hover:text-content-primary text-xl p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSavePaymentIssue} className="space-y-3.5 text-xs">
+              <div className="bg-bg-elevated p-3 rounded-xl border border-white/5 space-y-1">
+                <p className="font-semibold text-content-primary">
+                  {managingIssue.customer_name} ({managingIssue.customer_mobile})
+                </p>
+                <p className="text-content-muted">
+                  Type: <span className="text-content-secondary">{managingIssue.issue_type}</span>
+                </p>
+                {managingIssue.order_reference && (
+                  <p className="text-content-muted font-mono">
+                    Order Ref: {managingIssue.order_reference}
+                  </p>
+                )}
+                <p className="text-content-secondary italic pt-1">
+                  "{managingIssue.description}"
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-content-secondary mb-1">
+                  Ticket Status
+                </label>
+                <select
+                  value={issueNewStatus}
+                  onChange={(e) => setIssueNewStatus(e.target.value as PaymentIssueStatus)}
+                  className="w-full bg-bg-elevated border border-white/10 rounded-xl px-3 py-2 text-xs text-content-primary focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+                >
+                  <option value="OPEN">OPEN (Awaiting response)</option>
+                  <option value="IN_PROGRESS">IN_PROGRESS (Customer contacted)</option>
+                  <option value="RESOLVED">RESOLVED (Resolved / Assisted)</option>
+                  <option value="DISMISSED">DISMISSED (Invalid / Spurious)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-content-secondary mb-1">
+                  Staff Resolution Notes
+                </label>
+                <textarea
+                  rows={3}
+                  value={issueStaffNotes}
+                  onChange={(e) => setIssueStaffNotes(e.target.value)}
+                  placeholder="Record customer contact notes, cash collected at counter, etc."
+                  className="w-full bg-bg-elevated border border-white/10 rounded-xl p-2.5 text-xs text-content-primary focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setManagingIssue(null)}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-bg-elevated text-content-secondary hover:bg-white/10 border border-white/10"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-festive-marigold hover:bg-festive-amber text-black"
+                >
+                  Update Ticket
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── CUSTOMER PROFILE & ORDER HISTORY DRAWER ────────────────── */}
+      {selectedCustomerDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-bg-surface border border-white/10 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-content-primary">Customer Profile</h3>
+                <p className="text-xs text-content-muted">
+                  {selectedCustomerDetail.customer.full_name}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedCustomerDetail(null)}
+                className="text-content-muted hover:text-content-primary text-xl p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Overview */}
+            <div className="grid grid-cols-2 gap-3 bg-bg-elevated p-3.5 rounded-xl border border-white/5 text-xs font-mono">
+              <div>
+                <span className="text-content-muted block font-sans">Mobile Number:</span>
+                <span className="font-bold text-content-primary">
+                  {selectedCustomerDetail.customer.mobile_number}
+                </span>
+              </div>
+              <div>
+                <span className="text-content-muted block font-sans">Customer Notes:</span>
+                <span className="text-content-secondary">
+                  {selectedCustomerDetail.customer.notes || 'Counter Customer'}
+                </span>
+              </div>
+              <div>
+                <span className="text-content-muted block font-sans">Total Orders:</span>
+                <span className="font-bold text-content-primary">
+                  {selectedCustomerDetail.customer.total_orders}
+                </span>
+              </div>
+              <div>
+                <span className="text-content-muted block font-sans">Lifetime Spend:</span>
+                <span className="font-bold text-festive-marigold">
+                  {formatPaiseToRupees(selectedCustomerDetail.customer.lifetime_spent_paise)}
+                </span>
+              </div>
+            </div>
+
+            {/* Orders list */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-content-muted">
+                Order History ({selectedCustomerDetail.orders.length})
+              </h4>
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {selectedCustomerDetail.orders.map((ord) => (
+                  <div
+                    key={ord.id}
+                    className="p-3 bg-bg-elevated rounded-xl border border-white/5 text-xs flex items-center justify-between"
+                  >
+                    <div>
+                      <p className="font-mono font-bold text-festive-marigold">
+                        {ord.order_reference}
+                      </p>
+                      <p className="text-content-muted text-[11px]">
+                        {new Date(ord.created_at).toLocaleDateString('en-IN')} • Status:{' '}
+                        {ord.operational_status}
+                      </p>
+                    </div>
+                    <div className="text-right font-mono">
+                      <p className="font-bold text-content-primary">
+                        {formatPaiseToRupees(ord.subtotal_paise)}
+                      </p>
+                      <p className="text-amber-300 text-[11px]">
+                        Token: {formatPaiseToRupees(ord.token_amount_paise)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}
