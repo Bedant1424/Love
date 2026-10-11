@@ -42,9 +42,18 @@ export const DEFAULT_TOKEN_TIERS = {
  * - Fails closed if the environment cannot be safely determined.
  */
 export function isRestrictedEnvironment(request: Request, env?: any): boolean {
-  // 1. Explicit production check: Production MUST fail closed and NEVER permit test mode.
+  // STRICT SECURITY INVARIANT:
+  // - Client-supplied headers (e.g. X-Restricted-Test-Mode) NEVER enable test mode.
+  // - Client-supplied query parameters (e.g. ?test=true) NEVER enable test mode.
+  // - Production ALWAYS rejects test mode regardless of any client headers or caller input.
+  // - Restricted testing is strictly gated by verified server-side environment configuration.
+  // - Fails closed if the environment cannot be safely determined.
+
+  // 1. Explicit production configuration checks: Production MUST fail closed and NEVER permit test mode.
   const isProduction =
     env?.ENVIRONMENT === 'production' ||
+    env?.RESTRICTED_TEST_MODE === 'false' ||
+    env?.RESTRICTED_TEST_MODE === false ||
     (!env?.ENVIRONMENT &&
       typeof process !== 'undefined' &&
       process.env?.NODE_ENV === 'production');
@@ -53,25 +62,46 @@ export function isRestrictedEnvironment(request: Request, env?: any): boolean {
     return false;
   }
 
-  // 2. Server-side explicit restricted test flag (strictly enabled by server configuration)
+  // 2. Production hostnames fail closed (unless running inside unit test runner)
+  try {
+    const url = new URL(request.url);
+    const isTestRunner =
+      typeof process !== 'undefined' && process.env?.NODE_ENV === 'test';
+
+    if (!isTestRunner) {
+      if (
+        url.hostname === 'nagarjuna-traders.pages.dev' ||
+        url.hostname === 'nagarjuna-traders-owner.pages.dev' ||
+        url.hostname === 'nagarjunatraders.in' ||
+        url.hostname === 'www.nagarjunatraders.in'
+      ) {
+        return false;
+      }
+    }
+  } catch {
+    // If request URL cannot be safely parsed, fail closed
+    return false;
+  }
+
+  // 3. Server-side explicit restricted test flag (strictly enabled by server configuration)
   if (
-    env?.RESTRICTED_TEST_MODE === 'true' ||
-    env?.RESTRICTED_TEST_MODE === true
+    (env?.RESTRICTED_TEST_MODE === 'true' ||
+      env?.RESTRICTED_TEST_MODE === true) &&
+    (env?.ENVIRONMENT === 'test' || env?.ENVIRONMENT === 'preview')
   ) {
     return true;
   }
 
-  // 3. Automated test runner execution (Vitest / local test environment)
+  // 4. Automated test runner execution (Vitest / local test environment without explicit production config)
   if (
-    env?.ENVIRONMENT === 'test' ||
-    (!env?.ENVIRONMENT &&
-      typeof process !== 'undefined' &&
-      process.env?.NODE_ENV === 'test')
+    typeof process !== 'undefined' &&
+    process.env?.NODE_ENV === 'test' &&
+    (!env?.ENVIRONMENT || env?.ENVIRONMENT === 'test')
   ) {
     return true;
   }
 
-  // 4. Local development hostnames (strictly when NOT production)
+  // 5. Local development hostnames (strictly when NOT production)
   try {
     const url = new URL(request.url);
     if (
@@ -87,7 +117,7 @@ export function isRestrictedEnvironment(request: Request, env?: any): boolean {
     return false;
   }
 
-  // 5. Fail closed for all other unconfirmed or public environments
+  // 6. Fail closed for all other unconfirmed or public environments
   return false;
 }
 

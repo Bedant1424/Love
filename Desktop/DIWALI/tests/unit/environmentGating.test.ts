@@ -37,11 +37,13 @@ describe('Server-Side Environment Security & Gating Suite', () => {
     expect(isRestrictedEnvironment(publicReq, { ENVIRONMENT: 'unrecognized' })).toBe(false);
   });
 
-  it('Production: GET /api/v1/payment-config returns testFixture: undefined and paymentCollectionEnabled: false', async () => {
-    const req = new Request('https://nagarjuna-traders.pages.dev/api/v1/payment-config', {
+  it('Production: GET /api/v1/payment-config returns testFixture: undefined, no VPA, no QR payload, and isRestrictedEnv: false', async () => {
+    // Client tries headers and query parameters to spoof test mode
+    const req = new Request('https://nagarjuna-traders.pages.dev/api/v1/payment-config?test=true&restricted=true', {
       method: 'GET',
       headers: {
-        'X-Restricted-Test-Mode': 'true', // Client tries to spoof test mode
+        'X-Restricted-Test-Mode': 'true',
+        'X-Test-Mode': 'true',
       },
     });
 
@@ -51,8 +53,13 @@ describe('Server-Side Environment Security & Gating Suite', () => {
     const json = (await res.json()) as any;
     expect(json.success).toBe(true);
     expect(json.data.paymentCollectionEnabled).toBe(false);
+    expect(json.data.isRestrictedEnv).toBe(false);
+    expect(json.data.vpa).toBeUndefined();
+    expect(json.data.accountName).toBeUndefined();
+    expect(json.data.qrPayload).toBeUndefined();
     expect(json.data.testFixture).toBeUndefined();
     expect(json.data.message).toBe('Payment instructions are currently unavailable.');
+    expect(json.data.tokenTiers).toBeDefined();
   });
 
   it('Production: POST /api/v1/orders/:reference/utr is blocked with 403 PAYMENT_COLLECTION_DISABLED', async () => {
@@ -180,5 +187,37 @@ describe('Server-Side Environment Security & Gating Suite', () => {
     expect(utrJson.success).toBe(true);
     expect(utrJson.data.paymentStatus).toBe('RECORDED_UNVERIFIED');
     expect(utrJson.data.paymentReference).toBe('987654321098');
+  });
+
+  it('Production: POST /api/v1/orders returns paymentInstructions without test VPA or fixtures', async () => {
+    globalMemoryDb.seed();
+    const orderReq = new Request('https://nagarjuna-traders.pages.dev/api/v1/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        customer: {
+          fullName: 'Sivakasi Customer',
+          mobileNumber: '9876543210',
+          fulfilmentPreference: 'COUNTER_PICKUP',
+        },
+        items: [
+          {
+            variantId: 'var_bijli_50',
+            quantity: 2,
+          },
+        ],
+      }),
+    });
+
+    const res = await handleApiRequest(orderReq, prodEnv);
+    expect(res.status).toBe(201);
+    const json = (await res.json()) as any;
+    expect(json.success).toBe(true);
+    expect(json.data.paymentInstructions.paymentCollectionEnabled).toBe(false);
+    expect(json.data.paymentInstructions.notice).toBe('Payment instructions are currently unavailable.');
+    expect(json.data.paymentInstructions.vpa).toBeUndefined();
+    expect(json.data.paymentInstructions.accountName).toBeUndefined();
   });
 });
