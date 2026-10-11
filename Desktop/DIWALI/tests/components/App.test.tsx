@@ -13,7 +13,7 @@ describe('App End-to-End Integration Flow', () => {
     render(<App />);
 
     expect(screen.getByText('NAGARJUNA TRADERS')).toBeInTheDocument();
-    expect(screen.getByText(/Counter Pickup Only/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Diwali Fireworks Catalogue/i).length).toBeGreaterThan(0);
 
     // Verify 6 authentic category cards on home page
     expect(screen.getByText('Laddis')).toBeInTheDocument();
@@ -25,6 +25,14 @@ describe('App End-to-End Integration Flow', () => {
   });
 
   it('allows full customer journey: Home -> Catalogue -> Add Items -> Cart -> Customer Form -> Review -> QR -> UTR -> Confirmation', async () => {
+    vi.spyOn(apiClient, 'getPaymentConfig').mockResolvedValue({
+      paymentCollectionEnabled: false,
+      isRestrictedEnv: true,
+      vpa: 'test-fixture@nagarjunatraders',
+      accountName: 'NAGARJUNA TRADERS (TEST)',
+      message: 'Restricted testing environment: non-payable test QR fixture active.',
+    });
+
     vi.spyOn(apiClient, 'createOrder').mockResolvedValueOnce({
       orderReference: 'NT-9001',
       accessToken: 'token-uuid-9001',
@@ -123,7 +131,7 @@ describe('App End-to-End Integration Flow', () => {
     expect(screen.getAllByText(/₹50\.00/i).length).toBeGreaterThan(0); // ₹50 token for ₹120
 
     // 7. Proceed to QR Payment Instructions (Step 7)
-    const proceedToQrBtn = screen.getByRole('button', {
+    const proceedToQrBtn = await screen.findByRole('button', {
       name: /Proceed to QR Payment Instructions/i,
     });
     fireEvent.click(proceedToQrBtn);
@@ -151,7 +159,7 @@ describe('App End-to-End Integration Flow', () => {
     // 9. Order Confirmation (Step 9)
     await waitFor(() => {
       expect(
-        screen.getByText(/Order Reserved Successfully/i)
+        screen.getByText(/Order Details Recorded/i)
       ).toBeInTheDocument();
       expect(screen.getByText(/Order Reference: NT-9001/i)).toBeInTheDocument();
       expect(screen.getByText(/RECORDED_UNVERIFIED/i)).toBeInTheDocument();

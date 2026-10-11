@@ -16,7 +16,6 @@ erDiagram
     CUSTOMERS ||--o{ ORDERS : places
     ORDERS ||--|{ ORDER_ITEMS : includes
     PRODUCT_VARIANTS ||--o{ ORDER_ITEMS : references
-    ORDERS ||--o{ PAYMENTS : records
     ORDERS ||--o{ AUDIT_LOGS : audits
 
     CATEGORIES {
@@ -47,18 +46,18 @@ erDiagram
         string product_id FK
         string variant_name
         string sku UK
-        int pack_pieces
-        int price_paise
+        string pack_info
+        int is_pack_verified
+        string printed_price_text
+        int printed_min_paise
+        int printed_max_paise
+        string printed_options_json
+        string source_notes
+        int demo_price_paise
+        string price_status
+        string pricing_origin
         int stock_quantity
-        int is_active
-        datetime created_at
-        datetime updated_at
-    }
-
-    CUSTOMERS {
-        string id PK
-        string full_name
-        string mobile_number UK
+        int is_available
         datetime created_at
         datetime updated_at
     }
@@ -66,15 +65,20 @@ erDiagram
     ORDERS {
         string id PK
         string order_reference UK
-        string customer_id FK
+        string customer_name
+        string customer_mobile
+        string fulfilment_preference
         string operational_status
         string payment_status
         int subtotal_paise
-        int token_due_paise
-        int balance_due_paise
+        int token_amount_paise
+        int remaining_balance_paise
         string access_token UK
         string idempotency_key UK
         string customer_notes
+        string payment_reference
+        datetime payment_submitted_at
+        int is_simulated_demo
         datetime created_at
         datetime updated_at
     }
@@ -89,18 +93,6 @@ erDiagram
         int unit_price_paise
         int quantity
         int line_subtotal_paise
-        datetime created_at
-    }
-
-    PAYMENTS {
-        string id PK
-        string order_id FK
-        string payment_method
-        string payment_reference UK
-        int amount_paise
-        string verification_status
-        string verified_by_operator_id
-        datetime verified_at
         datetime created_at
     }
 
@@ -176,41 +168,42 @@ CREATE INDEX IF NOT EXISTS idx_variants_product ON product_variants(product_id);
 CREATE INDEX IF NOT EXISTS idx_variants_sku ON product_variants(sku);
 ```
 
-### 2.4 `demo_orders`
+### 2.4 `orders` (formerly `demo_orders`)
 ```sql
-CREATE TABLE IF NOT EXISTS demo_orders (
+CREATE TABLE IF NOT EXISTS orders (
     id TEXT PRIMARY KEY,
-    order_reference TEXT NOT NULL UNIQUE,      -- Format: DEMO-NT-XXXX
+    order_reference TEXT NOT NULL UNIQUE,      -- Format: NT-XXXX
     customer_name TEXT NOT NULL,
     customer_mobile TEXT NOT NULL CHECK (length(customer_mobile) = 10),
     fulfilment_preference TEXT NOT NULL DEFAULT 'COUNTER_PICKUP'
-        CHECK (fulfilment_preference IN ('COUNTER_PICKUP', 'DELIVERY_ENQUIRY')),
+        CHECK (fulfilment_preference IN ('COUNTER_PICKUP', 'SPECIAL_ENQUIRY')),
     operational_status TEXT NOT NULL DEFAULT 'SUBMITTED' 
         CHECK (operational_status IN ('SUBMITTED', 'CONFIRMED', 'PREPARING', 'READY_FOR_PICKUP', 'COMPLETED', 'CANCELLED')),
     payment_status TEXT NOT NULL DEFAULT 'UNPAID'
-        CHECK (payment_status IN ('UNPAID', 'PENDING_VERIFICATION', 'VERIFIED_TOKEN', 'FAILED')),
-    subtotal_paise INTEGER NOT NULL CHECK (subtotal_paise >= 10000),       -- Min ₹100.00 subtotal
-    token_amount_paise INTEGER NOT NULL DEFAULT 10000,                     -- Strictly fixed ₹100.00
+        CHECK (payment_status IN ('UNPAID', 'RECORDED_UNVERIFIED', 'FAILED')),
+    subtotal_paise INTEGER NOT NULL CHECK (subtotal_paise > 0),
+    token_amount_paise INTEGER NOT NULL,       -- Shared Tier Rule: < ₹200 -> ₹50 (or subtotal if < ₹50); >= ₹200 -> ₹100
     remaining_balance_paise INTEGER NOT NULL CHECK (remaining_balance_paise >= 0),
-    access_token TEXT NOT NULL UNIQUE,        -- Secret cryptographic UUID
+    access_token TEXT NOT NULL UNIQUE,         -- Secret cryptographic UUID passed in X-Order-Token header
     idempotency_key TEXT UNIQUE,
     customer_notes TEXT,
-    payment_reference TEXT,                   -- 12-digit simulated UTR
-    is_simulated_demo INTEGER NOT NULL DEFAULT 1 CHECK (is_simulated_demo = 1),
+    payment_reference TEXT UNIQUE,             -- Exactly 12 numeric digits string UTR
+    payment_submitted_at TEXT,
+    is_simulated_demo INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-CREATE INDEX IF NOT EXISTS idx_demo_orders_ref ON demo_orders(order_reference);
-CREATE INDEX IF NOT EXISTS idx_demo_orders_op_status ON demo_orders(operational_status);
-CREATE INDEX IF NOT EXISTS idx_demo_orders_pay_status ON demo_orders(payment_status);
-CREATE INDEX IF NOT EXISTS idx_demo_orders_created_at ON demo_orders(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_orders_ref ON orders(order_reference);
+CREATE INDEX IF NOT EXISTS idx_orders_op_status ON orders(operational_status);
+CREATE INDEX IF NOT EXISTS idx_orders_pay_status ON orders(payment_status);
+CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC);
 ```
 
-### 2.5 `demo_order_items` (Frozen Historical Snapshots)
+### 2.5 `order_items` (Frozen Historical Snapshots)
 ```sql
-CREATE TABLE IF NOT EXISTS demo_order_items (
+CREATE TABLE IF NOT EXISTS order_items (
     id TEXT PRIMARY KEY,
-    order_id TEXT NOT NULL REFERENCES demo_orders(id) ON DELETE CASCADE,
+    order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
     product_id TEXT NOT NULL,
     variant_id TEXT NOT NULL,
     product_name_snapshot TEXT NOT NULL,
@@ -220,14 +213,14 @@ CREATE TABLE IF NOT EXISTS demo_order_items (
     line_subtotal_paise INTEGER NOT NULL CHECK (line_subtotal_paise > 0),
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
-CREATE INDEX IF NOT EXISTS idx_demo_order_items_order ON demo_order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
 ```
 
 ### 2.6 `price_audit_logs`
 ```sql
 CREATE TABLE IF NOT EXISTS price_audit_logs (
     id TEXT PRIMARY KEY,
-    entity_type TEXT NOT NULL CHECK (entity_type IN ('VARIANT_PRICE', 'ORDER_STATUS', 'PAYMENT_VERIFICATION', 'SYSTEM_SETTING')),
+    entity_type TEXT NOT NULL CHECK (entity_type IN ('VARIANT_PRICE', 'ORDER_STATUS', 'SYSTEM_SETTING')),
     entity_id TEXT NOT NULL,
     action TEXT NOT NULL,
     operator_id TEXT NOT NULL,
@@ -238,145 +231,41 @@ CREATE TABLE IF NOT EXISTS price_audit_logs (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON price_audit_logs(entity_type, entity_id);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON price_audit_logs(created_at DESC);
-```
-
-### 2.7 `system_settings`
-```sql
-CREATE TABLE IF NOT EXISTS system_settings (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL,
-    description TEXT,
-    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-);
-```
-
-### 2.8 `payment_submissions` (12-Digit UTR Registry)
-```sql
-CREATE TABLE IF NOT EXISTS payment_submissions (
-    id TEXT PRIMARY KEY,
-    order_id TEXT NOT NULL REFERENCES demo_orders(id) ON DELETE CASCADE,
-    utr_reference TEXT NOT NULL UNIQUE,       -- Must be exactly 12 numeric digits
-    submission_status TEXT NOT NULL DEFAULT 'RECORDED_UNVERIFIED'
-        CHECK (submission_status IN ('RECORDED_UNVERIFIED', 'VERIFIED_TOKEN', 'REJECTED')),
-    submitted_at TEXT NOT NULL DEFAULT (datetime('now')),
-    notes TEXT
-);
-CREATE INDEX IF NOT EXISTS idx_payment_submissions_order ON payment_submissions(order_id);
-CREATE INDEX IF NOT EXISTS idx_payment_submissions_utr ON payment_submissions(utr_reference);
-```
-
-### 2.9 `order_status_history` & `payment_status_history`
-```sql
-CREATE TABLE IF NOT EXISTS order_status_history (
-    id TEXT PRIMARY KEY,
-    order_id TEXT NOT NULL REFERENCES demo_orders(id) ON DELETE CASCADE,
-    from_status TEXT,
-    to_status TEXT NOT NULL,
-    changed_by TEXT NOT NULL,
-    notes TEXT,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-);
-CREATE INDEX IF NOT EXISTS idx_order_status_hist_order ON order_status_history(order_id);
-
-CREATE TABLE IF NOT EXISTS payment_status_history (
-    id TEXT PRIMARY KEY,
-    order_id TEXT NOT NULL REFERENCES demo_orders(id) ON DELETE CASCADE,
-    from_status TEXT,
-    to_status TEXT NOT NULL,
-    changed_by TEXT NOT NULL,
-    notes TEXT,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-);
-CREATE INDEX IF NOT EXISTS idx_payment_status_hist_order ON payment_status_history(order_id);
 ```
 
 ---
 
-## 3. Financial Calculation Invariants (Tiered Advance Token Policy)
+## 3. Tiered Token Calculation Specification
 
-1. **Paise Integrity:** Every calculation uses strictly integer arithmetic without floating-point inaccuracies:
-   $$\text{line\_subtotal\_paise} = \text{unit\_price\_paise} \times \text{quantity}$$
-   $$\text{subtotal\_paise} = \sum_{i} \text{line\_subtotal\_paise}_i$$
-2. **Tiered Advance Token Rules:**
-   - If $\text{subtotal\_paise} < 20000$ (below ₹200), advance token amount is strictly **₹50.00** (`5,000 paise`).
-   - If $\text{subtotal\_paise} \ge 20000$ (₹200 or above), advance token amount is strictly **₹100.00** (`10,000 paise`).
-   - **Boundary Condition:** Exactly ₹200 belongs to the **₹100 tier**.
-   - **Counter Balance:**
-     $$\text{balance\_due\_paise} = \max\left(0, \text{subtotal\_paise} - \text{token\_amount\_paise}\right)$$
-     (Payable at physical counter upon pickup).
-3. **Subtotal Minimum Gating:** An order requires $\text{subtotal\_paise} \ge 5000$ (minimum ₹50.00 subtotal). If below ₹50, order checkout is blocked.
-4. **No Fabricated Pricing:** Range items and unconfirmed mappings have `pricePaise: null`. They can be added to the enquiry basket but block final checkout until confirmed by the store owner or administrator.
-5. **Zero Inconsistent State:** The sum of priced `lineSubtotalPaise` must exactly equal `subtotalPaise`.
+The tiered token calculation rule is implemented as a single, pure deterministic function shared across client and server:
 
----
-
-## 4. TypeScript Client & Order Models
-
-### 4.1 Constants (`src/utils/tokenPolicy.ts`)
 ```typescript
-export const TOKEN_TIER_THRESHOLD_PAISE = 20000; // ₹200.00 boundary
-export const TOKEN_LOW_TIER_PAISE = 5000;         // ₹50.00 token for orders < ₹200
-export const TOKEN_HIGH_TIER_PAISE = 10000;       // ₹100.00 token for orders >= ₹200
-export const MIN_ORDER_SUBTOTAL_PAISE = 5000;     // Minimum ₹50.00 order subtotal
-```
+export const TOKEN_TIER_THRESHOLD_PAISE = 20000; // ₹200.00
+export const TOKEN_LOW_TIER_PAISE = 5000;        // ₹50.00
+export const TOKEN_HIGH_TIER_PAISE = 10000;      // ₹100.00
 
-### 4.2 Pricing Origins & Price Status
-```typescript
-export type PricingOrigin =
-  | 'POSTER_EXACT'          // Exact price printed on supplied poster
-  | 'POSTER_RANGE'          // Price range printed on poster (e.g. ₹200 to ₹250)
-  | 'UNCONFIRMED_MAPPING'   // Multiple sizes without per-size pricing (e.g. Tiger Bomb 3-6)
-  | 'DEMO_NUMERIC'          // Designated demo price
-  | 'OWNER_CONFIRMED';      // Explicitly confirmed by store owner
-
-export type PriceStatus =
-  | 'PRINTED_ESTIMATE'      // Exact printed estimate
-  | 'PRICE_ON_ENQUIRY'      // Unpriced range item
-  | 'CONFIRMED';            // Owner-confirmed
-```
-
-### 4.3 Cart Totals & Order Records
-```typescript
-export interface CartTotals {
-  totalQuantity: number;
-  pricedItemCount: number;
-  unpricedItemCount: number;
-  subtotalPaise: number;
-  provisionalSubtotalPaise: number;
-  tokenAmountPaise: number;         // Tiered: 5,000 paise (< ₹200) or 10,000 paise (>= ₹200)
-  remainingBalancePaise: number;    // max(0, subtotal - tokenAmountPaise)
-  canProceedToCheckout: boolean;    // subtotal >= 5,000 && !hasUnpricedItems
-  minOrderRequirementMet: boolean;  // subtotal >= 5,000
-  hasUnpricedItems: boolean;        // unpricedItemCount > 0
-  checkoutBlockedReason?: string;
+export function calculateTokenAmountPaise(subtotalPaise: number): number {
+  if (subtotalPaise <= 0) return 0;
+  if (subtotalPaise < TOKEN_TIER_THRESHOLD_PAISE) {
+    // Safe rule for subtotals below ₹50: token never exceeds subtotal
+    return Math.min(subtotalPaise, TOKEN_LOW_TIER_PAISE);
+  }
+  return TOKEN_HIGH_TIER_PAISE;
 }
 
-export type PaymentStatus =
-  | 'UNPAID'
-  | 'RECORDED_UNVERIFIED'
-  | 'VERIFIED_TOKEN'
-  | 'FAILED';
-
-export interface OrderRecord {
-  orderReference: string;           // Format: NT-XXXX
-  accessToken: string;
-  createdAt: string;
-  customerName: string;
-  customerMobile: string;
-  items: CartItem[];
-  subtotalPaise: number;
-  tokenAmountPaise: number;
-  remainingBalancePaise: number;
-  paymentStatus: PaymentStatus;
-  paymentReference?: string;
-  isSimulatedDemo?: boolean;
+export function calculateRemainingBalancePaise(
+  subtotalPaise: number,
+  tokenAmountPaise: number
+): number {
+  return Math.max(0, subtotalPaise - tokenAmountPaise);
 }
 ```
 
-### 4.4 Data Minimisation & Transient State Invariant
-- Customer personal data (`CustomerDetails`: name, phone number, collection preference, age attestation, notes) is held **strictly in React component state**.
-- Customer data is **never written to `localStorage`** or remote unauthenticated endpoints.
-- `localStorage` stores only anonymous cracker cart item references: `nt_cart_items_v1: [{ productId, variantId, quantity }]`.
-
-
+### Verification Matrix:
+- Subtotal ₹30 $\rightarrow$ Token ₹30, Remaining Balance ₹0.
+- Subtotal ₹60 $\rightarrow$ Token ₹50, Remaining Balance ₹10.
+- Subtotal ₹150 $\rightarrow$ Token ₹50, Remaining Balance ₹100.
+- Subtotal ₹199 $\rightarrow$ Token ₹50, Remaining Balance ₹149.
+- Subtotal ₹200 (Exact boundary) $\rightarrow$ Token ₹100, Remaining Balance ₹100.
+- Subtotal ₹350 $\rightarrow$ Token ₹100, Remaining Balance ₹250.
+- Subtotal ₹1,000 $\rightarrow$ Token ₹100, Remaining Balance ₹900.

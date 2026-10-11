@@ -7,7 +7,6 @@ import {
   TOKEN_TIER_THRESHOLD_PAISE,
   TOKEN_LOW_TIER_PAISE,
   TOKEN_HIGH_TIER_PAISE,
-  MIN_ORDER_SUBTOTAL_PAISE,
 } from '../../src/utils/tokenPolicy';
 
 describe('useCart Hook & Tiered Token Calculation Policy', () => {
@@ -20,7 +19,13 @@ describe('useCart Hook & Tiered Token Calculation Policy', () => {
       expect(TOKEN_TIER_THRESHOLD_PAISE).toBe(20000);
       expect(TOKEN_LOW_TIER_PAISE).toBe(5000);
       expect(TOKEN_HIGH_TIER_PAISE).toBe(10000);
-      expect(MIN_ORDER_SUBTOTAL_PAISE).toBe(5000);
+    });
+
+    it('caps token amount to subtotal for subtotals below ₹50 so remaining balance is never negative', () => {
+      expect(calculateTokenAmountPaise(3000)).toBe(3000); // ₹30 subtotal -> ₹30 token
+      expect(calculateRemainingBalancePaise(3000, 3000)).toBe(0);
+      expect(calculateTokenAmountPaise(1000)).toBe(1000); // ₹10 subtotal -> ₹10 token
+      expect(calculateRemainingBalancePaise(1000, 1000)).toBe(0);
     });
 
     it('returns ₹50 (5,000 paise) token for subtotal below ₹200 (20,000 paise)', () => {

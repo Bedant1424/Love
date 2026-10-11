@@ -5,21 +5,21 @@
 **Protocol:** HTTPS / JSON Only  
 **Authentication:** 
 - Public Endpoints: Public / Rate-limited + Cloudflare Turnstile Verification
-- Customer Order Access: Bearer Secret Token in Query (`?token=...`) or Header (`X-Order-Token: ...`)
-- Admin Endpoints: Cloudflare Access JWT (`Cf-Access-Jwt-Assertion`) or Bearer Admin Token
+- Customer Order Access: Strictly require header `X-Order-Token: <token>`. URL query parameter tokens (`?token=...`) are prohibited and rejected with `401 Unauthorized` to prevent token leakage in browser history, proxy logs, and referrer headers.
+- Admin Endpoints: In production, strictly validated against Cloudflare Access JWT Assertion (`Cf-Access-Jwt-Assertion`), checking signature, issuer, audience (`CF_ACCESS_AUD`), and expiry (`exp`). In local/restricted development, isolated Bearer token `dev-admin-token`. Public admin registration is non-existent, and password login in production is rejected with `403 Forbidden`.
 
 ---
 
 ## 1. Status Codes & Error Envelope
 
-All API error responses follow a standardized JSON envelope:
+All API responses follow a standardized JSON envelope:
 
 ```json
 {
   "success": false,
   "error": {
     "code": "INVALID_UTR_FORMAT",
-    "message": "Payment UTR reference must be exactly 12 numeric digits.",
+    "message": "Payment UTR reference must be a string of exactly 12 numeric digits.",
     "details": []
   }
 }
@@ -27,13 +27,13 @@ All API error responses follow a standardized JSON envelope:
 
 | HTTP Status | Meaning | Typical Usage |
 |---|---|---|
-| `200 OK` | Successful request | Retrieval or status update successful. |
+| `200 OK` | Successful request | Retrieval or status update successful. Responses containing customer or order details include `Cache-Control: no-store, no-cache, must-revalidate`. |
 | `201 Created` | Resource created | Order created, variant added. |
-| `400 Bad Request` | Validation failure | Malformed JSON, non-numeric phone, negative quantity. |
-| `401 Unauthorized` | Missing / invalid auth | Missing admin token or wrong order secret token. |
-| `403 Forbidden` | Operation disallowed | Live checkout called when `COMMERCE_CHECKOUT_ENABLED=false`. |
+| `400 Bad Request` | Validation failure | Malformed JSON, non-numeric phone, non-12-digit UTR, unpriced items in cart. |
+| `401 Unauthorized` | Missing / invalid auth | Missing `X-Order-Token` header on private order lookup, missing admin token. |
+| `403 Forbidden` | Operation disallowed | Invalid `X-Order-Token`, public UTR submission while payment collection disabled, password login in production. |
 | `404 Not Found` | Entity missing | Unknown order reference or product ID. |
-| `409 Conflict` | Concurrency / Duplicate | UTR reference already used on another order; duplicate SKU. |
+| `409 Conflict` | Concurrency / Duplicate | UTR reference already recorded on another order (`DUPLICATE_UTR`). |
 | `429 Too Many Requests` | Rate limit hit | More than 5 order attempts from single IP in 10 minutes. |
 | `500 Server Error` | Edge worker error | Database timeout or unhandled exception. |
 
@@ -42,86 +42,64 @@ All API error responses follow a standardized JSON envelope:
 ## 2. Public Customer Endpoints
 
 ### 2.1 `GET /api/v1/payment-config`
-Returns payment system configuration, active token tier rules, and restricted test environment fixtures.
+Returns payment configuration and token tiers.
 
-- **Headers:** None required.
-- **Response `200 OK`:**
-```json
-{
-  "success": true,
-  "data": {
-    "paymentCollectionEnabled": false,
-    "testFixture": {
-      "qrPayload": "upi://pay?pa=test-fixture@nagarjunatraders&pn=NAGARJUNA%20TRADERS&am=0&tn=TEST%20FIXTURE%20ONLY",
-      "vpa": "test-fixture@nagarjunatraders",
-      "accountName": "NAGARJUNA TRADERS (TEST FIXTURE)",
-      "isRestrictedEnv": true,
-      "notice": "Payment collection is currently disabled. Test fixture provided for restricted workflow testing only."
-    },
-    "tokenTiers": {
-      "thresholdPaise": 20000,
-      "lowTierPaise": 5000,
-      "highTierPaise": 10000,
-      "minOrderSubtotalPaise": 5000
-    }
-  }
-}
-```
-
-### 2.2 `GET /api/v1/catalogue`
-Returns the active product categories, products, purchasable variants, and store payment policy.
-
-- **Headers:** None required.
-- **Cache Policy:** `Cache-Control: public, max-age=60, s-maxage=300, stale-while-revalidate=600`.
-- **Response `200 OK`:**
-```json
-{
-  "success": true,
-  "data": {
-    "store": {
-      "name": "Nagarjuna Traders",
-      "location": "Sivakasi / Counter Collection",
-      "checkoutEnabled": true,
+- **Truthful Public State (`paymentCollectionEnabled = false`, production):**
+  When public payment collection is disabled, returns a truthful notice and omits merchant VPA details:
+  ```json
+  {
+    "success": true,
+    "data": {
       "paymentCollectionEnabled": false,
+      "isRestrictedEnv": false,
+      "vpa": null,
+      "accountName": null,
+      "message": "Payment instructions are currently unavailable.",
       "tokenTiers": {
         "thresholdPaise": 20000,
         "lowTierPaise": 5000,
-        "highTierPaise": 10000,
-        "minOrderSubtotalPaise": 5000
+        "highTierPaise": 10000
       }
-    },
-    "categories": [
-      {
-        "id": "cat_skyshots",
-        "name": "Skyshots",
-        "slug": "skyshots",
-        "products": [
-          {
-            "id": "prod_bigboss",
-            "name": "Skyshot - Bigboss",
-            "packInfo": "3 pcs",
-            "imageUrl": "/images/bigboss.jpg",
-            "variants": [
-              {
-                "id": "var_bigboss_std",
-                "name": "Standard Pack",
-                "sku": "SKY-BB-03",
-                "packPieces": 3,
-                "pricePaise": 35000,
-                "inStock": true
-              }
-            ]
-          }
-        ]
-      }
-    ]
+    }
   }
-}
-```
+  ```
+- **Restricted Testing Mode (Local / Developer Test Environment):**
+  When in a restricted testing environment, provides a clearly labeled non-payable QR fixture:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "paymentCollectionEnabled": false,
+      "isRestrictedEnv": true,
+      "vpa": "test-fixture@nagarjunatraders",
+      "accountName": "NAGARJUNA TRADERS (TEST ONLY)",
+      "message": "Restricted testing environment: non-payable test QR fixture active.",
+      "testFixture": {
+        "qrPayload": "upi://pay?pa=test-fixture@nagarjunatraders&pn=NAGARJUNA%20TRADERS&am=0&tn=TEST%20FIXTURE%20ONLY",
+        "vpa": "test-fixture@nagarjunatraders",
+        "accountName": "NAGARJUNA TRADERS (TEST ONLY)",
+        "isRestrictedEnv": true,
+        "notice": "Restricted testing environment: non-payable test QR fixture active."
+      },
+      "tokenTiers": {
+        "thresholdPaise": 20000,
+        "lowTierPaise": 5000,
+        "highTierPaise": 10000
+      }
+    }
+  }
+  ```
+
+### 2.2 `GET /api/v1/catalogue`
+Returns the active product categories, products, purchasable variants, and store metadata without unverified claims.
+
+- **Headers:** None required.
+- **Cache Policy:** `Cache-Control: public, max-age=60, s-maxage=300, stale-while-revalidate=600`.
 
 ### 2.3 `POST /api/v1/orders`
 Submits a customer reservation request. Computes tiered tokens independently on the server using database prices.
 
+- **Restricted Policy Invariant:** When public payment collection is disabled and not in a restricted testing environment, public users are truthful informed that payment instructions are unavailable, and real customer details are not transmitted to the backend. In local/restricted testing, synthetic records are accepted.
 - **Rate Limit:** 5 requests per 10 minutes per IP.
 - **Request Body:**
 ```json
@@ -142,14 +120,18 @@ Submits a customer reservation request. Computes tiered tokens independently on 
   "idempotencyKey": "draft_uuid_12345"
 }
 ```
-- **Validation Rules:**
+- **Server Validation & Token Rules:**
   - `customer.fullName`: string, length $\ge$ 2.
   - `customer.mobileNumber`: string, regex `^[6-9]\d{9}$`.
   - `customer.ageConfirmed`: boolean, must be `true`.
-  - `items`: array, min 1 item, max 20 distinct items.
+  - `items`: array, min 1 item.
   - `items[].quantity`: integer, between 1 and 50.
-  - Minimum subtotal: ₹50 (`5,000 paise`).
-  - Tiered Token Rule: Subtotal < ₹200 $\rightarrow$ ₹50 token; Subtotal $\ge$ ₹200 $\rightarrow$ ₹100 token.
+  - No items with unconfirmed prices (`pricePaise === null`) allowed.
+  - **Shared Token Tier Rule:**
+    - Subtotal < ₹200 (`20,000 paise`): token amount is ₹50 (`5,000 paise`).
+    - Subtotal $\ge$ ₹200 (`20,000 paise`): token amount is ₹100 (`10,000 paise`).
+    - Exact ₹200 boundary belongs to ₹100 tier.
+    - Subtotals below token amount (e.g. ₹30): token capped at subtotal (`Math.min(subtotalPaise, 5000)` = ₹30), remaining balance is ₹0. Remaining balance is never negative.
 - **Response `201 Created`:**
 ```json
 {
@@ -164,11 +146,11 @@ Submits a customer reservation request. Computes tiered tokens independently on 
     "balanceDuePaise": 25000,
     "paymentInstructions": {
       "vpa": "test-fixture@nagarjunatraders",
-      "accountName": "NAGARJUNA TRADERS (TEST FIXTURE)",
+      "accountName": "NAGARJUNA TRADERS (TEST ONLY)",
       "amountInr": "100.00",
       "transactionNote": "NT-4829",
       "paymentCollectionEnabled": false,
-      "notice": "Payment collection is currently disabled. Test fixture provided for restricted workflow testing only."
+      "notice": "Restricted test fixture."
     }
   }
 }
@@ -177,7 +159,9 @@ Submits a customer reservation request. Computes tiered tokens independently on 
 ### 2.4 `GET /api/v1/orders/:reference/status`
 Retrieves lightweight order payment and operational status.
 
-- **Headers / Query:** `X-Order-Token: {accessToken}` or `?token={accessToken}`
+- **Headers:** Strictly requires `X-Order-Token: <accessToken>`.
+- **Query Parameter Tokens:** Prohibited. If `?token=...` is passed, returns `401 Unauthorized`.
+- **Cache-Control:** `Cache-Control: no-store, no-cache, must-revalidate`.
 - **Response `200 OK`:**
 ```json
 {
@@ -201,13 +185,15 @@ Retrieves lightweight order payment and operational status.
 ### 2.5 `GET /api/v1/orders/:reference`
 Retrieves full customer order details and line item snapshots.
 
-- **Headers / Query:** `X-Order-Token: {accessToken}` or `?token={accessToken}`
-- **Response `200 OK`:** Returns full order object including item breakdowns.
+- **Headers:** Strictly requires `X-Order-Token: <accessToken>`.
+- **Query Parameter Tokens:** Prohibited (`401 Unauthorized`).
+- **Cache-Control:** `Cache-Control: no-store, no-cache, must-revalidate`.
 
-### 2.6 `POST /api/v1/orders/:reference/utr` (or `/payment-reference`)
-Submits a customer 12-digit UTR reference after token payment attempt.
+### 2.6 `POST /api/v1/orders/:reference/utr`
+Submits a 12-digit UTR reference in restricted test mode.
 
-- **Headers / Query:** `X-Order-Token: {accessToken}` or `?token={accessToken}`
+- **Public Policy:** When public payment collection is disabled in production, this route is blocked with `403 Forbidden` (`PAYMENT_COLLECTION_DISABLED`).
+- **Headers:** `X-Order-Token: <accessToken>`.
 - **Request Body:**
 ```json
 {
@@ -215,8 +201,9 @@ Submits a customer 12-digit UTR reference after token payment attempt.
 }
 ```
 - **Validation Rules:**
-  - `utr`: string of **exactly 12 numeric digits** (`/^\d{12}$/`). Never parsed into a number.
-  - Replay rejection: if UTR was previously submitted for another order, returns `409 Conflict` (`DUPLICATE_UTR`).
+  - `utr`: string of **strictly 12 numeric digits** (`/^\d{12}$/`). Never parsed into a number.
+  - Duplicate check: if UTR was previously submitted for another order, returns `409 Conflict` (`DUPLICATE_UTR`).
+- **Status Invariant:** Status is set strictly to `RECORDED_UNVERIFIED`.
 - **Response `200 OK`:**
 ```json
 {
@@ -225,7 +212,7 @@ Submits a customer 12-digit UTR reference after token payment attempt.
     "orderReference": "NT-4829",
     "paymentReference": "987654321012",
     "paymentStatus": "RECORDED_UNVERIFIED",
-    "message": "12-digit UTR payment reference recorded. Status is recorded as unverified pending manual bank statement reconciliation."
+    "message": "12-digit UTR reference recorded as unverified. This application does not verify payments or establish receipt of funds."
   }
 }
 ```
@@ -234,39 +221,31 @@ Submits a customer 12-digit UTR reference after token payment attempt.
 
 ## 3. Protected Admin Endpoints
 
+All administrative endpoints require authentication:
+- In production: Valid Cloudflare Access JWT Assertion (`Cf-Access-Jwt-Assertion`).
+- In local development: Isolated Bearer token (`dev-admin-token`).
+- Requests without credentials return `401 Unauthorized`.
+
 ### 3.1 `GET /api/v1/admin/dashboard`
-Returns live operational counters and advance token totals.
+Returns live operational counters:
+- `totalOrders`: count of placed orders
+- `utrSubmittedCount`: count of orders with submitted UTR (`RECORDED_UNVERIFIED`)
+- `awaitingUtrCount`: count of orders awaiting UTR submission (`UNPAID`)
+- `ordersReadyForPickupCount`: count of orders ready for pickup
+- `completedOrdersCount`: count of completed orders
+*Note: Metrics claiming to represent money collected or verified have been removed.*
 
 ### 3.2 `GET /api/v1/admin/orders`
-Search and filter orders by operational status, payment status, or customer details.
+Search and filter orders by operational status, payment status, or reference.
 
-### 3.3 `POST /api/v1/admin/orders/:id/reconciliation` (or `/verify-payment`)
-Performs staff manual reconciliation against official bank statement.
-
-- **Prohibition:** Automated bank verification is prohibited.
-- **Request Body:**
-```json
-{
-  "action": "APPROVE_TOKEN", // or 'REJECT_INVALID_UTR'
-  "reconciliationNotes": "Matched ₹100 deposit on HDFC Current A/c statement at 11:42 AM",
-  "operatorId": "OP-NAGARJUNA"
-}
-```
-- **Validation Rules:** `reconciliationNotes` is strictly mandatory.
-- **Response `200 OK`:** Returns updated order with recorded `reconciled_by`, `reconciled_at`, and `reconciliation_notes`.
+### 3.3 Prohibition of Manual Bank Reconciliation
+Any calls to `/admin/orders/:id/reconciliation` or `/admin/orders/:id/verify-payment` return `400 Bad Request` with `PAYMENT_VERIFICATION_DISABLED`. The application does not support manual bank reconciliation, verification buttons, or operations claiming to establish receipt of funds.
 
 ### 3.4 `POST /api/v1/admin/orders/:id/status`
-Updates operational progress (`SUBMITTED` $\rightarrow$ `CONFIRMED` $\rightarrow$ `PREPARING` $\rightarrow$ `READY_FOR_PICKUP` $\rightarrow$ `COMPLETED`).
-Prevents advancing unpaid orders to `READY_FOR_PICKUP` or `COMPLETED`.
+Updates operational progress (`CONFIRMED`, `PREPARING`, `READY_FOR_PICKUP`, `COMPLETED`).
 
 ### 3.5 `GET /api/v1/admin/variants` & `POST /api/v1/admin/variants/:id/demo-price`
-Manage active variant pricing against printed catalogue boundaries.
+Manages variant pricing within printed catalogue bounds, requiring audit justification for any authorized overrides.
 
 ### 3.6 `GET /api/v1/admin/audit-logs`
-Audit log stream tracking price changes, status updates, and reconciliation entries.
-
-### 3.7 `POST /api/v1/admin/auth/login`
-Admin passphrase authentication (`nagarjuna-demo-2026`). Returns administrative session token.
-
-- **Transition Guard:** Rejects transitions to `READY_FOR_PICKUP` or `COMPLETED` if `payment_status` is `UNPAID` or `FAILED`.
-
+Audit log stream tracking price changes, overrides, operational status changes, and order events.

@@ -3,7 +3,6 @@ import {
   TOKEN_TIER_THRESHOLD_PAISE,
   TOKEN_LOW_TIER_PAISE,
   TOKEN_HIGH_TIER_PAISE,
-  MIN_ORDER_SUBTOTAL_PAISE,
   calculateTokenAmountPaise,
   calculateRemainingBalancePaise,
 } from '../utils/tokenPolicy';
@@ -12,7 +11,6 @@ export {
   TOKEN_TIER_THRESHOLD_PAISE,
   TOKEN_LOW_TIER_PAISE,
   TOKEN_HIGH_TIER_PAISE,
-  MIN_ORDER_SUBTOTAL_PAISE,
   calculateTokenAmountPaise,
   calculateRemainingBalancePaise,
 };
@@ -49,10 +47,10 @@ export interface CartTotals {
   unpricedItemCount: number;
   subtotalPaise: number;
   provisionalSubtotalPaise: number; // backward compatibility alias
-  tokenAmountPaise: number; // Tiered: ₹50 if subtotal < ₹200, ₹100 if subtotal >= ₹200
+  tokenAmountPaise: number; // Tiered: ₹50 if subtotal < ₹200 (capped at subtotal if < ₹50), ₹100 if subtotal >= ₹200
   remainingBalancePaise: number; // max(0, subtotal - tokenAmountPaise)
   canProceedToCheckout: boolean;
-  minOrderRequirementMet: boolean;
+  minOrderRequirementMet: boolean; // subtotal > 0
   hasUnpricedItems: boolean;
   checkoutBlockedReason?: string;
 }
@@ -60,10 +58,10 @@ export interface CartTotals {
 export type PaymentStatus =
   | 'UNPAID'
   | 'RECORDED_UNVERIFIED'
-  | 'RECONCILED'
-  | 'PENDING_VERIFICATION'
-  | 'VERIFIED_TOKEN'
-  | 'FAILED';
+  | 'FAILED'
+  | 'PENDING_VERIFICATION' // backward compat alias
+  | 'VERIFIED_TOKEN'      // backward compat alias
+  | 'RECONCILED';         // backward compat alias
 
 export type SimulatedPaymentStatus = PaymentStatus;
 
@@ -79,7 +77,6 @@ export interface OrderRecord {
   remainingBalancePaise: number;
   paymentStatus: PaymentStatus;
   paymentReference?: string | null;
-  reconciliationNotes?: string | null;
 }
 
 // Backward compatibility alias

@@ -41,7 +41,6 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
 
   // Selected Order for Modal
   const [selectedOrder, setSelectedOrder] = useState<DemoOrderRecordWithItems | null>(null);
-  const [reconciliationNotesInput, setReconciliationNotesInput] = useState<string>('');
 
   // Price Editing Modal State
   const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null);
@@ -99,33 +98,6 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
     showNotification('Logged out from admin console.');
   };
 
-  // Order Reconciliation Actions
-  const handleReconcilePayment = async (
-    orderId: string,
-    action: 'RECONCILE' | 'REJECT' | 'APPROVE_TOKEN' | 'REJECT_INVALID_UTR'
-  ) => {
-    if (!reconciliationNotesInput.trim()) {
-      showNotification('Staff reconciliation note is mandatory before recording reconciliation.', 'error');
-      return;
-    }
-    try {
-      const updated = await apiClient.reconcilePayment(orderId, {
-        action: action === 'RECONCILE' || action === 'APPROVE_TOKEN' ? 'RECONCILE' : 'REJECT',
-        operatorId,
-        reconciliationNotes: reconciliationNotesInput.trim(),
-      });
-      showNotification(
-        action === 'RECONCILE' || action === 'APPROVE_TOKEN'
-          ? `Order ${updated.order_reference} manually reconciled against bank statement.`
-          : `Order ${updated.order_reference} UTR rejected.`
-      );
-      setSelectedOrder(updated);
-      loadAllData();
-    } catch (err: any) {
-      showNotification(err?.message || 'Reconciliation failed', 'error');
-    }
-  };
-
   const handleUpdateOrderStatus = async (orderId: string, status: OperationalStatus) => {
     try {
       const updated = await apiClient.updateOrderStatus(orderId, status, operatorId);
@@ -166,7 +138,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
         overrideReason,
         allowOverride
       );
-      showNotification(`Demo price for "${updated.name}" updated to ₹${priceNum.toFixed(2)}`);
+      showNotification(`Price for "${updated.name}" updated to ₹${priceNum.toFixed(2)}`);
       setEditingVariant(null);
       loadAllData();
     } catch (err: any) {
@@ -202,7 +174,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
               Nagarjuna Traders Admin
             </h1>
             <p className="text-xs text-content-muted mt-1">
-              Portfolio Demo Administration & Order Management
+              Order Management & Inventory Operations
             </p>
           </div>
 
@@ -275,12 +247,9 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
             <span className="text-xl font-bold font-display text-content-primary">
               Nagarjuna Traders Admin Panel
             </span>
-            <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-festive-marigold/20 text-festive-marigold border border-festive-marigold/30">
-              Demo Mode
-            </span>
           </div>
           <p className="text-xs text-content-muted mt-0.5">
-            Operator: <span className="text-content-secondary font-mono">{operatorId}</span> • Session: 12h Active
+            Operator: <span className="text-content-secondary font-mono">{operatorId}</span>
           </p>
         </div>
 
@@ -327,7 +296,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
               : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
           }`}
         >
-          <span>Demo Orders</span>
+          <span>Orders</span>
           <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-black/40 text-current">
             {orders.length}
           </span>
@@ -340,7 +309,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
               : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
           }`}
         >
-          Catalogue & Demo Pricing ({variants.length})
+          Catalogue & Pricing ({variants.length})
         </button>
         <button
           onClick={() => setActiveTab('audit')}
@@ -360,7 +329,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
               : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
           }`}
         >
-          Simulation Settings
+          System Settings
         </button>
       </div>
 
@@ -369,17 +338,17 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
         <div className="py-6 space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-bg-surface border border-white/10 rounded-2xl p-4">
-              <p className="text-xs font-medium text-content-muted">Total Demo Orders</p>
+              <p className="text-xs font-medium text-content-muted">Total Orders</p>
               <p className="text-2xl font-bold font-mono text-content-primary mt-1">
-                {kpis.totalDemoOrders}
+                {kpis.totalOrders}
               </p>
-              <p className="text-[11px] text-content-muted mt-1">Simulated bookings</p>
+              <p className="text-[11px] text-content-muted mt-1">Total reservations placed</p>
             </div>
 
             <div className="bg-bg-surface border border-amber-500/20 rounded-2xl p-4">
-              <p className="text-xs font-medium text-amber-400">Pending UTR Verification</p>
+              <p className="text-xs font-medium text-amber-400">UTR Submitted (Unverified)</p>
               <p className="text-2xl font-bold font-mono text-amber-300 mt-1">
-                {kpis.pendingPaymentVerificationCount}
+                {kpis.utrSubmittedCount}
               </p>
               <button
                 onClick={() => {
@@ -388,16 +357,16 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                 }}
                 className="text-[11px] text-amber-400 hover:underline mt-1 block"
               >
-                Review queue →
+                View orders queue →
               </button>
             </div>
 
-            <div className="bg-bg-surface border border-emerald-500/20 rounded-2xl p-4">
-              <p className="text-xs font-medium text-emerald-400">Fixed ₹100 Tokens Verified</p>
-              <p className="text-2xl font-bold font-mono text-emerald-300 mt-1">
-                {formatPaiseToRupees(kpis.totalTokenCollectedPaise)}
+            <div className="bg-bg-surface border border-blue-500/20 rounded-2xl p-4">
+              <p className="text-xs font-medium text-blue-400">Awaiting UTR</p>
+              <p className="text-2xl font-bold font-mono text-blue-300 mt-1">
+                {kpis.awaitingUtrCount}
               </p>
-              <p className="text-[11px] text-content-muted mt-1">₹100 token per order</p>
+              <p className="text-[11px] text-content-muted mt-1">Pending submission</p>
             </div>
 
             <div className="bg-bg-surface border border-white/10 rounded-2xl p-4">
@@ -405,7 +374,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
               <p className="text-2xl font-bold font-mono text-festive-marigold mt-1">
                 {kpis.ordersReadyForPickupCount}
               </p>
-              <p className="text-[11px] text-content-muted mt-1">At Sivakasi counter</p>
+              <p className="text-[11px] text-content-muted mt-1">Counter collection</p>
             </div>
           </div>
 
@@ -421,30 +390,27 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                 <span className="font-mono text-amber-300">{kpis.unresolvedVariantsCount}</span>
               </div>
               <div className="flex items-center justify-between text-xs py-2">
-                <span className="text-content-muted">Completed Orders Counter Balance</span>
+                <span className="text-content-muted">Completed Orders</span>
                 <span className="font-mono text-emerald-300">
-                  {formatPaiseToRupees(kpis.totalBalanceCollectedPaise)}
+                  {kpis.completedOrdersCount}
                 </span>
               </div>
             </div>
 
             <div className="bg-bg-surface border border-white/10 rounded-2xl p-5 space-y-3">
-              <h3 className="text-sm font-semibold text-content-primary">Festival Operations Checklist</h3>
-              <p className="text-xs text-content-muted">
-                Guidelines from <code>docs/admin-runbook.md</code>:
-              </p>
+              <h3 className="text-sm font-semibold text-content-primary">Counter Operations Checklist</h3>
               <ul className="text-xs space-y-2 text-content-secondary">
                 <li className="flex items-start gap-2">
                   <span className="text-festive-marigold">•</span>
-                  <span>Match customer-submitted 12-digit UTR with bank smartphone notification.</span>
+                  <span>Inspect order reference and customer mobile number at counter.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-festive-marigold">•</span>
-                  <span>Check age attestation (&ge;18) before handing over crackers at counter.</span>
+                  <span>Ensure age verification (&ge;18) before handing over fireworks.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-festive-marigold">•</span>
-                  <span>Verify exact remaining balance collection prior to marking order completed.</span>
+                  <span>Collect any remaining balance payable at physical counter handover.</span>
                 </li>
               </ul>
             </div>
@@ -452,7 +418,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
         </div>
       )}
 
-      {/* ── TAB 2: DEMO ORDERS MANAGEMENT ─────────────────────────── */}
+      {/* ── TAB 2: ORDERS MANAGEMENT ───────────────────────────────── */}
       {activeTab === 'orders' && (
         <div className="py-6 space-y-4">
           {/* Filters Bar */}
@@ -490,7 +456,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
           {/* Orders Table */}
           {filteredOrders.length === 0 ? (
             <div className="bg-bg-surface border border-white/10 rounded-2xl p-8 text-center text-content-muted text-xs">
-              No simulated demo orders found matching your filters.
+              No orders found matching your filters.
             </div>
           ) : (
             <div className="bg-bg-surface border border-white/10 rounded-2xl overflow-hidden shadow-lg">
@@ -504,8 +470,9 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                       <th className="p-3.5">Subtotal</th>
                       <th className="p-3.5">Advance Token</th>
                       <th className="p-3.5">Remaining</th>
-                      <th className="p-3.5">Payment</th>
-                      <th className="p-3.5">Status</th>
+                      <th className="p-3.5">UTR Reference</th>
+                      <th className="p-3.5">UTR Status</th>
+                      <th className="p-3.5">Order Status</th>
                       <th className="p-3.5 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -525,23 +492,24 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                         <td className="p-3.5 font-mono text-content-primary font-medium">
                           {formatPaiseToRupees(ord.subtotal_paise)}
                         </td>
-                        <td className="p-3.5 font-mono text-emerald-400 font-semibold">
+                        <td className="p-3.5 font-mono text-amber-400 font-semibold">
                           {formatPaiseToRupees(ord.token_amount_paise)}
                         </td>
                         <td className="p-3.5 font-mono text-content-secondary">
                           {formatPaiseToRupees(ord.remaining_balance_paise)}
                         </td>
+                        <td className="p-3.5 font-mono text-festive-amber">
+                          {ord.payment_reference || '—'}
+                        </td>
                         <td className="p-3.5">
                           <span
                             className={`inline-block px-2 py-0.5 rounded text-[11px] font-mono font-medium ${
-                              ord.payment_status === 'VERIFIED_TOKEN'
-                                ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/40'
-                                : ord.payment_status === 'PENDING_VERIFICATION'
-                                ? 'bg-amber-950/60 text-amber-300 border border-amber-800/40 animate-pulse'
+                              ord.payment_reference || ord.payment_status === 'RECORDED_UNVERIFIED'
+                                ? 'bg-amber-950/60 text-amber-300 border border-amber-800/40'
                                 : 'bg-white/5 text-content-muted'
                             }`}
                           >
-                            {ord.payment_status}
+                            {ord.payment_reference ? 'RECORDED_UNVERIFIED' : 'NOT_SUBMITTED'}
                           </span>
                         </td>
                         <td className="p-3.5">
@@ -561,10 +529,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                         </td>
                         <td className="p-3.5 text-right">
                           <button
-                            onClick={() => {
-                              setSelectedOrder(ord);
-                              setReconciliationNotesInput(ord.reconciliation_notes || '');
-                            }}
+                            onClick={() => setSelectedOrder(ord)}
                             className="px-3 py-1 rounded-lg text-xs font-semibold bg-bg-elevated hover:bg-white/10 text-content-primary border border-white/10"
                           >
                             Manage
@@ -580,14 +545,14 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
         </div>
       )}
 
-      {/* ── TAB 3: CATALOGUE & DEMO PRICING ───────────────────────── */}
+      {/* ── TAB 3: CATALOGUE & PRICING ─────────────────────────────── */}
       {activeTab === 'catalogue' && (
         <div className="py-6 space-y-4">
           <div className="bg-bg-surface p-4 rounded-2xl border border-white/10 text-xs text-content-secondary flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div>
-              <p className="font-semibold text-content-primary">Diwali Poster Inventory & Demo Pricing Rules</p>
+              <p className="font-semibold text-content-primary">Diwali Poster Inventory & Pricing</p>
               <p className="text-content-muted mt-0.5">
-                Original printed prices remain immutable. Admin may configure demo simulation prices within printed bounds.
+                Printed prices remain immutable. Admin may configure prices within printed bounds.
               </p>
             </div>
             <span className="text-festive-marigold font-mono">
@@ -604,7 +569,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                     <th className="p-3.5">Pack Info</th>
                     <th className="p-3.5">Printed Price Text</th>
                     <th className="p-3.5">Printed Bounds</th>
-                    <th className="p-3.5">Current Demo Price</th>
+                    <th className="p-3.5">Active Price</th>
                     <th className="p-3.5">Status</th>
                     <th className="p-3.5 text-right">Action</th>
                   </tr>
@@ -652,7 +617,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                             onClick={() => openPriceEditModal(v)}
                             className="px-3 py-1 rounded-lg text-xs font-semibold bg-bg-elevated hover:bg-festive-marigold hover:text-black text-content-primary border border-white/10 transition-colors"
                           >
-                            Edit Demo Price
+                            Edit Price
                           </button>
                         </td>
                       </tr>
@@ -671,7 +636,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
           <div className="bg-bg-surface p-4 rounded-2xl border border-white/10 text-xs text-content-secondary">
             <p className="font-semibold text-content-primary">Immutable Audit Stream</p>
             <p className="text-content-muted mt-0.5">
-              Tracks all pricing updates, overrides, status changes, and payment verification events.
+              Tracks all pricing updates, overrides, status changes, and order events.
             </p>
           </div>
 
@@ -718,40 +683,30 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
         </div>
       )}
 
-      {/* ── TAB 5: SIMULATION SETTINGS ───────────────────────────── */}
+      {/* ── TAB 5: SYSTEM SETTINGS ───────────────────────────────── */}
       {activeTab === 'settings' && (
         <div className="py-6 max-w-2xl space-y-4">
           <div className="bg-bg-surface border border-white/10 rounded-2xl p-6 space-y-4">
-            <h3 className="text-sm font-semibold text-content-primary">Master Simulation Parameters</h3>
+            <h3 className="text-sm font-semibold text-content-primary">System Parameters</h3>
             
             <div className="space-y-3 text-xs">
               <div className="flex items-center justify-between p-3 rounded-xl bg-bg-elevated border border-white/5">
                 <div>
-                  <p className="font-semibold text-content-primary">Master Commerce Checkout</p>
-                  <p className="text-content-muted">When false, real payment gateway is completely blocked.</p>
+                  <p className="font-semibold text-content-primary">Payment Collection State</p>
+                  <p className="text-content-muted">Public payment collection and live merchant QR.</p>
                 </div>
                 <span className="px-3 py-1 rounded-full font-mono font-bold bg-amber-950/60 text-amber-300 border border-amber-800/40">
-                  DISABLED (DEMO ONLY)
+                  DISABLED
                 </span>
               </div>
 
               <div className="flex items-center justify-between p-3 rounded-xl bg-bg-elevated border border-white/5">
                 <div>
-                  <p className="font-semibold text-content-primary">Fixed Token Amount</p>
-                  <p className="text-content-muted">Strictly fixed at ₹100.00 for all qualifying orders.</p>
+                  <p className="font-semibold text-content-primary">Tiered Token Policy</p>
+                  <p className="text-content-muted">Advance token calculated strictly based on subtotal threshold.</p>
                 </div>
                 <span className="px-3 py-1 rounded-full font-mono font-bold bg-emerald-950/60 text-emerald-300 border border-emerald-800/40">
-                  ₹100.00 (10,000 paise)
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-3 rounded-xl bg-bg-elevated border border-white/5">
-                <div>
-                  <p className="font-semibold text-content-primary">Subtotal Minimum Threshold</p>
-                  <p className="text-content-muted">Enforces that cart subtotal meets or exceeds the ₹100 token.</p>
-                </div>
-                <span className="px-3 py-1 rounded-full font-mono font-bold bg-white/10 text-content-primary">
-                  &ge; ₹100.00
+                  ₹50 (&lt; ₹200) / ₹100 (&ge; ₹200)
                 </span>
               </div>
             </div>
@@ -759,7 +714,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
         </div>
       )}
 
-      {/* ── ORDER DETAILS & VERIFICATION MODAL ───────────────────── */}
+      {/* ── ORDER DETAILS MODAL ──────────────────────────────────── */}
       {selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="bg-bg-surface border border-white/10 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
@@ -824,85 +779,45 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                   {formatPaiseToRupees(selectedOrder.subtotal_paise)}
                 </span>
               </div>
-              <div className="flex justify-between text-emerald-400 font-semibold">
-                <span>Advance Token Due:</span>
+              <div className="flex justify-between text-amber-400 font-semibold">
+                <span>Advance Token Required:</span>
                 <span className="font-mono">{formatPaiseToRupees(selectedOrder.token_amount_paise)}</span>
               </div>
               <div className="flex justify-between pt-1 border-t border-white/5">
-                <span className="text-content-muted">Remaining Balance Due:</span>
+                <span className="text-content-muted">Remaining Balance Due at Counter:</span>
                 <span className="font-mono font-bold text-festive-marigold">
                   {formatPaiseToRupees(selectedOrder.remaining_balance_paise)}
                 </span>
               </div>
             </div>
 
-            {/* Manual Bank Statement Reconciliation Section */}
-            <div className="border border-amber-500/30 bg-amber-950/20 rounded-xl p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-amber-300">
-                  Manual Bank Statement Reconciliation
+            {/* UTR Information Card (Without Claims of Verification) */}
+            <div className="border border-white/10 bg-bg-elevated rounded-xl p-4 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-content-secondary">
+                  Customer 12-Digit UTR
                 </span>
-                <span className="text-xs font-mono font-bold text-content-primary">
-                  {selectedOrder.payment_reference || 'NO UTR SUBMITTED'}
+                <span className="font-mono font-bold text-festive-amber">
+                  {selectedOrder.payment_reference || 'NOT SUBMITTED'}
                 </span>
               </div>
-
-              <div className="text-[11px] text-content-muted leading-relaxed">
-                Automated bank verification is prohibited. Staff must cross-reference customer UTR with authorized bank statements or SMS notifications before confirming.
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-content-muted">Submission Timestamp:</span>
+                <span className="font-mono text-content-secondary">
+                  {selectedOrder.payment_submitted_at
+                    ? new Date(selectedOrder.payment_submitted_at).toLocaleString('en-IN')
+                    : '—'}
+                </span>
               </div>
-
-              {selectedOrder.reconciliation_notes && (
-                <div className="p-2.5 rounded-lg bg-bg-base border border-white/5 text-xs text-content-secondary">
-                  <span className="text-content-muted block text-[10px]">Staff Reconciliation Note:</span>
-                  <span className="italic">{selectedOrder.reconciliation_notes}</span>
-                  {selectedOrder.reconciled_by && (
-                    <span className="block text-[10px] text-content-muted mt-0.5 font-mono">
-                      By: {selectedOrder.reconciled_by} • {selectedOrder.reconciled_at ? new Date(selectedOrder.reconciled_at).toLocaleString('en-IN') : ''}
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {(selectedOrder.payment_status === 'RECORDED_UNVERIFIED' ||
-                selectedOrder.payment_status === 'PENDING_VERIFICATION') && (
-                <div className="space-y-2 pt-1">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-content-secondary mb-1">
-                      Bank Statement Matching Notes <span className="text-festive-crimson">*</span>
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={reconciliationNotesInput}
-                      onChange={(e) => setReconciliationNotesInput(e.target.value)}
-                      placeholder="e.g. Matched with HDFC credit notification #8492 at 15:30"
-                      className="w-full p-2.5 rounded-lg bg-bg-elevated border border-white/10 text-content-primary text-xs focus:outline-none focus:ring-1 focus:ring-festive-marigold"
-                      required
-                    />
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleReconcilePayment(selectedOrder.id, 'RECONCILE')}
-                      className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-black transition-colors"
-                    >
-                      Record Statement Match (Reconcile)
-                    </button>
-                    <button
-                      onClick={() => handleReconcilePayment(selectedOrder.id, 'REJECT')}
-                      className="flex-1 py-2 px-3 rounded-lg text-xs font-semibold bg-red-950 hover:bg-red-900 text-red-300 border border-red-800 transition-colors"
-                    >
-                      Reject UTR (Not in Statement)
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {(selectedOrder.payment_status === 'RECONCILED' ||
-                selectedOrder.payment_status === 'VERIFIED_TOKEN') && (
-                <p className="text-xs text-emerald-300 flex items-center gap-1.5 font-medium">
-                  ✓ Payment reference reconciled with bank statement.
-                </p>
-              )}
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-content-muted">Recorded Status:</span>
+                <span className="font-mono font-bold text-amber-300">
+                  {selectedOrder.payment_reference ? 'RECORDED_UNVERIFIED' : 'UNPAID'}
+                </span>
+              </div>
+              <p className="text-[11px] text-content-muted pt-1 leading-relaxed">
+                Status is recorded as unverified. Live payment verification is not enabled.
+              </p>
             </div>
 
             {/* Operational Status Transitions */}
@@ -937,7 +852,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
           <div className="bg-bg-surface border border-white/10 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div>
-                <h3 className="text-base font-bold text-content-primary">Edit Demo Price</h3>
+                <h3 className="text-base font-bold text-content-primary">Edit Price</h3>
                 <p className="text-xs text-content-muted">{editingVariant.name}</p>
               </div>
               <button
@@ -948,93 +863,82 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
               </button>
             </div>
 
-            <div className="bg-bg-elevated p-3 rounded-xl border border-white/5 text-xs space-y-1">
-              <p className="text-content-muted">
-                Original Printed Text: <span className="font-semibold text-content-primary">{editingVariant.printedPriceText}</span>
-              </p>
-              {editingVariant.printedMinPaise !== null && editingVariant.printedMinPaise !== undefined && (
-                <p className="text-content-muted font-mono">
-                  Printed Range: ₹{editingVariant.printedMinPaise / 100} to ₹
-                  {(editingVariant.printedMaxPaise || editingVariant.printedMinPaise) / 100}
-                </p>
-              )}
-            </div>
-
             <form onSubmit={handleSaveDemoPrice} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-content-secondary mb-1">
-                  Demo Price in Rupees (₹)
+                  Printed Range / Bounds
+                </label>
+                <p className="text-xs font-mono text-content-muted bg-bg-elevated p-2 rounded-lg border border-white/5">
+                  {editingVariant.printedPriceText} (
+                  {editingVariant.printedMinPaise !== null && editingVariant.printedMinPaise !== undefined
+                    ? `Min: ₹${editingVariant.printedMinPaise / 100}, Max: ₹${
+                        (editingVariant.printedMaxPaise || editingVariant.printedMinPaise) / 100
+                      }`
+                    : 'Discrete price'}
+                  )
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="variant-price" className="block text-xs font-semibold uppercase tracking-wider text-content-secondary mb-1">
+                  Active Price (₹)
                 </label>
                 <input
+                  id="variant-price"
                   type="number"
-                  step="0.01"
+                  step="1"
+                  min="1"
                   value={newPriceRupees}
                   onChange={(e) => setNewPriceRupees(e.target.value)}
-                  placeholder="e.g. 220.00"
-                  className="w-full bg-bg-elevated border border-white/10 rounded-xl px-4 py-2 text-sm font-mono text-content-primary focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+                  className="w-full bg-bg-elevated border border-white/10 rounded-xl px-4 py-2.5 text-sm font-mono text-content-primary focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+                  placeholder="e.g. 180"
                   required
                 />
               </div>
 
-              {/* Explicit Override Accordion if price is outside printed boundaries */}
-              {(() => {
-                const valPaise = Math.round((parseFloat(newPriceRupees) || 0) * 100);
-                const min = editingVariant.printedMinPaise;
-                const max = editingVariant.printedMaxPaise;
-                const isOut =
-                  (min !== null && min !== undefined && valPaise < min) ||
-                  (max !== null && max !== undefined && valPaise > max);
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  id="allow-override"
+                  type="checkbox"
+                  checked={allowOverride}
+                  onChange={(e) => setAllowOverride(e.target.checked)}
+                  className="w-4 h-4 rounded text-festive-marigold focus:ring-festive-marigold"
+                />
+                <label htmlFor="allow-override" className="text-xs text-content-muted cursor-pointer">
+                  Allow price outside printed boundaries (requires reason)
+                </label>
+              </div>
 
-                if (!isOut) return null;
-
-                return (
-                  <div className="p-3 bg-red-950/30 border border-red-800/50 rounded-xl space-y-2 text-xs">
-                    <p className="text-red-300 font-semibold">
-                      ⚠️ Entered price is outside the printed range!
-                    </p>
-                    <p className="text-content-muted">
-                      An administrator override justification is strictly required to save this price.
-                    </p>
-                    <div>
-                      <label className="block text-[11px] font-medium text-red-200 mb-1">
-                        Override Reason / Audit Justification
-                      </label>
-                      <input
-                        type="text"
-                        value={overrideReason}
-                        onChange={(e) => setOverrideReason(e.target.value)}
-                        placeholder="e.g. Owner verified wholesale supplier increase"
-                        className="w-full bg-bg-base border border-red-700/50 rounded-lg px-3 py-1.5 text-xs text-content-primary focus:outline-none"
-                      />
-                    </div>
-                    <label className="flex items-center gap-2 cursor-pointer pt-1">
-                      <input
-                        type="checkbox"
-                        checked={allowOverride}
-                        onChange={(e) => setAllowOverride(e.target.checked)}
-                        className="rounded border-red-700 text-festive-marigold"
-                      />
-                      <span className="text-content-secondary text-[11px]">
-                        Confirm administrative override outside printed range
-                      </span>
-                    </label>
-                  </div>
-                );
-              })()}
+              {allowOverride && (
+                <div>
+                  <label htmlFor="override-reason" className="block text-xs font-semibold uppercase tracking-wider text-content-secondary mb-1">
+                    Override Justification <span className="text-festive-crimson">*</span>
+                  </label>
+                  <textarea
+                    id="override-reason"
+                    rows={2}
+                    value={overrideReason}
+                    onChange={(e) => setOverrideReason(e.target.value)}
+                    placeholder="Enter audit reason for overriding printed bounds..."
+                    className="w-full bg-bg-elevated border border-white/10 rounded-xl p-2.5 text-xs text-content-primary focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+                    required
+                  />
+                </div>
+              )}
 
               <div className="flex gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setEditingVariant(null)}
-                  className="flex-1 py-2 px-3 rounded-xl text-xs font-semibold bg-bg-elevated hover:bg-white/10 text-content-secondary border border-white/10"
+                  className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-bg-elevated text-content-secondary hover:bg-white/10 border border-white/10"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2 px-3 rounded-xl text-xs font-semibold bg-festive-marigold hover:bg-festive-amber text-black"
+                  className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-festive-marigold hover:bg-festive-amber text-black"
                 >
-                  Save & Publish
+                  Save Price
                 </button>
               </div>
             </form>

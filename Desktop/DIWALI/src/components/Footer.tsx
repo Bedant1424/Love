@@ -7,40 +7,33 @@ export const Footer: React.FC = () => {
         {/* Brand & Store Information */}
         <div className="border-b border-white/5 pb-6">
           <h2 className="text-lg font-bold text-content-primary font-display">
-            Nagarjuna Traders — Sivakasi Fireworks
+            Nagarjuna Traders — Diwali Fireworks
           </h2>
           <p className="text-sm mt-1">
-            Official Diwali catalogue reservation and counter collection system.
+            Diwali catalogue enquiry and order reservation system.
           </p>
           <div className="mt-3 p-3 rounded-lg bg-bg-base border border-white/5 text-xs text-content-secondary space-y-1">
             <p>
-              <strong className="text-content-primary">Order Reservation:</strong> Orders submitted online require an advance token (₹50 below ₹200, ₹100 for ₹200+) to secure catalogue pricing and stock reservation.
+              <strong className="text-content-primary">Order Reservation:</strong> Orders submitted online require an advance token (₹50 below ₹200, ₹100 for ₹200+) to reserve items.
             </p>
             <p>
-              <strong className="text-content-primary">Physical Collection:</strong> Remaining balance is payable at physical counter collection. Courier shipment of fireworks is prohibited under Supreme Court & PESO regulations.
+              <strong className="text-content-primary">Counter Collection:</strong> Remaining balance is payable at counter collection upon receiving items.
             </p>
           </div>
         </div>
 
-        {/* Statutory Compliance & Safety Notice */}
-        <div className="p-4 rounded-xl bg-bg-elevated border border-white/10 text-xs space-y-2">
-          <div className="flex items-center gap-2 font-bold text-content-primary">
-            <span>⚖️</span>
-            <span>Statutory Compliance & Legal Guidelines</span>
-          </div>
+        {/* Notice */}
+        <div className="p-4 rounded-xl bg-bg-elevated border border-white/10 text-xs space-y-1">
           <p className="text-content-secondary leading-relaxed">
-            In accordance with the Supreme Court of India guidelines and Explosives Rules 2008, all fireworks orders must be collected directly in person at our licensed premises. Age verification (18+) is mandatory.
-          </p>
-          <p className="text-content-muted text-[11px] leading-relaxed">
-            Payment collection is strictly managed under authorized terms. Test environment transactions are recorded with non-payable fixtures until commercial operations open.
+            Please ensure you confirm quantities and item availability before finalizing your reservation.
           </p>
         </div>
 
         {/* Footer Meta */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs pt-4">
           <p>© 2026 Nagarjuna Traders. All rights reserved.</p>
-          <p className="text-festive-gold font-mono text-[11px]">
-            Licensed Counter Pickup • Sivakasi
+          <p className="text-content-muted font-mono text-[11px]">
+            Diwali Catalogue 2026
           </p>
         </div>
       </div>

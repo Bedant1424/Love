@@ -62,9 +62,16 @@ describe('ReviewView Component (Screens 6 to 10)', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(apiClient, 'getPaymentConfig').mockResolvedValue({
+      paymentCollectionEnabled: false,
+      isRestrictedEnv: true,
+      vpa: 'test-fixture@nagarjunatraders',
+      accountName: 'NAGARJUNA TRADERS (TEST)',
+      message: 'Restricted testing environment: non-payable test QR fixture active.',
+    });
   });
 
-  it('renders customer details, items, financial breakdown with tiered token', () => {
+  it('renders customer details, items, financial breakdown with tiered token', async () => {
     render(
       <ReviewView
         customer={mockCustomer}
@@ -75,10 +82,11 @@ describe('ReviewView Component (Screens 6 to 10)', () => {
       />
     );
 
-    // Customer info
-    expect(screen.getByText('Ramesh Patel')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Ramesh Patel')).toBeInTheDocument();
+    });
     expect(screen.getByText('+91 9876543210')).toBeInTheDocument();
-    expect(screen.getByText(/Store Counter Pickup/i)).toBeInTheDocument();
+    expect(screen.getByText(/Counter Pickup/i)).toBeInTheDocument();
     expect(screen.getByText(/18\+ Confirmed/i)).toBeInTheDocument();
 
     // Item info
@@ -90,6 +98,40 @@ describe('ReviewView Component (Screens 6 to 10)', () => {
     expect(screen.getAllByText(/₹360\.00/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/₹100\.00/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/₹260\.00/i).length).toBeGreaterThan(0);
+  });
+
+  it('shows truthful unavailable notice and blocks payment when public payment is disabled and not restricted', async () => {
+    vi.spyOn(apiClient, 'getPaymentConfig').mockResolvedValueOnce({
+      paymentCollectionEnabled: false,
+      isRestrictedEnv: false,
+      vpa: null,
+      accountName: null,
+      message: 'Payment instructions are currently unavailable.',
+    });
+
+    render(
+      <ReviewView
+        customer={mockCustomer}
+        items={mockPricedItems}
+        totals={mockValidTotals}
+        onEditCustomer={vi.fn()}
+        onEditCart={vi.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Payment instructions are currently unavailable/i)
+      ).toBeInTheDocument();
+    });
+
+    expect(
+      screen.queryByRole('button', { name: /Proceed to QR Payment Instructions/i })
+    ).not.toBeInTheDocument();
+
+    expect(
+      screen.getByRole('button', { name: /Copy Order Summary/i })
+    ).toBeInTheDocument();
   });
 
   it('advances from Screen 6 (Review) -> Screen 7 (QR) -> Screen 8 (UTR) -> Screen 9 (Confirmation)', async () => {
@@ -115,7 +157,7 @@ describe('ReviewView Component (Screens 6 to 10)', () => {
       orderReference: 'NT-8821',
       paymentReference: '428912345678',
       paymentStatus: 'RECORDED_UNVERIFIED',
-      message: 'Recorded unverified pending manual reconciliation',
+      message: 'Recorded unverified',
     });
 
     render(
@@ -128,8 +170,8 @@ describe('ReviewView Component (Screens 6 to 10)', () => {
       />
     );
 
-    // Step 6: Click Proceed to QR
-    const proceedBtn = screen.getByRole('button', {
+    // Step 6: Wait for proceed button in restricted env and click
+    const proceedBtn = await screen.findByRole('button', {
       name: /Proceed to QR Payment Instructions/i,
     });
     fireEvent.click(proceedBtn);
@@ -164,7 +206,7 @@ describe('ReviewView Component (Screens 6 to 10)', () => {
     // Step 9: Confirmation screen
     await waitFor(() => {
       expect(
-        screen.getByText(/Order Reserved Successfully/i)
+        screen.getByText(/Order Details Recorded/i)
       ).toBeInTheDocument();
       expect(screen.getByText(/RECORDED_UNVERIFIED/i)).toBeInTheDocument();
       expect(screen.getByText('428912345678')).toBeInTheDocument();
@@ -207,11 +249,10 @@ describe('ReviewView Component (Screens 6 to 10)', () => {
       />
     );
 
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: /Proceed to QR Payment Instructions/i,
-      })
-    );
+    const proceedBtn = await screen.findByRole('button', {
+      name: /Proceed to QR Payment Instructions/i,
+    });
+    fireEvent.click(proceedBtn);
 
     await waitFor(() => {
       expect(screen.getAllByText(/NT-5500/i).length).toBeGreaterThan(0);
@@ -243,10 +284,10 @@ describe('ReviewView Component (Screens 6 to 10)', () => {
     expect(screen.getByText(/Order Status Tracker/i)).toBeInTheDocument();
     expect(screen.getByText(/Fulfilment Progress/i)).toBeInTheDocument();
     expect(screen.getByText(/1\. Submitted/i)).toBeInTheDocument();
-    expect(screen.getByText(/Sivakasi Counter Collection Details/i)).toBeInTheDocument();
+    expect(screen.getByText(/Order Collection Information/i)).toBeInTheDocument();
   });
 
-  it('disables proceed action when unpriced items exist', () => {
+  it('disables proceed action when unpriced items exist', async () => {
     render(
       <ReviewView
         customer={mockCustomer}
@@ -257,7 +298,7 @@ describe('ReviewView Component (Screens 6 to 10)', () => {
       />
     );
 
-    const proceedBtn = screen.getByRole('button', {
+    const proceedBtn = await screen.findByRole('button', {
       name: /Proceed to QR Payment Instructions/i,
     });
     expect(proceedBtn).toBeDisabled();

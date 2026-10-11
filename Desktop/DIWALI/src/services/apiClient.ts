@@ -8,35 +8,47 @@ import {
   PaymentConfig,
   PaymentStatus,
   PriceAuditLog,
-  ReconcilePaymentRequest,
 } from '../server/types';
 import { ProductVariant } from '../types/catalogue';
 
 const API_BASE = '/api/v1';
+
+let currentAdminToken: string | null = null;
+
+export function setAdminAuthToken(token: string | null) {
+  currentAdminToken = token;
+}
+
+export function getAdminAuthToken(): string | null {
+  return currentAdminToken;
+}
 
 async function executeApi<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> || {}),
+  };
+
+  if (endpoint.startsWith('/admin') && currentAdminToken && !headers['Authorization']) {
+    headers['Authorization'] = `Bearer ${currentAdminToken}`;
+  }
+
   let response: Response;
 
   try {
     response = await fetch(url, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(options.headers || {}),
-      },
+      headers,
     });
   } catch (_fetchErr) {
     const fullUrl = `http://localhost${url}`;
     const syntheticReq = new Request(fullUrl, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(options.headers || {}),
-      },
+      headers,
     });
     response = await handleApiRequest(syntheticReq);
   }
@@ -66,12 +78,12 @@ export const apiClient = {
       tokenDuePaise: number;
       balanceDuePaise: number;
       paymentInstructions: {
-        vpa: string;
-        accountName: string;
-        amountInr: string;
-        transactionNote: string;
+        vpa?: string;
+        accountName?: string;
+        amountInr?: string;
+        transactionNote?: string;
         paymentCollectionEnabled: boolean;
-        notice: string;
+        notice?: string;
       };
     }>('/orders', {
       method: 'POST',
@@ -106,8 +118,10 @@ export const apiClient = {
     return this.submitUtr(orderReference, utr, token);
   },
 
+  /**
+   * Retrieves order status strictly using X-Order-Token header for privacy protection.
+   */
   async getOrderStatus(orderReference: string, token?: string) {
-    const query = token ? `?token=${encodeURIComponent(token)}` : '';
     return executeApi<{
       orderReference: string;
       customerName: string;
@@ -120,24 +134,28 @@ export const apiClient = {
       remainingBalancePaise: number;
       createdAt: string;
       updatedAt: string;
-    }>(`/orders/${orderReference}/status${query}`, {
+    }>(`/orders/${orderReference}/status`, {
       method: 'GET',
+      headers: token ? { 'X-Order-Token': token } : {},
     });
   },
 
+  /**
+   * Retrieves full order record strictly using X-Order-Token header for IDOR protection.
+   */
   async getOrder(orderReference: string, token?: string) {
-    const query = token ? `?token=${encodeURIComponent(token)}` : '';
     return executeApi<DemoOrderRecordWithItems>(
-      `/orders/${orderReference}${query}`,
+      `/orders/${orderReference}`,
       {
         method: 'GET',
+        headers: token ? { 'X-Order-Token': token } : {},
       }
     );
   },
 
   // Admin Dashboard Operations
   async adminLogin(passphrase: string) {
-    return executeApi<{
+    const result = await executeApi<{
       token: string;
       operatorId: string;
       role: string;
@@ -146,6 +164,11 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify({ passphrase }),
     });
+
+    if (result.token) {
+      setAdminAuthToken(result.token);
+    }
+    return result;
   },
 
   async getDashboardKPIs() {
@@ -191,34 +214,6 @@ export const apiClient = {
         body: JSON.stringify({ operationalStatus, operatorId, notes }),
       }
     );
-  },
-
-  async reconcilePayment(
-    orderId: string,
-    request: ReconcilePaymentRequest
-  ) {
-    return executeApi<DemoOrderRecordWithItems>(
-      `/admin/orders/${orderId}/reconciliation`,
-      {
-        method: 'POST',
-        body: JSON.stringify(request),
-      }
-    );
-  },
-
-  // Backward compatibility alias
-  async verifyPayment(
-    orderId: string,
-    action: 'APPROVE_TOKEN' | 'REJECT_INVALID_UTR',
-    operatorId: string = 'OP-ADMIN',
-    operatorNote?: string
-  ) {
-    return this.reconcilePayment(orderId, {
-      action,
-      operatorId,
-      reconciliationNotes:
-        operatorNote || 'Manual administrator statement verification',
-    });
   },
 
   async getAdminVariants() {

@@ -301,7 +301,7 @@ describe('Cloudflare Backend API Route Suite (/api/v1)', () => {
     expect(((await submit2.json()) as any).error.code).toBe('DUPLICATE_UTR');
   });
 
-  it('GET /api/v1/orders/:reference/status retrieves customer tracking details', async () => {
+  it('GET /api/v1/orders/:reference/status strictly requires X-Order-Token header and rejects query parameters', async () => {
     const createRes = await handleApiRequest(
       new Request('http://localhost/api/v1/orders', {
         method: 'POST',
@@ -313,13 +313,42 @@ describe('Cloudflare Backend API Route Suite (/api/v1)', () => {
     );
     const order = (await createRes.json()).data;
 
-    const statusRes = await handleApiRequest(
+    // 1. Rejects query param token with 401 (query params prohibited)
+    const queryParamRes = await handleApiRequest(
       new Request(
         `http://localhost/api/v1/orders/${order.orderReference}/status?token=${order.accessToken}`,
         { method: 'GET' }
       )
     );
+    expect(queryParamRes.status).toBe(401);
+
+    // 2. Rejects missing token with 401
+    const missingTokenRes = await handleApiRequest(
+      new Request(`http://localhost/api/v1/orders/${order.orderReference}/status`, {
+        method: 'GET',
+      })
+    );
+    expect(missingTokenRes.status).toBe(401);
+
+    // 3. Rejects invalid token with 403
+    const badTokenRes = await handleApiRequest(
+      new Request(`http://localhost/api/v1/orders/${order.orderReference}/status`, {
+        method: 'GET',
+        headers: { 'X-Order-Token': 'wrong-token' },
+      })
+    );
+    expect(badTokenRes.status).toBe(403);
+
+    // 4. Accepts valid X-Order-Token header and includes no-store Cache-Control
+    const statusRes = await handleApiRequest(
+      new Request(`http://localhost/api/v1/orders/${order.orderReference}/status`, {
+        method: 'GET',
+        headers: { 'X-Order-Token': order.accessToken },
+      })
+    );
     expect(statusRes.status).toBe(200);
+    expect(statusRes.headers.get('Cache-Control')).toContain('no-store');
+
     const statusData = (await statusRes.json()).data;
     expect(statusData.orderReference).toBe(order.orderReference);
     expect(statusData.operationalStatus).toBe('SUBMITTED');
@@ -327,7 +356,7 @@ describe('Cloudflare Backend API Route Suite (/api/v1)', () => {
     expect(statusData.subtotalPaise).toBe(order.subtotalPaise);
   });
 
-  it('Admin API: Requires mandatory notes for manual bank statement reconciliation', async () => {
+  it('Payment Verification & Bank Reconciliation operations are strictly prohibited', async () => {
     const createRes = await handleApiRequest(
       new Request('http://localhost/api/v1/orders', {
         method: 'POST',
@@ -349,36 +378,35 @@ describe('Cloudflare Backend API Route Suite (/api/v1)', () => {
     );
 
     const allOrders = (await (await handleApiRequest(
-      new Request('http://localhost/api/v1/admin/orders', { method: 'GET' })
+      new Request('http://localhost/api/v1/admin/orders', {
+        method: 'GET',
+        headers: { Authorization: 'Bearer dev-admin-token' },
+      })
     )).json()).data;
     const orderRecord = allOrders[0];
 
-    // Reconcile without notes -> Rejected
-    const badReconcile = await handleApiRequest(
+    // Any reconciliation attempt must be rejected with 400 PAYMENT_VERIFICATION_DISABLED
+    const reconcileRes = await handleApiRequest(
       new Request(`http://localhost/api/v1/admin/orders/${orderRecord.id}/reconciliation`, {
         method: 'POST',
-        body: JSON.stringify({ action: 'RECONCILE', reconciliationNotes: '' }),
-      })
-    );
-    expect(badReconcile.status).toBe(400);
-    expect(((await badReconcile.json()) as any).error.code).toBe('RECONCILIATION_NOTES_REQUIRED');
-
-    // Reconcile with manual statement match note -> Success
-    const goodReconcile = await handleApiRequest(
-      new Request(`http://localhost/api/v1/admin/orders/${orderRecord.id}/reconciliation`, {
-        method: 'POST',
+        headers: { Authorization: 'Bearer dev-admin-token' },
         body: JSON.stringify({
           action: 'RECONCILE',
           operatorId: 'OP-MANAGER',
-          reconciliationNotes: 'Verified against HDFC credit entry #9942 at 14:22',
+          reconciliationNotes: 'Verified against bank entry',
         }),
       })
     );
-    expect(goodReconcile.status).toBe(200);
-    const reconciledData = (await goodReconcile.json()).data;
-    expect(reconciledData.payment_status).toBe('RECONCILED');
-    expect(reconciledData.operational_status).toBe('CONFIRMED');
-    expect(reconciledData.reconciliation_notes).toContain('Verified against HDFC credit entry');
+    expect(reconcileRes.status).toBe(400);
+    expect(((await reconcileRes.json()) as any).error.code).toBe('PAYMENT_VERIFICATION_DISABLED');
+  });
+
+  it('Admin API: Requires authentication and rejects unauthorized requests', async () => {
+    // Unauthenticated request to /admin/orders -> 401
+    const unauthRes = await handleApiRequest(
+      new Request('http://localhost/api/v1/admin/orders', { method: 'GET' })
+    );
+    expect(unauthRes.status).toBe(401);
   });
 
   it('Admin API: Enforces printed price bounds and records overrides with audit log', async () => {
@@ -389,6 +417,7 @@ describe('Cloudflare Backend API Route Suite (/api/v1)', () => {
       `http://localhost/api/v1/admin/variants/${variantId}/demo-price`,
       {
         method: 'POST',
+        headers: { Authorization: 'Bearer dev-admin-token' },
         body: JSON.stringify({
           newPricePaise: 18000,
           operatorId: 'OP-NAGARJUNA',
@@ -403,6 +432,7 @@ describe('Cloudflare Backend API Route Suite (/api/v1)', () => {
       `http://localhost/api/v1/admin/variants/${variantId}/demo-price`,
       {
         method: 'POST',
+        headers: { Authorization: 'Bearer dev-admin-token' },
         body: JSON.stringify({
           newPricePaise: 29000, // ₹290 > ₹200 max
           operatorId: 'OP-NAGARJUNA',
@@ -418,6 +448,7 @@ describe('Cloudflare Backend API Route Suite (/api/v1)', () => {
       `http://localhost/api/v1/admin/variants/${variantId}/demo-price`,
       {
         method: 'POST',
+        headers: { Authorization: 'Bearer dev-admin-token' },
         body: JSON.stringify({
           newPricePaise: 29000,
           operatorId: 'OP-NAGARJUNA',

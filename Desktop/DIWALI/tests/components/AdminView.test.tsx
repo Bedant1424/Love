@@ -56,17 +56,17 @@ describe('AdminView Component Suite', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Overview & KPIs/i })).toBeInTheDocument();
-      expect(screen.getByText('Total Demo Orders')).toBeInTheDocument();
-      expect(screen.getByText('Pending UTR Verification')).toBeInTheDocument();
+      expect(screen.getByText('Total Orders')).toBeInTheDocument();
+      expect(screen.getByText('UTR Submitted (Unverified)')).toBeInTheDocument();
     });
 
-    // Navigate to Catalogue & Demo Pricing tab
-    const catTab = screen.getByRole('button', { name: /Catalogue & Demo Pricing/i });
+    // Navigate to Catalogue & Pricing tab
+    const catTab = screen.getByRole('button', { name: /Catalogue & Pricing/i });
     fireEvent.click(catTab);
 
     await waitFor(() => {
       expect(
-        screen.getByText(/Diwali Poster Inventory & Demo Pricing Rules/i)
+        screen.getByText(/Diwali Poster Inventory & Pricing/i)
       ).toBeInTheDocument();
       expect(screen.getByText(/Total Variants:/i)).toBeInTheDocument();
     });
@@ -80,7 +80,7 @@ describe('AdminView Component Suite', () => {
     });
   });
 
-  it('allows editing a demo price within printed bounds', async () => {
+  it('allows editing a price within printed bounds', async () => {
     render(<AdminView onBackToCustomerSite={mockBackToCustomer} />);
 
     // Login
@@ -94,19 +94,19 @@ describe('AdminView Component Suite', () => {
     });
 
     // Switch to Catalogue tab
-    fireEvent.click(screen.getByRole('button', { name: /Catalogue & Demo Pricing/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Catalogue & Pricing/i }));
 
     await waitFor(() => {
-      expect(screen.getAllByRole('button', { name: /Edit Demo Price/i }).length).toBeGreaterThan(0);
+      expect(screen.getAllByRole('button', { name: /Edit Price/i }).length).toBeGreaterThan(0);
     });
 
     // Click edit on the first item
-    const editButtons = screen.getAllByRole('button', { name: /Edit Demo Price/i });
+    const editButtons = screen.getAllByRole('button', { name: /Edit Price/i });
     fireEvent.click(editButtons[0]);
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /Edit Demo Price/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /Save & Publish/i })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /Edit Price/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Save Price/i })).toBeInTheDocument();
     });
   });
 });

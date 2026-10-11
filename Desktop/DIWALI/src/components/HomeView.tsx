@@ -28,7 +28,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </h1>
 
           <p className="text-base text-content-secondary max-w-xl mx-auto leading-relaxed">
-            Reserve your festival box across six traditional categories. Secure your order with an advance token online and collect your package directly at our licensed Sivakasi counter.
+            Reserve your festival box across six traditional categories. Place your order reservation online and collect your items at the counter.
           </p>
 
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -52,17 +52,17 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </section>
 
-      {/* Feature / Policy Strip */}
+      {/* Feature Strip */}
       <section className="max-w-7xl mx-auto px-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="p-4 rounded-xl bg-bg-surface border border-white/5 flex items-start gap-3">
             <span className="text-2xl" aria-hidden="true">📋</span>
             <div>
               <h2 className="text-sm font-bold text-content-primary font-display">
-                Authentic Sivakasi Catalogue
+                Traditional Catalogue
               </h2>
               <p className="text-xs text-content-muted mt-0.5">
-                Traditional crackers, sparklers, ground chakkars, and flower pots from genuine Sivakasi manufacturers.
+                Traditional crackers, sparklers, ground chakkars, and flower pots.
               </p>
             </div>
           </div>
@@ -74,7 +74,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 Tiered Advance Token
               </h2>
               <p className="text-xs text-content-muted mt-0.5">
-                Pay ₹50 token for orders below ₹200, or ₹100 for orders ₹200 and above. Settle remaining balance at pickup.
+                ₹50 token for orders below ₹200, or ₹100 for orders ₹200 and above. Settle remaining balance at pickup.
               </p>
             </div>
           </div>
@@ -83,10 +83,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <span className="text-2xl" aria-hidden="true">📍</span>
             <div>
               <h2 className="text-sm font-bold text-content-primary font-display">
-                Licensed Counter Pickup
+                Counter Collection
               </h2>
               <p className="text-xs text-content-muted mt-0.5">
-                Physical collection at licensed premises in full compliance with Supreme Court safety guidelines.
+                Collect your reserved items directly at the counter upon order readiness.
               </p>
             </div>
           </div>

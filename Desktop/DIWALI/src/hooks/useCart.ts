@@ -3,7 +3,6 @@ import {
   StoredCartItem,
   CartItem,
   CartTotals,
-  MIN_ORDER_SUBTOTAL_PAISE,
   calculateTokenAmountPaise,
   calculateRemainingBalancePaise,
 } from '../types/cart';
@@ -80,7 +79,7 @@ export function useCart() {
       subtotalPaise,
       tokenAmountPaise
     );
-    const minOrderRequirementMet = subtotalPaise >= MIN_ORDER_SUBTOTAL_PAISE;
+    const minOrderRequirementMet = subtotalPaise > 0;
     const hasUnpricedItems = unpricedItemCount > 0;
 
     const canProceedToCheckout =
@@ -90,9 +89,9 @@ export function useCart() {
     if (hasUnpricedItems) {
       checkoutBlockedReason =
         'Every item in your box must have a confirmed price before proceeding to payment instructions.';
-    } else if (!minOrderRequirementMet && totalQuantity > 0) {
+    } else if (totalQuantity === 0) {
       checkoutBlockedReason =
-        'Add items until your subtotal reaches at least ₹50 to meet the minimum order requirement.';
+        'Your basket is currently empty. Add at least one cracker item to proceed.';
     }
 
     return {

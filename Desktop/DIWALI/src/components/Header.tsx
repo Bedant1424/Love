@@ -36,21 +36,12 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <p className="text-xs text-content-muted flex items-center gap-1.5 mt-0.5">
               <span>Diwali Fireworks Catalogue</span>
-              <span>•</span>
-              <span className="text-festive-gold">Sivakasi Counter Collection</span>
             </p>
           </button>
         </div>
 
-        {/* Counter Collection Badge, Admin Link & Cart Action */}
+        {/* Admin Link & Cart Action */}
         <div className="flex items-center gap-2 md:gap-3">
-          <span
-            className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-950/60 text-emerald-300 border border-emerald-800/40"
-            title="Advance token required online; balance payable at physical counter collection"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            Counter Pickup Only
-          </span>
 
           <button
             onClick={() => onSelectTab('admin')}

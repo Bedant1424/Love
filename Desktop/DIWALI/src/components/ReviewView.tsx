@@ -1,9 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { CartItem, CartTotals, PaymentStatus } from '../types/cart';
 import { CustomerDetails } from '../types/customer';
 import { formatPaise } from '../utils/formatters';
 import { generateEnquiryText, getWhatsAppUrl } from '../utils/enquirySummary';
 import { apiClient } from '../services/apiClient';
+import { PaymentConfig } from '../server/types';
 import { TestQrCode } from './TestQrCode';
 
 export type ReviewStep =
@@ -23,7 +24,6 @@ interface OrderState {
   balanceDuePaise: number;
   paymentReference?: string | null;
   paymentSubmittedAt?: string | null;
-  reconciliationNotes?: string | null;
 }
 
 interface ReviewViewProps {
@@ -50,10 +50,27 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [statusLookupRef, setStatusLookupRef] = useState('');
+  const [statusLookupToken, setStatusLookupToken] = useState('');
   const [statusLookupError, setStatusLookupError] = useState<string | null>(null);
   const [statusPolling, setStatusPolling] = useState(false);
+  const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
 
   const isSubmittingOrderRef = useRef(false);
+
+  useEffect(() => {
+    apiClient
+      .getPaymentConfig()
+      .then(setPaymentConfig)
+      .catch(() => {
+        setPaymentConfig({
+          paymentCollectionEnabled: false,
+          isRestrictedEnv: false,
+          vpa: null,
+          accountName: null,
+          message: 'Payment instructions are currently unavailable.',
+        });
+      });
+  }, []);
 
   const isCustomerValid =
     customer.fullName.trim().length >= 2 &&
@@ -63,8 +80,12 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
   const canProceedToPayment =
     isCustomerValid &&
     totals.totalQuantity > 0 &&
-    totals.minOrderRequirementMet &&
+    totals.subtotalPaise > 0 &&
     !totals.hasUnpricedItems;
+
+  const isPaymentAvailable = Boolean(
+    paymentConfig?.paymentCollectionEnabled || paymentConfig?.isRestrictedEnv
+  );
 
   const currentOrderId = orderState?.orderReference;
   const summaryText = generateEnquiryText(
@@ -87,7 +108,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
 
   // Step 6 -> Step 7: Create Order on server and proceed to QR payment instructions
   const handleProceedToQr = async () => {
-    if (!canProceedToPayment || isSubmittingOrderRef.current) return;
+    if (!canProceedToPayment || isSubmittingOrderRef.current || !isPaymentAvailable) return;
     isSubmittingOrderRef.current = true;
     setIsSubmitting(true);
 
@@ -198,11 +219,15 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
 
     setStatusLookupError(null);
     setStatusPolling(true);
+
     try {
-      const live = await apiClient.getOrderStatus(statusLookupRef.trim());
+      const live = await apiClient.getOrderStatus(
+        statusLookupRef.trim(),
+        statusLookupToken.trim() || undefined
+      );
       setOrderState({
         orderReference: live.orderReference,
-        accessToken: '',
+        accessToken: statusLookupToken.trim(),
         operationalStatus: live.operationalStatus,
         paymentStatus: live.paymentStatus,
         subtotalPaise: live.subtotalPaise,
@@ -213,7 +238,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
       });
       setCurrentStep('ORDER_STATUS');
     } catch (err: any) {
-      setStatusLookupError(err.message || 'Order reference not found.');
+      setStatusLookupError(err.message || 'Order reference not found or invalid token.');
     } finally {
       setStatusPolling(false);
     }
@@ -223,12 +248,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
   // SCREEN 10: ORDER STATUS TRACKER
   // ══════════════════════════════════════════════════════════════════
   if (currentStep === 'ORDER_STATUS' && orderState) {
-    const isUnverified =
-      orderState.paymentStatus === 'RECORDED_UNVERIFIED' ||
-      orderState.paymentStatus === 'PENDING_VERIFICATION';
-    const isReconciled =
-      orderState.paymentStatus === 'RECONCILED' ||
-      orderState.paymentStatus === 'VERIFIED_TOKEN';
+    const isUnverified = orderState.paymentStatus === 'RECORDED_UNVERIFIED';
 
     return (
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
@@ -238,7 +258,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
               Order Status Tracker
             </h2>
             <p className="text-xs text-content-muted mt-0.5">
-              Live status for Reference: <span className="font-mono text-festive-marigold font-bold">{orderState.orderReference}</span>
+              Status for Reference: <span className="font-mono text-festive-marigold font-bold">{orderState.orderReference}</span>
             </p>
           </div>
           <button
@@ -262,7 +282,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
               { key: 'CONFIRMED', label: '2. Confirmed' },
               { key: 'PREPARING', label: '3. Packing' },
               { key: 'READY_FOR_PICKUP', label: '4. Ready' },
-              { key: 'COMPLETED', label: '5. Collected' },
+              { key: 'COMPLETED', label: '5. Completed' },
             ].map((step, idx) => {
               const orderStatuses = [
                 'SUBMITTED',
@@ -293,15 +313,15 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
           </div>
         </div>
 
-        {/* Payment & Token Verification Card */}
+        {/* Payment & Token Status Card */}
         <div className="p-5 rounded-2xl bg-bg-surface border border-white/10 space-y-3">
           <h3 className="text-sm font-bold text-content-primary uppercase tracking-wider font-mono">
-            Advance Token & Payment Status
+            Advance Token & Payment State
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
             <div className="p-3 rounded-xl bg-bg-elevated border border-white/5">
-              <span className="text-[11px] text-content-muted block">Advance Token Due</span>
+              <span className="text-[11px] text-content-muted block">Advance Token</span>
               <span className="text-base font-bold font-mono text-festive-marigold">
                 {formatPaise(orderState.tokenDuePaise)}
               </span>
@@ -318,18 +338,14 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
               <span className="text-[11px] text-content-muted block">Payment State</span>
               <span
                 className={`text-xs font-bold font-mono px-2 py-0.5 rounded inline-block mt-1 ${
-                  isReconciled
-                    ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
-                    : isUnverified
+                  isUnverified
                     ? 'bg-amber-950 text-amber-300 border border-amber-700'
+                    : orderState.paymentStatus === 'UNPAID'
+                    ? 'bg-bg-elevated text-content-muted border border-white/10'
                     : 'bg-red-950 text-red-300 border border-red-700'
                 }`}
               >
-                {isReconciled
-                  ? 'RECONCILED'
-                  : isUnverified
-                  ? 'RECORDED (UNVERIFIED)'
-                  : orderState.paymentStatus}
+                {isUnverified ? 'RECORDED (UNVERIFIED)' : orderState.paymentStatus}
               </span>
             </div>
           </div>
@@ -343,25 +359,25 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
                 </span>
               </div>
               <div className="text-[11px] text-content-muted">
-                Note: Bank verification is performed manually by staff against bank statements before counter pickup handover.
+                Note: This reference is recorded as unverified. This application does not verify payments or establish receipt of funds.
               </div>
             </div>
           )}
         </div>
 
-        {/* Counter Pickup Instructions */}
+        {/* Collection Information */}
         <div className="p-5 rounded-2xl bg-bg-surface border border-white/10 space-y-2 text-xs text-content-secondary">
           <h3 className="text-sm font-bold text-content-primary font-display">
-            Sivakasi Counter Collection Details
+            Order Collection Information
           </h3>
           <p>
-            • Please present your order reference <strong className="text-content-primary font-mono">{orderState.orderReference}</strong> and registered mobile number at the depot counter.
+            • Present your order reference <strong className="text-content-primary font-mono">{orderState.orderReference}</strong> and registered mobile number at collection.
           </p>
           <p>
-            • Remaining balance of <strong className="text-content-primary font-mono">{formatPaise(orderState.balanceDuePaise)}</strong> can be paid in cash or UPI at the collection desk.
+            • Remaining balance of <strong className="text-content-primary font-mono">{formatPaise(orderState.balanceDuePaise)}</strong> is due upon collection.
           </p>
           <p>
-            • 18+ Photo ID verification is legally required for handing over crackers.
+            • Age confirmation (18+) required at collection.
           </p>
         </div>
 
@@ -402,7 +418,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-950/60 text-emerald-300 border border-emerald-800/40 mb-2">
               <span>🎉</span>
-              <span>Order Reserved Successfully</span>
+              <span>Order Details Recorded</span>
             </div>
             <h2 className="text-2xl md:text-3xl font-bold font-display text-content-primary">
               Order Reference: {orderState.orderReference}
@@ -422,12 +438,14 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
               <span className="text-content-muted">Mobile Number:</span>
               <span className="font-mono text-content-primary">+91 {customer.mobileNumber}</span>
             </div>
-            <div className="flex justify-between items-center pb-2 border-b border-white/5">
-              <span className="text-content-muted">Submitted 12-Digit UTR:</span>
-              <span className="font-mono text-festive-amber font-bold">
-                {orderState.paymentReference || 'Recorded'}
-              </span>
-            </div>
+            {orderState.paymentReference && (
+              <div className="flex justify-between items-center pb-2 border-b border-white/5">
+                <span className="text-content-muted">Submitted 12-Digit UTR:</span>
+                <span className="font-mono text-festive-amber font-bold">
+                  {orderState.paymentReference}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between items-center pb-2 border-b border-white/5">
               <span className="text-content-muted">Payment Reference Status:</span>
               <span className="px-2 py-0.5 rounded bg-amber-950/80 text-amber-300 font-mono font-bold text-[11px] border border-amber-800/60">
@@ -435,13 +453,13 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
               </span>
             </div>
             <div className="flex justify-between items-center pb-2 border-b border-white/5">
-              <span className="text-content-muted">Advance Token Amount:</span>
+              <span className="text-content-muted">Advance Token:</span>
               <span className="font-mono font-bold text-festive-marigold">
                 {formatPaise(orderState.tokenDuePaise)}
               </span>
             </div>
             <div className="flex justify-between items-center pt-1 text-sm">
-              <span className="font-bold text-content-primary">Balance Due at Counter:</span>
+              <span className="font-bold text-content-primary">Balance Due at Collection:</span>
               <span className="font-mono font-bold text-content-primary text-base">
                 {formatPaise(orderState.balanceDuePaise)}
               </span>
@@ -449,7 +467,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
           </div>
 
           <p className="text-xs text-content-muted max-w-md mx-auto leading-relaxed">
-            Your 12-digit UTR has been recorded. Payment status is unverified pending manual reconciliation with our bank account. Stock has been reserved for your counter pickup in Sivakasi.
+            Your 12-digit UTR has been recorded as unverified. This application does not verify payments or confirm receipt of funds. Please retain your order reference.
           </p>
 
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -495,7 +513,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
           <div className="mb-6">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-festive-marigold/10 border border-festive-marigold/30 text-festive-amber mb-2">
               <span>💳</span>
-              <span>Step 8 of 10 • UTR Submission</span>
+              <span>Step 8 • UTR Submission</span>
             </div>
             <h2 className="text-2xl font-bold font-display text-content-primary">
               Submit 12-Digit UTR
@@ -537,7 +555,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
                 className="w-full min-h-touch px-4 py-2.5 rounded-xl bg-bg-elevated border border-white/10 text-content-primary font-mono text-base tracking-widest focus:outline-none focus:ring-2 focus:ring-festive-marigold"
               />
               <p className="text-xs text-content-muted mt-1.5">
-                Exact 12 digits from your UPI payment receipt (GPay, PhonePe, Paytm, or BHIM).
+                Exact 12 digits from your UPI payment receipt.
               </p>
               {utrError && (
                 <p className="mt-1.5 text-xs text-festive-crimson flex items-center gap-1">
@@ -548,10 +566,10 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
 
             <div className="p-3 rounded-xl bg-bg-elevated border border-white/5 text-xs text-content-muted space-y-1">
               <p className="text-content-primary font-semibold">
-                ⚖️ Verification Notice:
+                ℹ️ Status Notice:
               </p>
               <p>
-                A submitted UTR is recorded as unverified pending manual bank statement reconciliation by our store staff. Automated bank verification is prohibited.
+                Submitted UTR references are recorded as unverified. This application does not verify payments or establish receipt of funds.
               </p>
             </div>
 
@@ -582,6 +600,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
   // ══════════════════════════════════════════════════════════════════
   if (currentStep === 'QR_PAYMENT' && orderState) {
     const amountInr = (orderState.tokenDuePaise / 100).toFixed(2);
+    const isRestricted = Boolean(paymentConfig?.isRestrictedEnv);
 
     return (
       <div className="max-w-xl mx-auto px-4 py-6 space-y-6">
@@ -589,7 +608,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
           <div className="text-center space-y-1">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-festive-marigold/10 border border-festive-marigold/30 text-festive-amber mb-1">
               <span>📱</span>
-              <span>Step 7 of 10 • Advance Token QR</span>
+              <span>Step 7 • Advance Token QR</span>
             </div>
             <h2 className="text-2xl font-bold font-display text-content-primary">
               UPI QR Payment Instructions
@@ -601,11 +620,11 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
 
           {/* Test QR Code Fixture */}
           <TestQrCode
-            vpa="test-fixture@nagarjunatraders"
-            accountName="NAGARJUNA TRADERS (TEST)"
+            vpa={paymentConfig?.vpa || 'test-fixture@nagarjunatraders'}
+            accountName={paymentConfig?.accountName || 'NAGARJUNA TRADERS (TEST)'}
             amountInr={amountInr}
             transactionNote={orderState.orderReference}
-            isRestricted={true}
+            isRestricted={isRestricted}
           />
 
           {/* Payment Guidance Card */}
@@ -625,12 +644,14 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
             <div className="flex justify-between items-center text-content-secondary">
               <span>Remaining Balance:</span>
               <span className="font-mono font-bold text-content-primary">
-                {formatPaise(orderState.balanceDuePaise)} (Payable at counter)
+                {formatPaise(orderState.balanceDuePaise)} (Payable at collection)
               </span>
             </div>
-            <div className="pt-2 border-t border-white/5 text-[11px] text-amber-300 leading-relaxed">
-              ⚠️ Restricted Test Environment: Real payment collection is disabled. Test fixture provided for workflow verification only. Do not transfer actual money.
-            </div>
+            {isRestricted && (
+              <div className="pt-2 border-t border-white/5 text-[11px] text-amber-300 leading-relaxed">
+                ⚠️ Restricted Test Environment: Non-payable test QR fixture active. Real payment collection is disabled. Do not transfer actual money.
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-3">
@@ -664,7 +685,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
       <div className="border-b border-white/10 pb-4">
         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-festive-marigold/10 border border-festive-marigold/30 text-festive-amber mb-2">
           <span>📋</span>
-          <span>Step 6 of 10 • Order Review</span>
+          <span>Step 6 • Order Review</span>
         </div>
         <h2 className="text-2xl font-bold font-display text-content-primary">
           Order Review & Advance Token
@@ -706,8 +727,8 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
             <span className="text-content-muted block">Collection Preference:</span>
             <span className="text-content-primary">
               {customer.fulfilmentPreference === 'SPECIAL_ENQUIRY'
-                ? 'Wholesale Enquiry'
-                : 'Store Counter Pickup (Sivakasi)'}
+                ? 'Special Enquiry'
+                : 'Counter Pickup'}
             </span>
           </div>
           <div>
@@ -785,7 +806,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
           </div>
 
           <div className="flex justify-between items-center">
-            <span className="text-content-muted">Balance Due at Sivakasi Counter:</span>
+            <span className="text-content-muted">Balance Due at Collection:</span>
             <span className="font-mono font-bold text-content-primary">
               {formatPaise(totals.remainingBalancePaise)}
             </span>
@@ -802,10 +823,23 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
         </div>
       </div>
 
+      {/* Payment Disabled Truthful Notice */}
+      {paymentConfig && !isPaymentAvailable && (
+        <div className="p-4 rounded-2xl bg-amber-950/30 border border-amber-600/30 text-amber-200 text-xs space-y-2">
+          <div className="flex items-center gap-2 font-bold text-sm text-amber-300">
+            <span>ℹ️</span>
+            <span>Payment instructions are currently unavailable.</span>
+          </div>
+          <p className="text-amber-200/80 leading-relaxed">
+            Public online payment collection is currently disabled. Real customer details and payments are not being accepted online. You may copy your order summary or share it via WhatsApp for order enquiry.
+          </p>
+        </div>
+      )}
+
       {/* Warnings & Action Button */}
       {!canProceedToPayment && (
         <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-800/40 text-xs text-amber-300">
-          ⚠️ Please ensure customer details are complete (including 18+ confirmation) and cart meets minimum requirements before proceeding.
+          ⚠️ Please ensure customer details are complete (including 18+ confirmation) and items are selected before proceeding.
         </div>
       )}
 
@@ -818,29 +852,59 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
           ← Edit Cart
         </button>
 
-        <button
-          type="button"
-          disabled={!canProceedToPayment || isSubmitting}
-          onClick={handleProceedToQr}
-          className="w-full sm:flex-1 min-h-touch px-6 py-3 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 disabled:opacity-50 text-black font-semibold text-base transition-transform flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-festive-marigold"
-        >
-          <span>{isSubmitting ? 'Creating Order...' : 'Proceed to QR Payment Instructions →'}</span>
-        </button>
+        {isPaymentAvailable ? (
+          <button
+            type="button"
+            disabled={!canProceedToPayment || isSubmitting}
+            onClick={handleProceedToQr}
+            className="w-full sm:flex-1 min-h-touch px-6 py-3 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 disabled:opacity-50 text-black font-semibold text-base transition-transform flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+          >
+            <span>{isSubmitting ? 'Creating Order...' : 'Proceed to QR Payment Instructions →'}</span>
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="w-full sm:flex-1 min-h-touch px-5 py-2.5 rounded-xl bg-bg-elevated hover:bg-white/10 border border-white/10 text-content-primary font-semibold text-sm transition-colors text-center"
+            >
+              {copied ? '✓ Summary Copied!' : '📋 Copy Order Summary'}
+            </button>
+
+            {whatsappUrl && (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:flex-1 min-h-touch px-5 py-2.5 rounded-xl bg-emerald-700/80 hover:bg-emerald-600 text-white font-semibold text-sm transition-colors text-center inline-flex items-center justify-center gap-1.5"
+              >
+                <span>💬 Share to WhatsApp</span>
+              </a>
+            )}
+          </>
+        )}
       </div>
 
       {/* Quick Order Lookup Form */}
       <div className="pt-6 border-t border-white/5">
         <details className="text-xs text-content-muted">
           <summary className="cursor-pointer hover:text-content-primary font-semibold py-1">
-            Already placed an order? Track with Order Reference
+            Already placed an order? Track with Order Reference & Token
           </summary>
-          <form onSubmit={handleLookupOrder} className="mt-3 flex gap-2">
+          <form onSubmit={handleLookupOrder} className="mt-3 flex flex-col sm:flex-row gap-2">
             <input
               type="text"
               value={statusLookupRef}
               onChange={(e) => setStatusLookupRef(e.target.value)}
-              placeholder="e.g. NT-4921"
+              placeholder="Order Reference (e.g. NT-4921)"
               className="flex-1 px-3 py-2 rounded-xl bg-bg-elevated border border-white/10 font-mono text-content-primary text-xs"
+            />
+            <input
+              type="password"
+              value={statusLookupToken}
+              onChange={(e) => setStatusLookupToken(e.target.value)}
+              placeholder="Access Token"
+              className="w-full sm:w-44 px-3 py-2 rounded-xl bg-bg-elevated border border-white/10 font-mono text-content-primary text-xs"
             />
             <button
               type="submit"
