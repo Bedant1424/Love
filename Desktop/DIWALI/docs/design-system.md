@@ -145,6 +145,24 @@ On mobile screens (`< 768px`), a fixed bottom glass bar (`h-16`) docks to the bo
 - Right: Primary CTA button (`View Cart & Book` or `Review Estimate`).
 - Ensures zero layout shift and high checkout discoverability.
 
+### 4.5 Portfolio Demo Banner & Simulated Modal Tokens
+
+- **Portfolio Demo Banner:**
+  - Background: `bg-amber-950/40 border border-amber-800/40`
+  - Text: `text-xs text-amber-200` with bold headline: *"Portfolio Demo Only. No real orders, fireworks sales, delivery, or payments are processed."*
+- **Fixed ₹100 Token Badge:**
+  - Token amount: `10000` integer paise (`₹100.00`).
+  - Visual: `px-1.5 py-0.5 rounded bg-amber-500/10 text-festive-amber border border-amber-500/20`.
+- **Simulated Payment Gateway Modal:**
+  - Backdrop: `bg-black/70 backdrop-blur-sm fixed inset-0 z-50`.
+  - Pending State: Spin animation on amber circle with explanatory guidance.
+  - Test Success CTA: `bg-emerald-600 hover:bg-emerald-500 text-white font-semibold`.
+  - Test Failure CTA: `bg-red-950/60 hover:bg-red-900/60 text-red-200 border border-red-800/50`.
+- **Demo Order Confirmation Card:**
+  - Success Icon: 64px emerald circle with white checkmark.
+  - Reference Badge: `DEMO-NT-XXXX` formatted in bold monospace.
+  - One-click copy summary button and start new order action.
+
 ---
 
 ## 5. Accessibility & Inclusivity Invariants
@@ -153,3 +171,4 @@ On mobile screens (`< 768px`), a fixed bottom glass bar (`h-16`) docks to the bo
 2. **Focus Visibility:** Standard `focus-visible:ring-2 focus-visible:ring-[#FF8800] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F0E13]` on all interactives.
 3. **Screen Readers:** ARIA labels on all quantity steppers (`aria-label="Increase quantity of Skyshot Bigboss"`, `aria-live="polite"` on cart balance totals).
 4. **Motion Restraint:** All transitions degrade to `transition: none` and static layout when `@media (prefers-reduced-motion: reduce)` is enabled.
+

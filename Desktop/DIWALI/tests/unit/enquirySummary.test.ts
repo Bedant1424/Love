@@ -23,6 +23,7 @@ describe('Enquiry Summary Utility', () => {
       pricePaise: 35000,
       printedPriceText: '₹350',
       priceStatus: 'PRINTED_ESTIMATE',
+      pricingOrigin: 'POSTER_EXACT',
       quantity: 2,
       lineSubtotalPaise: 70000,
     },
@@ -36,32 +37,77 @@ describe('Enquiry Summary Utility', () => {
       pricePaise: null,
       printedPriceText: '₹200 to ₹250',
       priceStatus: 'PRICE_ON_ENQUIRY',
+      pricingOrigin: 'POSTER_RANGE',
       quantity: 1,
       lineSubtotalPaise: null,
     },
   ];
 
-  const sampleTotals: CartTotals = {
+  const sampleTotalsWithUnpriced: CartTotals = {
     totalQuantity: 3,
     pricedItemCount: 1,
     unpricedItemCount: 1,
     provisionalSubtotalPaise: 70000,
+    subtotalPaise: 70000,
+    tokenAmountPaise: 10000,
+    remainingBalancePaise: 60000,
+    canProceedToCheckout: false,
+    minOrderRequirementMet: true,
+    hasUnpricedItems: true,
+    checkoutBlockedReason:
+      'Every item in your box must have a confirmed price before proceeding to simulated payment.',
   };
 
-  it('generates a clean human-readable enquiry text containing customer and item details', () => {
-    const text = generateEnquiryText(sampleCustomer, sampleItems, sampleTotals);
+  const sampleTotalsAllPriced: CartTotals = {
+    totalQuantity: 2,
+    pricedItemCount: 1,
+    unpricedItemCount: 0,
+    provisionalSubtotalPaise: 70000,
+    subtotalPaise: 70000,
+    tokenAmountPaise: 10000,
+    remainingBalancePaise: 60000,
+    canProceedToCheckout: true,
+    minOrderRequirementMet: true,
+    hasUnpricedItems: false,
+    checkoutBlockedReason: undefined,
+  };
 
-    expect(text).toContain('NAGARJUNA TRADERS');
+  it('generates a clean human-readable enquiry text containing customer and item details with unpriced items', () => {
+    const text = generateEnquiryText(sampleCustomer, sampleItems, sampleTotalsWithUnpriced);
+
+    expect(text).toContain('NAGARJUNA TRADERS — PORTFOLIO DEMO');
     expect(text).toContain('Ravi Kumar');
     expect(text).toContain('9876543210');
     expect(text).toContain('Skyshot - Bigboss');
     expect(text).toContain('₹700.00');
     expect(text).toContain('Pandav');
     expect(text).toContain('Requires Confirmation (Printed: ₹200 to ₹250)');
-    expect(text).toContain('Known-Price Items Subtotal: ₹700.00');
-    expect(text).toContain('Items Requiring Price Confirmation: 1 item(s)');
-    expect(text).toContain('STATUTORY NOTICE:');
-    expect(text).toContain('Online firecracker sales and courier parcel delivery are prohibited under Indian law');
+    expect(text).toContain('Order Subtotal: ₹700.00');
+    expect(text).toContain('Fixed Demo Token: ₹100.00');
+    expect(text).toContain('Remaining Balance: ₹600.00');
+    expect(text).toContain('Items Needing Price Confirmation: 1 item(s)');
+    expect(text).toContain('PORTFOLIO DEMO NOTICE:');
+    expect(text).toContain(
+      'Portfolio Demo Only. No real orders, fireworks sales, delivery, or payments are processed.'
+    );
+  });
+
+  it('generates demo summary with fixed ₹100 token and calculated remaining balance when all items are priced', () => {
+    const pricedItemsOnly = [sampleItems[0]];
+    const text = generateEnquiryText(
+      sampleCustomer,
+      pricedItemsOnly,
+      sampleTotalsAllPriced,
+      'DEMO-NT-TEST-1234'
+    );
+
+    expect(text).toContain('DEMO ORDER REF: DEMO-NT-TEST-1234');
+    expect(text).toContain('STATUS: SIMULATED DEMO RECORD');
+    expect(text).toContain('Order Subtotal: ₹700.00');
+    expect(text).toContain('Fixed Demo Token: ₹100.00');
+    expect(text).toContain('Remaining Balance: ₹600.00');
+    expect(text).toContain('Total Items: 2 unit(s)');
+    expect(text).toContain('PORTFOLIO DEMO NOTICE:');
   });
 
   describe('WhatsApp URL Generator', () => {

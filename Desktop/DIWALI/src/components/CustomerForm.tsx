@@ -31,7 +31,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
 
     if (!values.ageConfirmed) {
       errs.ageConfirmed =
-        'You must confirm that you are 18 years or older as required by the Explosives Rules, 2008.';
+        'You must confirm that you are 18 years or older for the demo ordering flow.';
     }
 
     return errs;
@@ -61,11 +61,15 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     <div className="max-w-xl mx-auto px-4 py-6">
       <div className="bg-bg-surface border border-white/10 rounded-2xl p-5 md:p-7 shadow-xl">
         <div className="mb-6">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-festive-marigold/10 border border-festive-marigold/30 text-festive-amber mb-2">
+            <span>👤</span>
+            <span>Transient Session Memory Only</span>
+          </div>
           <h2 className="text-2xl font-bold font-display text-content-primary">
-            Customer Information
+            Sample Customer Information
           </h2>
           <p className="text-sm text-content-muted mt-1 leading-relaxed">
-            Please enter your contact details for counter reservation. Your
+            Please enter sample contact details for the order simulation. Your
             details are stored only in memory for this session and are never
             saved to local storage.
           </p>
@@ -160,7 +164,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
               </p>
             ) : (
               <p className="mt-1 text-xs text-content-muted">
-                Required to verify your booking at the counter.
+                Used to label your simulated demo order slip.
               </p>
             )}
           </div>
@@ -168,7 +172,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
           {/* Fulfilment Preference */}
           <div>
             <label className="block text-sm font-semibold text-content-primary mb-1.5">
-              Collection Method
+              Collection Method (Demonstration)
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button
@@ -187,7 +191,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
               >
                 <div className="font-bold text-sm">Store Counter Pickup</div>
                 <div className="text-content-muted mt-0.5">
-                  Collect at licensed premises in Sivakasi
+                  Simulated local counter collection demo
                 </div>
               </button>
 
@@ -207,7 +211,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
               >
                 <div className="font-bold text-sm">Wholesale Enquiry</div>
                 <div className="text-content-muted mt-0.5">
-                  Large festival batch or dealer inquiry
+                  Simulated bulk festival batch demo
                 </div>
               </button>
             </div>
@@ -234,8 +238,8 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                 <strong className="text-content-primary">
                   18 years of age or older
                 </strong>{' '}
-                as mandated by the Indian Explosives Rules, 2008 for fireworks
-                purchase. <span className="text-festive-crimson">*</span>
+                (Simulated age verification for demo ordering flow).{' '}
+                <span className="text-festive-crimson">*</span>
               </span>
             </label>
             {touched.ageConfirmed && errors.ageConfirmed && (
@@ -261,7 +265,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
               onChange={(e) =>
                 setDetails((prev) => ({ ...prev, notes: e.target.value }))
               }
-              placeholder="e.g. Expected pickup date or packaging requests."
+              placeholder="e.g. Test notes for simulated packaging or pickup date."
               className="w-full p-3 rounded-xl bg-bg-elevated border border-white/10 text-content-primary placeholder-content-muted text-sm focus:outline-none focus:ring-2 focus:ring-festive-marigold"
             />
             <div className="text-right text-[11px] text-content-muted mt-1">

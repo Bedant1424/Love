@@ -158,4 +158,79 @@ describe('useCart Hook', () => {
     expect(result.current.items[0].quantity).toBe(3);
     expect(result.current.items[0].lineSubtotalPaise).toBe(105000); // 35000 * 3
   });
+
+  describe('Fixed ₹100 Token & Demo Order Financial Rules', () => {
+    it('enforces fixed 10,000 paise (₹100) token and calculates non-negative remaining balance for eligible orders', () => {
+      const { result } = renderHook(() => useCart());
+
+      // Skyshot Bigboss: ₹350 (35000 paise)
+      act(() => {
+        result.current.addItem('prod_skyshot_bigboss', 'var_bigboss_3pcs', 1);
+      });
+
+      expect(result.current.totals.subtotalPaise).toBe(35000);
+      expect(result.current.totals.tokenAmountPaise).toBe(10000); // Exactly ₹100
+      expect(result.current.totals.remainingBalancePaise).toBe(25000); // ₹350 - ₹100 = ₹250
+      expect(result.current.totals.minOrderRequirementMet).toBe(true);
+      expect(result.current.totals.hasUnpricedItems).toBe(false);
+      expect(result.current.totals.canProceedToCheckout).toBe(true);
+      expect(result.current.totals.checkoutBlockedReason).toBeUndefined();
+    });
+
+    it('handles exact ₹100 order subtotal: token is ₹100, remaining balance is ₹0 (never negative)', () => {
+      const { result } = renderHook(() => useCart());
+
+      // Ground Chakri Medium: ₹100 (10000 paise)
+      act(() => {
+        result.current.addItem('prod_chakri_spinners', 'var_chakri_medium', 1);
+      });
+
+      expect(result.current.totals.subtotalPaise).toBe(10000);
+      expect(result.current.totals.tokenAmountPaise).toBe(10000);
+      expect(result.current.totals.remainingBalancePaise).toBe(0);
+      expect(result.current.totals.minOrderRequirementMet).toBe(true);
+      expect(result.current.totals.canProceedToCheckout).toBe(true);
+    });
+
+    it('blocks checkout when subtotal is below ₹100 with required prompt message', () => {
+      const { result } = renderHook(() => useCart());
+
+      // Bijli Laddi ₹60 (6000 paise)
+      act(() => {
+        result.current.addItem('prod_bijli_laddi', 'var_bijli_60', 1);
+      });
+
+      expect(result.current.totals.subtotalPaise).toBe(6000);
+      expect(result.current.totals.tokenAmountPaise).toBe(10000);
+      expect(result.current.totals.remainingBalancePaise).toBe(0); // Never negative
+      expect(result.current.totals.minOrderRequirementMet).toBe(false);
+      expect(result.current.totals.canProceedToCheckout).toBe(false);
+      expect(result.current.totals.checkoutBlockedReason).toBe(
+        'Add items until your subtotal reaches ₹100. The demo token amount is fixed at ₹100.'
+      );
+    });
+
+    it('blocks checkout when cart contains items requiring price confirmation', () => {
+      const { result } = renderHook(() => useCart());
+
+      // Add priced item: Skyshot Bigboss (₹350)
+      act(() => {
+        result.current.addItem('prod_skyshot_bigboss', 'var_bigboss_3pcs', 1);
+      });
+      // Add unpriced range item: Pandav (Printed: ₹200 to ₹250)
+      act(() => {
+        result.current.addItem('prod_pandav', 'var_pandav_5pcs', 1);
+      });
+
+      expect(result.current.totals.subtotalPaise).toBe(35000);
+      expect(result.current.totals.tokenAmountPaise).toBe(10000);
+      expect(result.current.totals.remainingBalancePaise).toBe(25000);
+      expect(result.current.totals.hasUnpricedItems).toBe(true);
+      expect(result.current.totals.canProceedToCheckout).toBe(false);
+      expect(result.current.totals.checkoutBlockedReason).toBe(
+        'Every item in your box must have a confirmed price before proceeding to simulated payment.'
+      );
+    });
+  });
 });
+

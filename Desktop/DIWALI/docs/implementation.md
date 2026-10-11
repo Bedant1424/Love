@@ -55,11 +55,35 @@ To maintain repository safety and prevent accidental overrides:
 ### Milestone 2: Core Customer Interface (COMPLETED)
 1. **Initialize Project:** Scaffolded React 18 + Vite + TypeScript application with Tailwind CSS in `c:\Users\17042\Desktop\DIWALI`.
 2. **Design Tokens & Typography:** Implemented festive color palette (deep night `#080604`, festive marigold `#F59E0B`, warm cream `#FFFBEB`) with responsive typography and accessible touch targets (48×48px).
-3. **Authentic Catalogue Data:** Extracted all 26 authentic products/variants across 6 categories from `docs/catalogue-data.md` into strongly typed structures (`src/data/catalogueData.ts`), preserving printed prices, marking unverified sizes, and flagging unpriced range items as "Price on enquiry".
+3. **Authentic Catalogue Data:** Extracted authentic products/variants across 6 categories from `docs/catalogue-data.md` into strongly typed structures (`src/data/catalogueData.ts`), preserving printed prices, marking unverified sizes, and flagging unpriced range items as "Price on enquiry".
 4. **Client Cart Engine (`useCart`):** Engineered immutable cart hook with integer paise arithmetic (`src/utils/formatters.ts`), 1–50 quantity clamping, unpriced items count separation, and sanitized LocalStorage synchronization (`nt_cart_items_v1`).
 5. **Transient Customer State:** Customer personal details (full name, 10-digit mobile, 18+ age attestation) are stored exclusively in React memory and strictly excluded from LocalStorage to protect customer privacy under DPDP Act 2023.
-6. **Statutory Non-Binding Enquiry Flow:** Enforced `COMMERCE_CHECKOUT_ENABLED=false`; review view renders human-readable quotation summary with one-click clipboard copy (`generateEnquiryText`), optional WhatsApp URI fallback, and Supreme Court firecracker licensing notices.
-7. **Automated Verification:** 42 Vitest unit and component integration tests passing (100%); zero build errors (`tsc && vite build`: JS gzip 59.87 kB, CSS gzip 4.72 kB).
+
+### Correction Milestone: Portfolio Demo Mode, Fixed ₹100 Token & Catalogue Accuracy (COMPLETED)
+1. **Branch Safety:** Created and developed on `fix/nagarjuna-demo-mode-and-catalogue` based on `feature/nagarjuna-customer-ui`.
+2. **Explicit Portfolio Demo Framing:**
+   - Added persistent portfolio demo banner across header, footer, cart, and simulated checkout: *"Portfolio Demo Only. No real orders, fireworks sales, delivery, or payments are processed."*
+   - Updated header badge to `Portfolio Demo Mode` with pulsing amber indicator.
+   - Removed all unsupported commercial marketing claims ("Direct wholesale rates", "Licensed counter pickup").
+3. **Fixed ₹100 Token & Financial Engine:**
+   - Enforced single source of truth constant: `TOKEN_AMOUNT_PAISE = 10000` (₹100.00).
+   - Removed old 20% variable deposit and variable minimum token logic.
+   - Remaining balance is strictly `Math.max(0, subtotalPaise - 10000)` (never negative).
+   - Gated checkout: orders require `subtotalPaise >= 10000` (₹100). If below ₹100, displays: *"Add items until your subtotal reaches ₹100. The demo token amount is fixed at ₹100."*
+   - Range items gating: orders with unconfirmed range prices cannot proceed to simulated payment until all items have confirmed prices.
+4. **Catalogue & Poster Alignment:**
+   - Sparkler prices strictly restored to printed poster prices: 9cm (₹180), 9cm Color (₹250), 12cm (₹250), 12cm Color (₹300), and 15cm Crackling (₹350).
+   - Kumpi restricted to authentic poster sizes: Medium (₹150 to ₹200 range) and Large (₹200 to ₹250 range) only. Invented Small, Big, Special, and Deluxe purged.
+   - Chakri Medium set to ₹100 printed rate; Chakri Large kept as ₹250 to ₹350 unpriced range item.
+   - Added `POSTER_CATALOGUE_NOTE` preserving poster note on enquiry requests.
+5. **Simulated Payment & Checkout Flow:**
+   - Implemented interactive simulated payment modal with `PENDING`, `SUCCESS`, and `FAILED` states.
+   - Provided test action buttons to simulate authorization success or test error states with retry capability.
+   - Successful simulation generates `DEMO-NT-XXXX` confirmation record with zero real banking API or UPI calls.
+   - Idempotency ref (`isSubmittingRef`) prevents duplicate submissions on rapid repeated clicks.
+6. **Automated Verification:**
+   - 50 Vitest unit and component tests passing (100% green across 9 test suites).
+   - Zero TypeScript errors (`tsc && vite build` clean: JS bundle 221.53 kB / gzip 61.64 kB).
 
 ### Milestone 3: Backend Edge API & Admin Console
 1. **Wrangler Setup:** Create `wrangler.jsonc` with Cloudflare D1 database binding and environment variables.

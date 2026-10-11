@@ -127,76 +127,82 @@ Resolves multi-size products (e.g., Tiger Bomb Sizes 3, 4, 5, 6; Big Lanka Laddi
 
 ---
 
-## 6. Cart (`/cart`)
+## 6. Demo Basket (`/cart` or Cart View)
 
 ### 6.1 Purpose
-Complete review of items, quantities, unit prices, line subtotals, gross total, token amount, and balance.
+Complete review of items, quantities, unit prices, line subtotals, gross total, fixed ₹100 demo token, and remaining balance.
 
 ### 6.2 Layout
 - **Mobile Layout:**
   - Stacked list of cart item cards.
-  - Each item row contains: Product Name, Variant Pill, Exact Unit Price, Quantity Stepper, Line Subtotal, and Trash/Remove icon button.
-  - Price Calculation Card:
-    - Items Subtotal: `₹X,XXX.00` (computed in paise)
-    - Confirmed Taxes / Charges: `₹0.00` (Inclusive / explicitly itemized)
-    - Token Deposit Required (20%): `₹YYY.00`
-    - Remaining Balance Payable at Counter: `₹ZZZ.00`
-  - Action: Sticky Primary Button "Proceed to Review".
-- **Desktop Layout:** Table layout with thumbnail, variant, price, quantity stepper, total, and sticky right-hand summary sidebar.
+  - Each item row contains: Product Name, Variant Pill, Exact Unit Price, Quantity Stepper, Line Subtotal, and Remove button.
+  - Range items clearly display *"Price to be confirmed (Range item: ...)"*.
+  - Demo Financial Breakdown Card (Integer Paise):
+    - Priced Items Subtotal: `₹X,XXX.00`
+    - Fixed Demo Token: `₹100.00` (highlighted in Festive Amber, single constant `TOKEN_AMOUNT_PAISE = 10000`)
+    - Remaining Balance: `₹ZZZ.00` (`Math.max(0, subtotal - 10000)`)
+    - Items Requiring Price Confirmation: count displayed if any range items present.
+  - Gating Notices:
+    - If subtotal < ₹100: *"Add items until your subtotal reaches ₹100. The demo token amount is fixed at ₹100."*
+    - If unpriced range items present: *"Every item in your box must have a confirmed price before proceeding to simulated payment."*
+    - Portfolio Demo Notice: *"Portfolio Demo Only. No real orders, fireworks sales, delivery, or payments are processed."*
+  - Action: Sticky Primary Button "Proceed to Review & Summary →".
 
 ### 6.3 States
-- **Empty Cart:** Festive illustration, text "Your Diwali box is empty", and primary button "Explore Catalogue".
+- **Empty Cart:** Festive icon, title "Your Demo Basket is Empty", guidance to explore 6 poster categories, button "Explore 2026 Catalogue →".
 
 ---
 
-## 7. Order Review (`/checkout/review`)
+## 7. Simulated Order Review (`/checkout/review` or Review View)
 
 ### 7.1 Purpose
-Final pre-submission audit. Recalculates all values from server database rules, validates stock, and runs Cloudflare Turnstile bot verification.
+Pre-submission audit of customer details, items, integer paise valuation, fixed ₹100 token rule, and initiation of simulated payment.
 
 ### 7.2 Layout
-- Customer Details Card: Name, Phone number, and Pickup preference.
-- Itemized Order Summary (frozen line snapshots).
-- Financial Breakdown: Total, Token Amount Due, Balance Due.
-- Legal Disclaimer Box: Counter collection rules and age requirement.
-- Bot Verification: Embedded Cloudflare Turnstile challenge box.
+- Persistent Portfolio Demo Banner at top.
+- Customer Details Card: Full Name, Mobile Number (+91), Collection Method, 18+ Age Attestation, Special Notes, with "Edit Details" navigation.
+- Selected Items list with quantities and subtotal calculations.
+- Financial Breakdown Card: Subtotal, Fixed Demo Token (₹100), Remaining Balance.
+- Human-Readable Demo Summary Textarea with one-click "📋 Copy Demo Summary" button.
 - Submission CTA:
-  - If `COMMERCE_CHECKOUT_ENABLED=true`: "Submit Order & Pay Token"
-  - If `COMMERCE_CHECKOUT_ENABLED=false`: "Generate WhatsApp Estimate Slip"
+  - Enabled when eligible: "Proceed to Simulated Payment (₹100 Demo Token) →"
+  - Disabled when unpriced items exist or subtotal < ₹100, showing clear reason.
 
 ---
 
-## 8. Payment Instructions (`/checkout/payment/{orderId}`)
+## 8. Simulated Payment Gateway Demo (Payment Modal / State)
 
 ### 8.1 Purpose
-Presents approved UPI payment methods (VPA, QR code, Intent link) for the exact token amount.
+Demonstrates how an online token payment authorization behaves without connecting a live payment gateway or charging real funds.
 
-### 8.2 Layout
-- Order Reference Badge: `NT-2026-XXXXXX`.
-- Token Deposit Due: `₹XXX.00` (Highlighted in Warm Marigold).
-- Dynamic UPI QR Code: Pre-encoded with VPA, amount, and order reference note.
-- "Tap to Pay with UPI App" button (Mobile only, triggers `upi://pay` intent for GPay/PhonePe/Paytm).
-- Manual Reference Entry Form:
-  - Label: "Enter 12-digit UPI Reference / UTR Number from your bank receipt".
-  - Input: 12-digit numeric text input (`inputmode="numeric"`, pattern `\d{12}`).
-  - Action Button: "Submit UTR for Verification".
+### 8.2 Layout & Interactive Controls
+- Modal Title: "Fixed ₹100 Demo Token Payment"
+- Subhead: "Simulated token reservation amount: ₹100.00"
+- Pending State:
+  - Animated spinner with "Simulating Payment Authorization..."
+  - Clear notice: *"No real UPI intent or bank API is contacted. Use the buttons below to test success or error response states:"*
+  - Test Success Button: "Simulate Successful Payment (Test Success)"
+  - Test Error Button: "Simulate Payment Failure (Test Error)"
+  - Cancel Button: "← Cancel and Return to Review Screen"
+- Failure State:
+  - Error alert with decline explanation.
+  - "Retry Simulated Payment" button.
 
 ---
 
-## 9. Order Confirmation (`/checkout/confirmed/{orderId}`)
+## 9. Demo Order Confirmation (Success Screen)
 
 ### 9.1 Purpose
-Confirms successful order capture and informs the customer that staff verification is underway.
+Displays simulated order reference, itemized receipt, token accounting, and explicit portfolio disclaimers.
 
 ### 9.2 Layout
-- Hero Status: Amber Hourglass icon + "Booking Submitted — Payment Under Verification".
-- Prominent Order ID: `NT-2026-XXXXXX` with "Copy Reference" button.
-- Secret Tracking Link: Bookmarking reminder with direct link `/order/{orderId}?token={secret}`.
-- Next Steps Card:
-  1. Store staff verifies UTR against bank account.
-  2. Order changes to "Confirmed".
-  3. SMS/WhatsApp notification sent when package is packed.
-  4. Collect crackers at store counter by presenting this Order ID.
+- Success checkmark icon with emerald badge: "Simulated Payment Completed".
+- Headline: "Demo Order Confirmation".
+- Demo Reference: `DEMO-NT-XXXX`.
+- Receipt card: Subtotal, Simulated Token Paid (₹100.00), Remaining Balance.
+- Portfolio Demo Disclaimer:
+  > *"Portfolio Demo Only: No real funds were charged, no real bank transaction occurred, and no commercial order will be packed or dispatched."*
+- Actions: "📋 Copy Demo Order Summary" and "Start New Demo Order".
 
 ---
 

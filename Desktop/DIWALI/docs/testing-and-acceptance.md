@@ -8,49 +8,49 @@
 
 ## 1. Test Strategy & Architecture
 
+## 1. Test Strategy & Architecture
+
 ```
 +───────────────────────────────────────────────────────────────────────────────────+
-|                               TEST SUITE TOPOLOGY                                 |
+|                           TEST SUITE TOPOLOGY (PORTFOLIO DEMO)                    |
 |                                                                                   |
-|  [ Level 1: Unit Tests (Vitest) ]                                                 |
-|  - Integer paise arithmetic (token calculation, rounding, balance)                |
-|  - Price snapshot immutability                                                    |
-|  - Zod request body validation & phone number regex                               |
-|  - UTR 12-digit format validation                                                 |
+|  [ Level 1: Unit Tests (Vitest) - 100% Passed (25 tests) ]                         |
+|  - Integer paise arithmetic and formatting (formatters.test.ts)                   |
+|  - Fixed ₹100 token rule (TOKEN_AMOUNT_PAISE = 10000) (cart.test.ts)              |
+|  - Minimum subtotal gating (subtotal >= ₹100) (cart.test.ts)                      |
+|  - Non-negative remaining balance: Math.max(0, subtotal - 10000) (cart.test.ts)   |
+|  - Unpriced range item gating (cart.test.ts)                                      |
+|  - Safe LocalStorage cart recovery (storage.test.ts)                              |
+|  - Human-readable demo summary generation & WhatsApp link (enquirySummary.test.ts)|
 |                                                                                   |
-|  [ Level 2: Edge Integration Tests (Vitest + Miniflare + D1 In-Memory) ]          |
-|  - GET /api/v1/catalogue (edge caching, hides unpriced variants)                  |
-|  - POST /api/v1/orders (recalculates client prices, rejects tampering)            |
-|  - POST /api/v1/orders/:id/payment-reference (enforces unique UTR)                |
-|  - POST /api/v1/admin/* (enforces Cloudflare Access JWT authentication)           |
-|                                                                                   |
-|  [ Level 3: Concurrency & Security Tests ]                                        |
-|  - Idempotency key replay protection                                              |
-|  - Race condition on inventory deductions                                         |
-|  - SQL injection payloads on D1 queries                                           |
-|  - IDOR / BOLA attack without secret order token                                  |
-|                                                                                   |
-|  [ Level 4: E2E & Mobile UX Tests (Playwright) ]                                  |
-|  - Complete customer booking flow (Home -> Cart -> UTR -> Confirmation)           |
-|  - Mobile viewports (360px Android, 390px iPhone)                                 |
-|  - Touch target audit (minimum 44×44px / 48×48px)                                 |
-|  - WCAG 2.2 AA color contrast audit (Axe-core)                                    |
+|  [ Level 2: Component Integration Tests (Vitest + RTL) - 100% Passed (25 tests) ]  |
+|  - 6 Authentic category tabs & poster pricing (CatalogueView.test.tsx)            |
+|  - Environmental statutory notice for Category 1 Laddis (CatalogueView.test.tsx)  |
+|  - Transient customer form validation & 18+ attestation (CustomerForm.test.tsx)   |
+|  - Demo basket, ₹100 token breakdown & blockers (CartView.test.tsx)                |
+|  - Simulated checkout, pending authorization & success (ReviewView.test.tsx)      |
+|  - Failure state simulation & retry action (ReviewView.test.tsx)                  |
+|  - Complete customer journey: Home -> Catalogue -> Basket -> Form -> Review ->   |
+|    Simulated Payment -> Demo Order Confirmation (App.test.tsx)                    |
 +───────────────────────────────────────────────────────────────────────────────────+
 ```
 
 ---
 
-## 2. Unit Test Matrix
+## 2. Unit & Integration Test Matrix
 
-| Test Suite | Test Case Description | Pass Criteria | Command |
-|---|---|---|---|
-| `math.test.ts` | Paise to INR conversion | `formatPaise(35000)` returns `"₹350.00"`. `parseInrToPaise("350.00")` returns `35000`. | `npm run test:unit` |
-| `math.test.ts` | 20% Token calculation | Order of ₹1,000 (100,000 paise) returns ₹200 (20,000 paise). | `npm run test:unit` |
-| `math.test.ts` | Minimum token rule | Order of ₹300 (30,000 paise) returns minimum ₹100 (10,000 paise) token deposit. | `npm run test:unit` |
-| `math.test.ts` | Remaining balance calculation | Correctly computes `subtotalPaise - tokenDuePaise` down to exact single paisa. | `npm run test:unit` |
-| `validation.test.ts`| Phone number validation | Accepts `9876543210`, rejects `123456`, `abcdefghij`, `5876543210` (starts with 5). | `npm run test:unit` |
-| `validation.test.ts`| UTR format validation | Accepts `428901234567` (12 digits), rejects `12345` or alphanumeric strings. | `npm run test:unit` |
-| `validation.test.ts`| Quantity bounds | Rejects `0`, `-5`, `1.5`, and `9999`. Accepts `1` through `50`. | `npm run test:unit` |
+| Test Suite | Tests | Scenario Covered | Outcome | Command |
+|---|---|---|---|---|
+| `cart.test.ts` | 12 | Fixed ₹100 token (`10000`), min subtotal gating, non-negative balance, quantity limits (1-50), clamp | ✓ Passed (12/12) | `npm test` |
+| `formatters.test.ts` | 3 | Integer paise to Indian Rupee formatting (`35000` -> `"₹350.00"`) | ✓ Passed (3/3) | `npm test` |
+| `storage.test.ts` | 5 | Safe localStorage recovery, JSON fallback, quota error handling | ✓ Passed (5/5) | `npm test` |
+| `enquirySummary.test.ts` | 5 | Human-readable demo summary, fixed token, remaining balance, WhatsApp URL | ✓ Passed (5/5) | `npm test` |
+| `CustomerForm.test.tsx` | 5 | Name validation, Indian mobile regex (`^[6-9]\d{9}$`), age checkbox | ✓ Passed (5/5) | `npm test` |
+| `CartView.test.tsx` | 4 | Demo basket display, price confirmation notes, fixed ₹100 token, blockers | ✓ Passed (4/4) | `npm test` |
+| `ReviewView.test.tsx` | 8 | Customer info, item valuation, simulated payment (pending/success/failure), copy | ✓ Passed (8/8) | `npm test` |
+| `CatalogueView.test.tsx` | 5 | 6 Categories, discrete vs range items, category filtering, search, Laddis notice | ✓ Passed (5/5) | `npm test` |
+| `App.test.tsx` | 3 | Initial Home rendering, end-to-end full customer journey to simulated confirmation, localStorage restore | ✓ Passed (3/3) | `npm test` |
+| **Total** | **50** | **Comprehensive Frontend & Portfolio Demo Verification** | **✓ 50/50 Passed (100%)** | `npm test` |
 
 ---
 

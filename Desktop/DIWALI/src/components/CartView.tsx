@@ -31,11 +31,11 @@ export const CartView: React.FC<CartViewProps> = ({
           📦
         </div>
         <h2 className="text-2xl font-bold font-display text-content-primary">
-          Your Enquiry Basket is Empty
+          Your Demo Basket is Empty
         </h2>
         <p className="text-sm text-content-muted mt-2 max-w-sm mx-auto leading-relaxed">
-          You have not selected any crackers yet. Browse our 6 authentic Diwali
-          categories to assemble your celebration box.
+          You have not selected any cracker items yet. Browse our 6 authentic Diwali
+          poster categories to assemble your sample box.
         </p>
         <button
           type="button"
@@ -54,7 +54,7 @@ export const CartView: React.FC<CartViewProps> = ({
       <div className="flex items-center justify-between border-b border-white/10 pb-4">
         <div>
           <h2 className="text-2xl font-bold font-display text-content-primary">
-            Enquiry Basket
+            Demo Basket
           </h2>
           <p className="text-xs text-content-muted mt-0.5">
             {totals.totalQuantity} items selected across {items.length} product(s)
@@ -70,7 +70,7 @@ export const CartView: React.FC<CartViewProps> = ({
       </div>
 
       {/* Item List */}
-      <div className="space-y-3" role="list" aria-label="Enquiry basket items">
+      <div className="space-y-3" role="list" aria-label="Demo basket items">
         {items.map((item) => (
           <div
             key={`${item.productId}-${item.variantId}`}
@@ -100,14 +100,13 @@ export const CartView: React.FC<CartViewProps> = ({
 
               {/* Price Status Note */}
               <div className="mt-1 text-[11px]">
-                {item.priceStatus === 'PRINTED_ESTIMATE' && (
+                {item.lineSubtotalPaise !== null ? (
                   <span className="text-amber-300">
                     Catalogue Estimate: {formatPaise(item.lineSubtotalPaise)}
                   </span>
-                )}
-                {item.priceStatus === 'PRICE_ON_ENQUIRY' && (
+                ) : (
                   <span className="text-amber-400 font-medium">
-                    Price on enquiry (quote will be confirmed at counter)
+                    Price to be confirmed (Range item: {item.printedPriceText})
                   </span>
                 )}
               </div>
@@ -139,7 +138,7 @@ export const CartView: React.FC<CartViewProps> = ({
       {/* Estimates & Financial Summary Card */}
       <div className="p-5 rounded-2xl bg-bg-surface border border-white/10 space-y-4">
         <h3 className="text-base font-bold font-display text-content-primary">
-          Provisional Estimate Summary
+          Demo Financial Breakdown (Integer Paise)
         </h3>
 
         <div className="space-y-2 text-sm border-b border-white/5 pb-4">
@@ -148,50 +147,84 @@ export const CartView: React.FC<CartViewProps> = ({
               Priced Items ({totals.pricedItemCount})
             </span>
             <span className="font-mono font-bold text-content-primary">
-              {formatPaise(totals.provisionalSubtotalPaise)}
+              {formatPaise(totals.subtotalPaise)}
+            </span>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-1.5">
+              <span className="text-content-muted">Fixed Demo Token</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-festive-amber border border-amber-500/20">
+                Fixed ₹100
+              </span>
+            </div>
+            <span className="font-mono font-bold text-festive-amber">
+              {formatPaise(totals.tokenAmountPaise)}
+            </span>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <span className="text-content-muted">Remaining Balance</span>
+            <span className="font-mono font-bold text-content-primary">
+              {formatPaise(totals.remainingBalancePaise)}
             </span>
           </div>
 
           {totals.unpricedItemCount > 0 && (
             <div className="flex justify-between items-center text-festive-amber">
-              <span>Items Requiring Confirmation</span>
+              <span>Items Requiring Price Confirmation</span>
               <span className="font-mono font-bold">
                 {totals.unpricedItemCount} item(s)
               </span>
             </div>
           )}
-
-          <div className="flex justify-between items-center text-xs text-content-muted">
-            <span>Taxes & Charges</span>
-            <span>Included in printed rates</span>
-          </div>
         </div>
 
         {/* Total Estimate */}
         <div className="flex justify-between items-baseline pt-1">
           <div>
             <span className="text-base font-bold text-content-primary">
-              Provisional Subtotal Estimate
+              Simulated Order Subtotal
             </span>
             <p className="text-[11px] text-content-muted">
-              Computed only from products with discrete printed catalogue prices
+              Order Subtotal = sum of priced items and quantities
             </p>
           </div>
           <span className="text-2xl font-bold font-mono text-festive-amber">
-            {formatPaise(totals.provisionalSubtotalPaise)}
+            {formatPaise(totals.subtotalPaise)}
           </span>
         </div>
 
-        {/* Business Policy Disclaimer */}
+        {/* Validation Blocking Warnings */}
+        {totals.hasUnpricedItems && (
+          <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-800/40 text-xs text-amber-300 space-y-1">
+            <p className="font-bold flex items-center gap-1.5">
+              <span>⚠️</span> Unpriced Items Present:
+            </p>
+            <p>
+              Every item in your box must have a confirmed price before proceeding to simulated payment.
+            </p>
+          </div>
+        )}
+
+        {!totals.minOrderRequirementMet && (
+          <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-800/40 text-xs text-amber-300 space-y-1">
+            <p className="font-bold flex items-center gap-1.5">
+              <span>ℹ️</span> Minimum Demo Subtotal:
+            </p>
+            <p>
+              Add items until your subtotal reaches ₹100. The demo token amount is fixed at ₹100.
+            </p>
+          </div>
+        )}
+
+        {/* Portfolio Demo Notice */}
         <div className="p-3 rounded-xl bg-bg-elevated border border-white/5 text-xs text-content-muted space-y-1">
           <p className="text-content-primary font-semibold">
-            📌 Non-Binding Estimate Notice:
+            📌 Portfolio Demo Notice:
           </p>
           <p>
-            The 20% advance token deposit remains an unconfirmed policy and is
-            neither charged nor finalized on this site. You do not pay anything
-            online. All transactions are settled in cash or counter UPI during
-            in-person pickup.
+            Portfolio Demo Only. No real orders, fireworks sales, delivery, or payments are processed.
           </p>
         </div>
       </div>

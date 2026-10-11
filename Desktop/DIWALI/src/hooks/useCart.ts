@@ -1,5 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { StoredCartItem, CartItem, CartTotals } from '../types/cart';
+import {
+  StoredCartItem,
+  CartItem,
+  CartTotals,
+  TOKEN_AMOUNT_PAISE,
+  MIN_ORDER_SUBTOTAL_PAISE,
+} from '../types/cart';
 import { PRODUCTS } from '../data/catalogueData';
 import { loadCartFromStorage, saveCartToStorage } from '../utils/storage';
 
@@ -11,7 +17,7 @@ export function useCart() {
     return loadCartFromStorage();
   });
 
-  // Persist to LocalStorage on state change
+  // Persist minimal cart state to LocalStorage on state change
   useEffect(() => {
     saveCartToStorage(storedItems);
   }, [storedItems]);
@@ -42,6 +48,7 @@ export function useCart() {
         pricePaise: variant.pricePaise,
         printedPriceText: variant.printedPriceText,
         priceStatus: variant.priceStatus,
+        pricingOrigin: variant.pricingOrigin,
         quantity: stored.quantity,
         lineSubtotalPaise,
       });
@@ -50,34 +57,57 @@ export function useCart() {
     return items;
   }, [storedItems]);
 
-  // Compute financial totals and unpriced counts
+  // Compute financial totals and unpriced counts with fixed ₹100 token rules
   const totals: CartTotals = useMemo(() => {
     let totalQuantity = 0;
     let pricedItemCount = 0;
     let unpricedItemCount = 0;
-    let provisionalSubtotalPaise = 0;
+    let subtotalPaise = 0;
 
     for (const item of cartItems) {
       totalQuantity += item.quantity;
       if (item.lineSubtotalPaise !== null) {
         pricedItemCount += 1;
-        provisionalSubtotalPaise += item.lineSubtotalPaise;
+        subtotalPaise += item.lineSubtotalPaise;
       } else {
         unpricedItemCount += 1;
       }
+    }
+
+    const tokenAmountPaise = TOKEN_AMOUNT_PAISE;
+    const remainingBalancePaise = Math.max(0, subtotalPaise - tokenAmountPaise);
+    const minOrderRequirementMet = subtotalPaise >= MIN_ORDER_SUBTOTAL_PAISE;
+    const hasUnpricedItems = unpricedItemCount > 0;
+
+    const canProceedToCheckout =
+      totalQuantity > 0 && minOrderRequirementMet && !hasUnpricedItems;
+
+    let checkoutBlockedReason: string | undefined;
+    if (hasUnpricedItems) {
+      checkoutBlockedReason =
+        'Every item in your box must have a confirmed price before proceeding to simulated payment.';
+    } else if (!minOrderRequirementMet && totalQuantity > 0) {
+      checkoutBlockedReason =
+        'Add items until your subtotal reaches ₹100. The demo token amount is fixed at ₹100.';
     }
 
     return {
       totalQuantity,
       pricedItemCount,
       unpricedItemCount,
-      provisionalSubtotalPaise,
+      subtotalPaise,
+      provisionalSubtotalPaise: subtotalPaise, // backward-compatibility alias
+      tokenAmountPaise,
+      remainingBalancePaise,
+      canProceedToCheckout,
+      minOrderRequirementMet,
+      hasUnpricedItems,
+      checkoutBlockedReason,
     };
   }, [cartItems]);
 
   const addItem = useCallback(
     (productId: string, variantId: string, quantity = 1) => {
-      // Validate product and variant exist in trusted catalogue
       const product = PRODUCTS.find((p) => p.id === productId);
       if (!product) return;
       const variant = product.variants.find((v) => v.id === variantId);
@@ -116,7 +146,6 @@ export function useCart() {
     (productId: string, variantId: string, newQuantity: number) => {
       const parsed = Math.floor(newQuantity);
       if (parsed < MIN_QUANTITY) {
-        // Remove item if quantity falls below 1
         setStoredItems((prev) =>
           prev.filter(
             (item) =>

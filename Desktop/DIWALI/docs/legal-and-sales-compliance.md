@@ -2,19 +2,24 @@
 
 **Document Reference:** `docs/legal-and-sales-compliance.md`  
 **Applicable Jurisdiction:** India (Union Statutes, State Regulations, and District Licensing)  
+**System Mode:** Portfolio Demo Mode (`PORTFOLIO_DEMO_MODE=true`)  
 **Investigation Date:** October 2026  
-**Default Operational Status:** `COMMERCE_CHECKOUT_ENABLED=false` (Enquiry & Estimate Fallback Mode Active)
 
 ---
 
-## 1. Executive Summary & Hard Gating Decision
+## 1. Executive Summary & Portfolio Demonstration Nature
 
-Fireworks commerce in India is governed by strict penal statutes, environmental directives, safety regulations, and Supreme Court rulings. 
+This repository contains a **portfolio demonstration** of a fireworks catalogue and ordering system.
 
-> [!CAUTION] Crucial Legal Finding
-> The Supreme Court of India has explicitly banned all online e-commerce sales and home delivery of fireworks across India. Furthermore, joined firecrackers (laddis/garlands) are strictly prohibited under environmental orders.
+> [!IMPORTANT]
+> **PORTFOLIO DEMONSTRATION NOTICE:**
+> This website is strictly an educational engineering portfolio project demonstrating full-stack architecture, integer paise financial accuracy, and mobile-first responsive design.
 > 
-> Therefore, **commercial online checkout, online payment capture, and delivery dispatch MUST REMAIN TOTALLY DISABLED (`COMMERCE_CHECKOUT_ENABLED=false`)** until the business owner supplies verified statutory licenses, clarifies their store jurisdiction, and legal counsel approves the physical counter-pickup reservation workflow.
+> **Zero Real Commercial Transactions:**
+> - No real fireworks sales, dispatch, courier transport, or inventory delivery are conducted.
+> - No real payment gateways are connected and no real UPI or card credentials are collected.
+> - All orders, payments, tokens, and balances are strictly simulated demo records (`DEMO-NT-XXXX`).
+> - The application respects Indian legal frameworks (Explosives Act 1884, Explosives Rules 2008, Supreme Court directives in *Arjun Gopal v. Union of India*) by never engaging in actual commercial fireworks e-commerce.
 
 ---
 

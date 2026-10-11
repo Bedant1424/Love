@@ -15,12 +15,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
 }) => {
   return (
     <div className="space-y-12">
-      {/* Hero Section (Conforming to Taste Skill: max 2 lines headline, <20 words subtext, fits mobile viewport) */}
+      {/* Hero Section */}
       <section className="relative px-4 pt-6 pb-8 md:pt-12 md:pb-14 border-b border-white/5 bg-gradient-to-b from-bg-surface/50 to-transparent">
         <div className="max-w-4xl mx-auto text-center space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-festive-marigold/10 border border-festive-marigold/30 text-festive-amber uppercase tracking-wider">
             <span>✨</span>
-            <span>Diwali 2026 Festival Collection</span>
+            <span>Diwali Catalogue Portfolio Demonstration</span>
           </div>
 
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold font-display tracking-tight text-content-primary leading-tight max-w-2xl mx-auto">
@@ -28,9 +28,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </h1>
 
           <p className="text-base text-content-secondary max-w-xl mx-auto leading-relaxed">
-            Direct wholesale rates from Sivakasi. Assemble your festival box
-            online and collect fresh stock at our licensed counter.
+            Interactive software portfolio demonstration based on an authentic Diwali catalogue poster. Browse products, assemble a box, and experience simulated ₹100 token checkout.
           </p>
+
+          {/* Highlighted Portfolio Demo Callout */}
+          <div className="max-w-xl mx-auto p-3 rounded-xl bg-amber-950/40 border border-amber-800/40 text-xs text-amber-300 font-medium">
+            Portfolio Demo Only. No real orders, fireworks sales, delivery, or payments are processed.
+          </div>
 
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
@@ -47,47 +51,47 @@ export const HomeView: React.FC<HomeViewProps> = ({
               onClick={onEnterCustomerDetails}
               className="w-full sm:w-auto min-h-touch px-6 py-3 rounded-xl bg-bg-surface hover:bg-white/10 border border-white/10 text-content-primary font-semibold text-base transition-colors"
             >
-              <span>Customer Information</span>
+              <span>Sample Customer Info</span>
             </button>
           </div>
         </div>
       </section>
 
-      {/* Trust & Statutory Fact Strip */}
+      {/* Feature / Architecture Highlight Strip */}
       <section className="max-w-7xl mx-auto px-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="p-4 rounded-xl bg-bg-surface border border-white/5 flex items-start gap-3">
-            <span className="text-2xl" aria-hidden="true">🌿</span>
+            <span className="text-2xl" aria-hidden="true">📋</span>
             <div>
               <h2 className="text-sm font-bold text-content-primary font-display">
-                Certified Green Crackers
+                Authentic Poster Data
               </h2>
               <p className="text-xs text-content-muted mt-0.5">
-                Authentic CSIR-NEERI formulations with verified emission controls.
+                Exact products, categories, and printed prices extracted from the original poster.
               </p>
             </div>
           </div>
 
           <div className="p-4 rounded-xl bg-bg-surface border border-white/5 flex items-start gap-3">
-            <span className="text-2xl" aria-hidden="true">🏷️</span>
+            <span className="text-2xl" aria-hidden="true">🪙</span>
             <div>
               <h2 className="text-sm font-bold text-content-primary font-display">
-                Transparent Wholesale Pricing
+                Fixed ₹100 Demo Token
               </h2>
               <p className="text-xs text-content-muted mt-0.5">
-                Exact catalogue rates printed on the authentic Sivakasi poster.
+                Fixed 10,000 paise token reservation rule with remaining balance accounting.
               </p>
             </div>
           </div>
 
           <div className="p-4 rounded-xl bg-bg-surface border border-white/5 flex items-start gap-3">
-            <span className="text-2xl" aria-hidden="true">🏢</span>
+            <span className="text-2xl" aria-hidden="true">📱</span>
             <div>
               <h2 className="text-sm font-bold text-content-primary font-display">
-                Safe In-Person Collection
+                Simulated Checkout Flow
               </h2>
               <p className="text-xs text-content-muted mt-0.5">
-                Physical counter inspection and handover per Explosives Rules, 2008.
+                Full UI demonstration with simulated payment pending, success, and error states.
               </p>
             </div>
           </div>
@@ -139,8 +143,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
               {cat.complianceWarning && (
                 <div className="mt-4 pt-3 border-t border-white/5 text-[11px] text-amber-300 flex items-center gap-1.5">
-                  <span aria-hidden="true">⚠️</span>
-                  <span className="truncate">Statutory restrictions apply</span>
+                  <span aria-hidden="true">ℹ️</span>
+                  <span className="truncate">Catalogue demonstration reference</span>
                 </div>
               )}
             </button>
@@ -148,30 +152,24 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </section>
 
-      {/* Location & Contact Notice Card */}
+      {/* Demo Information Notice Card */}
       <section className="max-w-7xl mx-auto px-4">
         <div className="p-6 rounded-2xl bg-bg-surface border border-white/10 space-y-3">
           <h2 className="text-base font-bold font-display text-content-primary">
-            Store Location & Counter Collection
+            Portfolio Demonstration Architecture
           </h2>
           <p className="text-xs text-content-secondary leading-relaxed">
-            Nagarjuna Traders operates a licensed retail fireworks counter. The
-            supplied catalogue poster prints our location as{' '}
-            <strong className="text-content-primary">
-              Sivakasi, Andhra Pradesh
-            </strong>
-            . Counter timings, inspection rules, and booking collections are
-            managed in accordance with the Explosives Rules, 2008.
+            This web application demonstrates a high-performance, mobile-first ordering interface engineered with React 18, TypeScript, Vite, and Tailwind CSS. All price calculations use exact integer paise arithmetic. The project illustrates how a seasonal fireworks ordering system could operate with fixed token payments and admin reconciliation, without processing real payments or conducting actual commercial sales.
           </p>
           <div className="pt-2 flex flex-wrap gap-2 text-xs">
             <span className="px-3 py-1 rounded-lg bg-bg-elevated border border-white/5 text-content-muted">
-              💳 Payment: Cash / UPI at Counter
+              🪙 Fixed Token: ₹100 (10,000 paise)
             </span>
             <span className="px-3 py-1 rounded-lg bg-bg-elevated border border-white/5 text-content-muted">
-              🔞 Age Policy: Strict 18+ Verification
+              🔒 Privacy: Transient session memory only
             </span>
             <span className="px-3 py-1 rounded-lg bg-bg-elevated border border-white/5 text-content-muted">
-              🚫 Delivery: No Postal / Courier Transport
+              📦 Scope: Non-commercial software portfolio
             </span>
           </div>
         </div>

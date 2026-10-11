@@ -118,6 +118,10 @@ export const App: React.FC = () => {
             totals={cart.totals}
             onEditCustomer={() => handleNavigateToTab('customer')}
             onEditCart={() => handleNavigateToTab('cart')}
+            onResetOrder={() => {
+              cart.clearCart();
+              handleNavigateToTab('catalogue');
+            }}
           />
         )}
       </main>

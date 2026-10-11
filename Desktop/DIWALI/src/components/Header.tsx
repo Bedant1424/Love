@@ -15,6 +15,13 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-bg-surface/95 backdrop-blur-md border-b border-white/10">
+      {/* Portfolio Demo Notice Banner */}
+      <div className="bg-amber-500/15 border-b border-amber-500/30 px-3 py-1 text-center">
+        <p className="text-[11px] sm:text-xs font-medium text-amber-300">
+          Portfolio Demo Only. No real orders, fireworks sales, delivery, or payments are processed.
+        </p>
+      </div>
+
       {/* Top Brand Banner */}
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -29,9 +36,9 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </div>
             <p className="text-xs text-content-muted flex items-center gap-1.5 mt-0.5">
-              <span>📍 Sivakasi</span>
+              <span>Diwali Catalogue Showcase</span>
               <span>•</span>
-              <span className="text-festive-amber">Licensed Counter Pickup</span>
+              <span className="text-festive-amber">Portfolio Demo</span>
             </p>
           </button>
         </div>
@@ -40,10 +47,10 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-2 md:gap-3">
           <span
             className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-950/60 text-amber-300 border border-amber-800/40"
-            title="Online checkout disabled per Supreme Court e-commerce directive"
+            title="Portfolio Demo Only: All ordering flows and token payments are simulated"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-            Enquiry Mode Active
+            Portfolio Demo Mode
           </span>
 
           <button
@@ -53,7 +60,7 @@ export const Header: React.FC<HeaderProps> = ({
                 ? 'bg-festive-marigold text-black'
                 : 'bg-bg-elevated text-content-primary hover:bg-white/10 border border-white/10'
             }`}
-            aria-label={`View enquiry basket with ${cartCount} items`}
+            aria-label={`View demo basket with ${cartCount} items`}
           >
             <span>Basket</span>
             <span
@@ -102,7 +109,7 @@ export const Header: React.FC<HeaderProps> = ({
               : 'text-content-muted hover:text-content-primary'
           }`}
         >
-          Customer Details
+          Sample Customer
         </button>
         <button
           onClick={() => onSelectTab('cart')}
@@ -112,7 +119,7 @@ export const Header: React.FC<HeaderProps> = ({
               : 'text-content-muted hover:text-content-primary'
           }`}
         >
-          Enquiry Basket ({cartCount})
+          Demo Basket ({cartCount})
         </button>
         <button
           onClick={() => onSelectTab('review')}
@@ -122,7 +129,7 @@ export const Header: React.FC<HeaderProps> = ({
               : 'text-content-muted hover:text-content-primary'
           }`}
         >
-          Review Estimate
+          Simulated Checkout
         </button>
       </nav>
     </header>

@@ -46,6 +46,7 @@
 | Question | Default Assumption | Owner Action Required |
 |---|---|---|
 | **Tax Inclusion:** Do printed prices include Goods & Services Tax (GST)? | Assumed **Inclusive** of all taxes. No unexpected tax surcharges added at cart. | Confirm whether GST invoice is required and whether prices are tax-inclusive. |
-| **Token Percentage Policy:** Is 20% advance token with a minimum of ₹100 acceptable? | Defaulted to 20% advance token (`MIN_TOKEN_AMOUNT_PAISE = 10000`). | Confirm if flat token (e.g. ₹500) or percentage is preferred. |
-| **Store UPI VPA:** What is the official merchant UPI ID and registered account name? | Placeholder used: `nagarjunatraders@okhdfcbank`. | Provide genuine store UPI VPA for customer payment routing. |
-| **WhatsApp Group Link:** The poster has a WhatsApp QR code. What is the target group/phone URL? | Placeholder WhatsApp enquiry link. | Provide invite URL or 10-digit WhatsApp business number. |
+| **Token Payment Policy:** Token policy established for portfolio demo. | **RESOLVED FOR DEMO:** Token is strictly fixed at ₹100 (`TOKEN_AMOUNT_PAISE = 10000`). Not a percentage or variable minimum. | If commercial operations ever launch, confirm if fixed ₹100 token or another model applies. |
+| **Store UPI VPA:** What is the official merchant UPI ID and registered account name? | Portfolio demo uses simulated internal payment status (`PENDING` / `SUCCESS` / `FAILED`). Zero live VPA collection. | Provide genuine store UPI VPA only if commercial payments are configured. |
+| **WhatsApp Group Link:** The poster has a WhatsApp QR code. What is the target group/phone URL? | Optional environment variable `VITE_WHATSAPP_ENQUIRY_URL`. If empty, WhatsApp button safely hidden. | Provide invite URL or 10-digit WhatsApp business number if direct messaging is desired. |
+

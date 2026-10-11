@@ -2,21 +2,21 @@
 
 **Document Reference:** `docs/copy.md`  
 **Language:** English (Clear, respectful, Indian retail context) with localized terms (Diwali, Sivakasi, Laddis, Chakri, Kumpi, Skyshot)  
-**Tone:** Celebratory, trustworthy, transparent, concise (following Taste Skill copy audit)
+**System Mode:** Portfolio Demo Mode (`PORTFOLIO_DEMO_MODE=true`)  
+**Tone:** Celebratory, trustworthy, transparent, concise
 
 ---
 
-## 1. Global Navigation & Brand Elements
+## 1. Global Navigation & Portfolio Demo Elements
 
 | UI Element | Proposed Copy | Notes / Context |
 |---|---|---|
 | **Site Wordmark** | `NAGARJUNA TRADERS` | Displayed in top navigation. |
-| **Site Tagline** | `Diwali 2026 Wholesale & Retail Crackers` | Subtle subhead below brand. |
-| **Location Badge** | `📍 Sivakasi • Licensed Counter Pickup` | Reminds customer of physical collection. |
-| **Status Pill (Active)**| `● 2026 Festive Bookings Open` | Emerald badge in header. |
-| **Status Pill (Enquiry)**| `● Enquiry & Estimate Mode Active` | Amber badge when checkout is gated. |
-| **Cart Button** | `Cart ({count})` | Displays active item count. |
-| **Footer Legal Disclaimer**| `Online sale and delivery of firecrackers are prohibited under Indian law. Nagarjuna Traders operates an advance counter reservation service. Products must be collected in person with valid government ID.` | Mandatory statutory disclaimer on all pages. |
+| **Site Tagline** | `Diwali Catalogue Showcase • Portfolio Demo` | Subtle subhead below brand. |
+| **Global Demo Notice** | `Portfolio Demo Only. No real orders, fireworks sales, delivery, or payments are processed.` | Prominently displayed across banner, cart, review, and footer. |
+| **Status Pill** | `● Portfolio Demo Mode` | Amber pulsating badge in header. |
+| **Basket Button** | `Basket ({count})` / `Demo Basket ({count})` | Displays active item count in sample basket. |
+| **Footer Notice** | `Portfolio Demo Only. No real orders, fireworks sales, delivery, or payments are processed. This project demonstrates an e-commerce interface, catalogue modelling, and simulated token payments for an engineering portfolio.` | Mandatory footer notice. |
 
 ---
 
@@ -67,37 +67,44 @@
 
 ---
 
-## 5. Cart & Totals Breakdown
-
+## 5. Basket & Fixed ₹100 Token Breakdown
+ 
 | Element | Proposed Copy |
 |---|---|
-| **Cart Title** | `Your Festival Cracker Box` |
-| **Empty Cart Title** | `Your Cracker Box is Empty` |
-| **Empty Cart Subtext**| `You have not selected any Diwali crackers yet. Browse our 6 categories to pick your celebration favourites.` |
-| **Empty Cart CTA** | `Start Browsing Catalogue` |
-| **Subtotal Line** | `Catalogue Subtotal` |
-| **Taxes Line** | `Taxes & Surcharges` (`Included in printed prices`) |
-| **Token Due Line** | `Advance Token Due (20%)` |
-| **Token Helper Copy** | `Required to reserve physical stock in your name.` |
-| **Balance Line** | `Remaining Balance at Counter` |
-| **Balance Helper Copy**| `Payable in cash or UPI during physical package collection.` |
-| **Review Order CTA** | `Proceed to Review & Booking` |
+| **Cart Title** | `Demo Basket` |
+| **Empty Cart Title** | `Your Demo Basket is Empty` |
+| **Empty Cart Subtext**| `You have not selected any cracker items yet. Browse our 6 authentic Diwali poster categories to assemble your sample box.` |
+| **Empty Cart CTA** | `Explore 2026 Catalogue →` |
+| **Subtotal Line** | `Simulated Order Subtotal` |
+| **Fixed Token Line** | `Fixed Demo Token (Fixed ₹100)` |
+| **Fixed Token Amount** | `₹100.00` (Strictly 10,000 integer paise) |
+| **Remaining Balance Line** | `Remaining Balance (Subtotal - ₹100)` |
+| **Subtotal < ₹100 Blocker** | `Add items until your subtotal reaches ₹100. The demo token amount is fixed at ₹100.` |
+| **Unpriced Items Blocker** | `Every item in your box must have a confirmed price before proceeding to simulated payment.` |
+| **Review Order CTA** | `Proceed to Review & Summary →` |
 
 ---
 
-## 6. Payment Instructions & UTR Entry
+## 6. Simulated Checkout & Demo Payment Flow
 
 | Element | Proposed Copy |
 |---|---|
-| **Screen Title** | `Complete Advance Token Payment` |
-| **Order Reference** | `Order Reference: {reference}` |
-| **Amount Highlight** | `Advance Token Payable: ₹{tokenAmount}` |
-| **UPI Instructions** | `1. Scan the QR code below or tap your preferred UPI app.<br>2. Complete the payment of exactly ₹{tokenAmount}.<br>3. Copy the 12-digit UTR / Bank Reference Number from your UPI app receipt.<br>4. Enter the UTR below to confirm your booking.` |
-| **UPI App Tap CTA** | `Pay with GPay / PhonePe / Paytm` |
-| **UTR Form Label** | `12-Digit Bank Reference / UTR Number` |
-| **UTR Form Placeholder**| `e.g. 428901234567` |
-| **UTR Helper Text** | `Found on your UPI payment receipt under 'UPI transaction ID' or 'UTR'.` |
-| **Submit UTR CTA** | `Submit Reference for Staff Verification` |
+| **Review Title** | `Simulated Checkout & Review` |
+| **Review Subtitle** | `Review your sample customer details, selected fireworks, fixed ₹100 demo token, and remaining balance below.` |
+| **Proceed Button** | `Proceed to Simulated Payment (₹100 Demo Token) →` |
+| **Modal Heading** | `Fixed ₹100 Demo Token Payment` |
+| **Pending Status** | `Simulating Payment Authorization...` |
+| **Pending Subtext** | `No real UPI intent or bank API is contacted. Use the buttons below to test success or error response states:` |
+| **Simulate Success CTA** | `Simulate Successful Payment (Test Success)` |
+| **Simulate Failure CTA** | `Simulate Payment Failure (Test Error)` |
+| **Retry CTA** | `Retry Simulated Payment` |
+| **Failure Notice** | `Simulated Payment Failed. This error state demonstrates how transaction timeouts, bank declines, or user cancellation are handled. No funds were charged.` |
+| **Confirmation Title** | `Demo Order Confirmation` |
+| **Confirmation Badge** | `Simulated Payment Completed` |
+| **Order Reference** | `Demo Reference: DEMO-NT-XXXX` |
+| **Confirmation Notice**| `Portfolio Demo Only: No real funds were charged, no real bank transaction occurred, and no commercial order will be packed or dispatched.` |
+| **Copy Summary CTA** | `📋 Copy Demo Order Summary` |
+| **Start New Order CTA**| `Start New Demo Order` |
 
 ---
 

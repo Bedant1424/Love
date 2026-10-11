@@ -252,11 +252,80 @@ CREATE INDEX IF NOT EXISTS idx_audit_entity ON audit_logs(entity_type, entity_id
 
 ---
 
-## 3. Financial Calculation Invariants
+## 3. Financial Calculation Invariants (Fixed ₹100 Demo Token)
 
 1. **Paise Integrity:** Every calculation follows:
    $$\text{line\_subtotal\_paise} = \text{unit\_price\_paise} \times \text{quantity}$$
    $$\text{subtotal\_paise} = \sum_{i} \text{line\_subtotal\_paise}_i$$
-   $$\text{token\_due\_paise} = \max\left(10000, \left\lceil \text{subtotal\_paise} \times 0.20 \right\rceil\right)$$
-   $$\text{balance\_due\_paise} = \text{subtotal\_paise} - \text{verified\_amount\_paise}$$
-2. **Zero Inconsistent State:** The sum of `order_items.line_subtotal_paise` must exactly equal `orders.subtotal_paise`. Checked via server-side database transaction before final commit.
+   $$\text{token\_amount\_paise} = 10000 \quad (\text{Strictly fixed at ₹100.00; NOT a percentage})$$
+   $$\text{balance\_due\_paise} = \max\left(0, \text{subtotal\_paise} - \text{token\_amount\_paise}\right)$$
+2. **Subtotal Minimum Gating:** A demo order requires $\text{subtotal\_paise} \ge 10000$ (₹100.00). If below ₹100, simulated checkout is blocked.
+3. **No Fabricated Pricing:** Range items and unconfirmed mappings have `pricePaise: null`. They can be added to the enquiry basket but block final payment simulation until confirmed.
+4. **Zero Inconsistent State:** The sum of priced `lineSubtotalPaise` must exactly equal `subtotalPaise`.
+
+---
+
+## 4. TypeScript Client & Portfolio Demo Models
+
+### 4.1 Constants
+```typescript
+export const TOKEN_AMOUNT_PAISE = 10000;       // Fixed ₹100.00 demo token
+export const MIN_ORDER_SUBTOTAL_PAISE = 10000; // Minimum ₹100.00 order subtotal
+```
+
+### 4.2 Pricing Origins & Price Status
+```typescript
+export type PricingOrigin =
+  | 'POSTER_EXACT'          // Exact price printed on supplied poster
+  | 'POSTER_RANGE'          // Price range printed on poster (e.g. ₹200 to ₹250)
+  | 'UNCONFIRMED_MAPPING'   // Multiple sizes without per-size pricing (e.g. Tiger Bomb 3-6)
+  | 'DEMO_NUMERIC'          // Designated demo price
+  | 'OWNER_CONFIRMED';      // Explicitly confirmed by store owner
+
+export type PriceStatus =
+  | 'PRINTED_ESTIMATE'      // Exact printed estimate
+  | 'PRICE_ON_ENQUIRY'      // Unpriced range item
+  | 'CONFIRMED';            // Owner-confirmed
+```
+
+### 4.3 Cart Totals & Simulated Demo Records
+```typescript
+export interface CartTotals {
+  totalQuantity: number;
+  pricedItemCount: number;
+  unpricedItemCount: number;
+  subtotalPaise: number;
+  provisionalSubtotalPaise: number;
+  tokenAmountPaise: number;         // Fixed 10,000 paise (₹100)
+  remainingBalancePaise: number;    // max(0, subtotal - 10,000)
+  canProceedToCheckout: boolean;    // subtotal >= 10,000 && !hasUnpricedItems
+  minOrderRequirementMet: boolean;  // subtotal >= 10,000
+  hasUnpricedItems: boolean;        // unpricedItemCount > 0
+  checkoutBlockedReason?: string;
+}
+
+export type SimulatedPaymentStatus =
+  | 'NOT_STARTED'
+  | 'PENDING'
+  | 'SUCCESS'
+  | 'FAILED';
+
+export interface DemoOrderRecord {
+  demoOrderId: string;             // Format: DEMO-NT-XXXX
+  createdAt: string;
+  customerName: string;
+  customerMobile: string;
+  items: CartItem[];
+  subtotalPaise: number;
+  tokenAmountPaise: number;        // Fixed 10,000 paise
+  remainingBalancePaise: number;
+  paymentStatus: SimulatedPaymentStatus;
+  isSimulatedDemo: true;
+}
+```
+
+### 4.4 Data Minimisation & Transient State Invariant
+- Customer personal data (`CustomerDetails`: name, phone number, collection preference, age attestation, notes) is held **strictly in React component state**.
+- Customer data is **never written to `localStorage`** or remote servers.
+- `localStorage` stores only anonymous cracker cart item references: `nt_cart_items_v1: [{ productId, variantId, quantity }]`.
+

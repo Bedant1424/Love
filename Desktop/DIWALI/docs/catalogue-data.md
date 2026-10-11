@@ -3,7 +3,7 @@
 **Document Reference:** `docs/catalogue-data.md`  
 **Source of Truth:** Physical Diwali Poster Artwork (`docs/reference/nagarjuna-traders-catalog.jpg`)  
 **Currency:** Indian Rupee (INR) — Internal Minor Units: Paise (₹1.00 = 100 paise)  
-**Publication Status:** Initial Extraction Pending Owner Pricing Confirmation
+**System Mode:** Portfolio Demo Mode — Authentic Poster Extraction & Simulated Ordering
 
 ---
 
@@ -11,11 +11,18 @@
 
 This catalogue specification records the exact fireworks inventory extracted from the Nagarjuna Traders Diwali poster. 
 
+> [!NOTE]
+> **PORTFOLIO DEMO SPECIFICATION:**
+> In this portfolio demonstration, all 6 authentic poster categories and products are modeled. No real commercial transactions or product dispatch occur.
+
 ### Mandatory Catalogue Invariants:
-1. **Never Invent Data:** If a pack size, item count, or price is omitted or shown as a range on the poster, it is flagged as `NEEDS_CONFIRMATION` and blocked from commercial purchase.
-2. **Discrete Variant Pricing:** Every purchasable SKU must have an administrator-confirmed exact unit price in integer paise. Range pricing (e.g. ₹200 to ₹250) is never permitted at checkout.
-3. **Price Snapshotting:** Published catalogue prices are copied into order line items at submission time. Historical orders remain permanently immutable.
-4. **Original Spelling Preserved:** Product names retain poster spelling (e.g., "Jharjhari", "Kumpi", "Bijli Laddi") unless owner provides written correction.
+1. **Never Invent Data:** If a pack size, item count, or price is omitted or shown as a range on the poster, it is mapped with `pricePaise: null` and `priceStatus: 'PRICE_ON_ENQUIRY'`. It cannot reach the final simulated payment stage until confirmed.
+2. **Strict Pricing Origins:** Every variant tracks a `pricingOrigin`:
+   - `POSTER_EXACT`: Exact single numeric price printed on the supplied poster (e.g., 9cm Sparklers at ₹180, Skyshot Bigboss at ₹350, Chakri Medium at ₹100).
+   - `POSTER_RANGE`: A range printed on the poster (e.g., Pandav at ₹200 to ₹250, JJ at ₹400 to ₹450, Kumpi Medium at ₹150 to ₹200). Kept unpriced (`pricePaise: null`).
+   - `UNCONFIRMED_MAPPING`: Multiple sizes without per-size pricing (e.g., Tiger Bomb sizes 3, 4, 5, 6 with broad ₹200 to ₹400 range). Kept unpriced (`pricePaise: null`).
+3. **No Fabricated Sizes or Categories:** Kumpi is strictly Medium and Large (no Small, Big, Special, or Deluxe). Sparklers are strictly 9cm (₹180), 9cm Color (₹250), 12cm (₹250), 12cm Color (₹300), and 15cm Crackling (₹350).
+4. **Original Spelling Preserved:** Product names retain poster spelling (e.g., "Jharjhari", "Kumpi", "Bijli Laddi").
 
 ---
 

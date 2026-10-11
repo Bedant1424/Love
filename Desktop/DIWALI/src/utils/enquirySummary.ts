@@ -5,31 +5,35 @@ import { formatPaise } from './formatters';
 export function generateEnquiryText(
   customer: CustomerDetails,
   items: CartItem[],
-  totals: CartTotals
+  totals: CartTotals,
+  demoOrderId?: string
 ): string {
   const lines: string[] = [];
 
   lines.push('=========================================');
-  lines.push('   NAGARJUNA TRADERS — DIWALI 2026');
-  lines.push('   FESTIVAL CATALOGUE ENQUIRY BASKET');
+  lines.push('   NAGARJUNA TRADERS — PORTFOLIO DEMO');
+  lines.push('   SIMULATED DIWALI ORDER SUMMARY');
   lines.push('=========================================');
+  if (demoOrderId) {
+    lines.push(`DEMO ORDER REF: ${demoOrderId}`);
+    lines.push('STATUS: SIMULATED DEMO RECORD');
+  }
   lines.push('');
-  lines.push('CUSTOMER DETAILS:');
+  lines.push('SAMPLE CUSTOMER DETAILS:');
   lines.push(`• Name: ${customer.fullName}`);
   lines.push(`• Mobile: ${customer.mobileNumber}`);
   lines.push(
-    `• Fulfilment: ${
+    `• Preference: ${
       customer.fulfilmentPreference === 'COUNTER_PICKUP'
-        ? 'Licensed Store Counter Pickup'
-        : 'Special Wholesale Enquiry'
+        ? 'Simulated Store Counter Pickup'
+        : 'Simulated Wholesale Enquiry'
     }`
   );
   if (customer.notes.trim()) {
-    lines.push(`• Customer Notes: ${customer.notes.trim()}`);
+    lines.push(`• Notes: ${customer.notes.trim()}`);
   }
-  lines.push('• Age Attestation: Confirmed 18+ years of age');
   lines.push('');
-  lines.push('ENQUIRY BASKET ITEMS:');
+  lines.push('SELECTED ITEMS:');
 
   items.forEach((item, index) => {
     lines.push(`${index + 1}. ${item.productName}`);
@@ -37,7 +41,7 @@ export function generateEnquiryText(
     lines.push(`   Quantity: ${item.quantity}`);
     if (item.lineSubtotalPaise !== null) {
       lines.push(
-        `   Estimate: ${formatPaise(item.lineSubtotalPaise)} (${formatPaise(
+        `   Subtotal: ${formatPaise(item.lineSubtotalPaise)} (${formatPaise(
           item.pricePaise
         )} each)`
       );
@@ -49,22 +53,20 @@ export function generateEnquiryText(
     lines.push('');
   });
 
-  lines.push('ESTIMATE SUMMARY:');
-  lines.push(
-    `• Known-Price Items Subtotal: ${formatPaise(
-      totals.provisionalSubtotalPaise
-    )}`
-  );
+  lines.push('FINANCIAL SUMMARY (INTEGER PAISE):');
+  lines.push(`• Order Subtotal: ${formatPaise(totals.subtotalPaise)}`);
+  lines.push(`• Fixed Demo Token: ${formatPaise(totals.tokenAmountPaise)}`);
+  lines.push(`• Remaining Balance: ${formatPaise(totals.remainingBalancePaise)}`);
   if (totals.unpricedItemCount > 0) {
     lines.push(
-      `• Items Requiring Price Confirmation: ${totals.unpricedItemCount} item(s)`
+      `• Items Needing Price Confirmation: ${totals.unpricedItemCount} item(s)`
     );
   }
-  lines.push(`• Total Items in Basket: ${totals.totalQuantity} unit(s)`);
+  lines.push(`• Total Items: ${totals.totalQuantity} unit(s)`);
   lines.push('');
-  lines.push('STATUTORY NOTICE:');
+  lines.push('PORTFOLIO DEMO NOTICE:');
   lines.push(
-    'This enquiry is a non-binding quotation request. Online firecracker sales and courier parcel delivery are prohibited under Indian law. Crackers must be inspected and collected in person at the licensed counter by an adult (18+).'
+    'Portfolio Demo Only. No real orders, fireworks sales, delivery, or payments are processed. All amounts and order states shown are simulated.'
   );
   lines.push('=========================================');
 

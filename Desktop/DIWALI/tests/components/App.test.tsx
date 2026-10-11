@@ -8,14 +8,16 @@ describe('App End-to-End Integration Flow', () => {
     vi.clearAllMocks();
   });
 
-  it('renders initial Home page with store identity and category cards', () => {
+  it('renders initial Home page with store identity, portfolio demo badge, and category cards', () => {
     render(<App />);
 
     expect(screen.getByText('NAGARJUNA TRADERS')).toBeInTheDocument();
-    expect(screen.getByText('Enquiry Mode Active')).toBeInTheDocument();
+    expect(screen.getAllByText(/Portfolio Demo Mode/i).length).toBeGreaterThan(0);
     expect(
-      screen.getByText(/Light Up Your Festivities with Authentic Crackers/i)
-    ).toBeInTheDocument();
+      screen.getAllByText(
+        /Portfolio Demo Only\. No real orders, fireworks sales, delivery, or payments are processed\./i
+      ).length
+    ).toBeGreaterThan(0);
 
     // Verify 6 authentic category cards on home page
     expect(screen.getByText('Laddis')).toBeInTheDocument();
@@ -26,7 +28,7 @@ describe('App End-to-End Integration Flow', () => {
     expect(screen.getByText('Others')).toBeInTheDocument();
   });
 
-  it('allows full customer journey: Home -> Catalogue -> Add Item -> Basket -> Customer Form -> Review', async () => {
+  it('allows full customer journey: Home -> Catalogue -> Add Items (>= ₹100) -> Basket -> Customer Form -> Simulated Payment -> Demo Order Confirmation', async () => {
     render(<App />);
 
     // 1. Click "Browse 2026 Catalogue" from Home
@@ -41,7 +43,7 @@ describe('App End-to-End Integration Flow', () => {
       screen.getByRole('tab', { name: /All Categories \(6\)/i })
     ).toBeInTheDocument();
 
-    // 2. Add first available product (Bijli Laddi)
+    // 2. Add first available product (Bijli Laddi: ₹60)
     const addButtons = screen.getAllByRole('button', {
       name: /to enquiry basket/i,
     });
@@ -51,15 +53,22 @@ describe('App End-to-End Integration Flow', () => {
     // Sticky Cart bar should appear on mobile viewport
     expect(screen.getByText(/Review Box/i)).toBeInTheDocument();
 
+    // Increment quantity to 2 so subtotal = ₹120 (>= ₹100 minimum demo requirement)
+    const increaseBtn = screen.getByRole('button', {
+      name: /Increase quantity/i,
+    });
+    fireEvent.click(increaseBtn);
+
     // 3. Open Basket via the sticky bar
     const viewBasketBtn = screen.getByText(/Review Box/i);
     fireEvent.click(viewBasketBtn);
 
     // Verify we are in CartView
-    expect(screen.getByText('Enquiry Basket')).toBeInTheDocument();
+    expect(screen.getByText('Demo Basket')).toBeInTheDocument();
     expect(
-      screen.getByText(/Provisional Estimate Summary/i)
+      screen.getByText(/Demo Financial Breakdown/i)
     ).toBeInTheDocument();
+    expect(screen.getByText('Fixed Demo Token')).toBeInTheDocument();
 
     // 4. Click Proceed to Review & Summary
     // Since customer details are empty, it should navigate to Customer Form first
@@ -69,7 +78,7 @@ describe('App End-to-End Integration Flow', () => {
     fireEvent.click(proceedBtn);
 
     // Verify we are on Customer Information page
-    expect(screen.getByText('Customer Information')).toBeInTheDocument();
+    expect(screen.getByText('Sample Customer Information')).toBeInTheDocument();
 
     // 5. Fill customer form
     fireEvent.change(screen.getByLabelText(/Full Name/i), {
@@ -87,19 +96,45 @@ describe('App End-to-End Integration Flow', () => {
     fireEvent.click(saveAndContinueBtn);
 
     // 6. Should now be in ReviewView
-    expect(screen.getByText('Enquiry Review & Estimate')).toBeInTheDocument();
+    expect(screen.getByText('Simulated Checkout & Review')).toBeInTheDocument();
     expect(screen.getByText('Kalyan Varma')).toBeInTheDocument();
     expect(screen.getByText('+91 9848022338')).toBeInTheDocument();
+    expect(screen.getAllByText(/₹120\.00/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/₹100\.00/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/₹20\.00/i).length).toBeGreaterThan(0);
+
+    // 7. Proceed to Simulated Payment
+    const simulatedPayBtn = screen.getByRole('button', {
+      name: /Proceed to Simulated Payment/i,
+    });
+    fireEvent.click(simulatedPayBtn);
+
+    // Modal opens in pending state
     expect(
-      screen.getByText(/Supreme Court E-Commerce & Licensing Notice/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /Copy Enquiry Summary/i })
+      screen.getByText(/Fixed ₹100 Demo Token Payment/i)
     ).toBeInTheDocument();
 
-    // Verify that checkout is NEVER rendered
-    expect(screen.queryByText(/Pay Now/i)).toBeNull();
-    expect(screen.queryByText(/Place Order/i)).toBeNull();
+    // Simulate success
+    const simulateSuccessBtn = screen.getByRole('button', {
+      name: /Simulate Successful Payment \(Test Success\)/i,
+    });
+    fireEvent.click(simulateSuccessBtn);
+
+    // 8. Order confirmation state reached
+    expect(
+      screen.getByText(/Demo Order Confirmation/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/DEMO-NT-/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Simulated Token Paid:/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Remaining Balance:/i)
+    ).toBeInTheDocument();
+
+    // Verify that live commerce checkout is NEVER rendered
+    expect(screen.queryByLabelText(/Card Number/i)).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Pay Now$/i })).toBeNull();
   });
 
   it('restores cart items from localStorage on initial render', () => {
@@ -119,7 +154,7 @@ describe('App End-to-End Integration Flow', () => {
 
     // Header navigation button reflects 3 items
     const cartNavBtn = screen.getByRole('button', {
-      name: /Enquiry Basket \(3\)/i,
+      name: /Demo Basket \(3\)/i,
     });
     expect(cartNavBtn).toBeInTheDocument();
 

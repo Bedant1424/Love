@@ -1,25 +1,28 @@
 # NAGARJUNA TRADERS — PRODUCT REQUIREMENTS DOCUMENT (PRD)
 
 **Document Reference:** `docs/PRD.md`  
-**Version:** 1.0.0 (Foundation Milestone)  
-**Status:** Approved for Documentation & Review  
-**Author:** Antigravity System Architecture  
-**Target Platform:** Mobile-First Web (Cloudflare Pages + Workers + D1)  
-**Commercial Mode:** Gated by Default (`COMMERCE_CHECKOUT_ENABLED=false` / Enquiry & Reservation Fallback)
+**Version:** 2.0.0 (Correction Milestone — Portfolio Demo Mode)  
+**Status:** Approved Portfolio Specification  
+**Target Platform:** Mobile-First Web (Vite + React + TypeScript)  
+**System Mode:** Portfolio Demo Mode (`PORTFOLIO_DEMO_MODE=true` / Simulated Checkout & Fixed ₹100 Token)
 
 ---
 
-## 1. Executive Summary & Business Objective
+## 1. Executive Summary & Project Nature
 
-**Nagarjuna Traders** is a retail fireworks vendor. This project specifies a mobile-first, high-performance, ₹0-software-cost web application enabling customers to explore the authentic Diwali fireworks catalogue, configure product variants and quantities, compute exact token payments and remaining balances, and submit orders or enquiries through a legally verified fulfilment process.
+**Nagarjuna Traders** is a showcase engineering portfolio project demonstrating the architecture, mobile-first design, financial precision, and simulated ordering mechanics of an authentic Diwali fireworks web application based on a supplied Sivakasi dealer poster.
 
-A secure, private administrative portal empowers business operators to manage catalogue variants, set strict paise prices, monitor inventory, verify incoming UPI payments, audit order lifecycle transitions, and conduct store operations without recurring SaaS overhead.
+> [!IMPORTANT]
+> **PORTFOLIO DEMONSTRATION ONLY:**
+> This website is strictly an educational engineering portfolio demonstration. No real fireworks sales, commercial orders, physical delivery, courier transport, or live financial transactions are processed. All checkouts and payments are simulated.
 
 ### Key Tenets
-1. **Zero Recurring SaaS / Hosting Cost:** Built entirely on Cloudflare's free tiers (Pages, Workers, D1, Turnstile, Access) and GitHub Actions.
-2. **Authenticity Over Invention:** The supplied physical catalogue poster is the single source of truth. Unconfirmed variant prices or pack specifications are never fabricated.
-3. **Legal-First Architecture:** Because Indian statutory frameworks strictly regulate firework commerce and prohibit online delivery, commercial checkout defaults to `COMMERCE_CHECKOUT_ENABLED=false` until legal council confirms retail licensing and local pickup conditions.
-4. **Financial Precision:** All financial transactions and balances are tracked strictly in integer minor units (paise: ₹1 = 100 paise) with server-side authoritative recalculation.
+1. **Zero Live Commercial Transactions:** No live payment gateways, real UPI credential collection, or merchant banking integrations are connected.
+2. **Fixed ₹100 Demo Token:** Every valid demo order requires a fixed simulated booking token of ₹100 (`TOKEN_AMOUNT_PAISE = 10000`). Token amount is never a percentage or variable formula.
+3. **Minimum Order Requirement (₹100):** Orders must have a subtotal of at least ₹100 to proceed to simulated checkout. If subtotal is below ₹100, checkout is blocked with: *"Add items until your subtotal reaches ₹100. The demo token amount is fixed at ₹100."*
+4. **Authenticity Over Invention:** The supplied physical catalogue poster is the single source of truth. Unconfirmed variant prices or pack specifications are kept as unpriced enquiry items; range items require confirmation before proceeding to simulated payment.
+5. **Transient Customer Information:** Customer details (name, phone, notes) are kept strictly in transient React component state and are never persisted to `localStorage` or remote databases.
+6. **Financial Precision:** All prices, line items, subtotals, tokens, and remaining balances are tracked strictly in integer paise. Remaining balance is `Math.max(0, subtotalPaise - 10000)` and is never negative.
 
 ---
 
@@ -115,25 +118,26 @@ flowchart TD
 ---
 
 ## 6. Business Rules & Financial Model
-
+ 
 | Rule ID | Rule Name | Description |
 |---|---|---|
 | **BR-01** | **Paise Accounting** | All prices, line totals, subtotals, and tokens are stored and computed in integer paise. Formatted as `₹(paise / 100).toFixed(2)` for display only. |
-| **BR-02** | **Price Snapshotting** | When an order is placed, unit prices are frozen in `order_items`. Subsequent admin catalogue price edits never alter existing orders. |
-| **BR-03** | **Token Calculation** | Token amount = `Math.ceil((subtotalPaise * tokenPercentage) / 100)`. Default token percentage is 20%. Minimum token amount is ₹100 (10,000 paise). |
-| **BR-04** | **Balance Calculation** | Remaining Balance = `subtotalPaise - verifiedPaidPaise`. Payable at pickup counter. |
-| **BR-05** | **No Unpriced Orders** | A product variant with null or 0 price cannot be placed in the cart or submitted. |
-| **BR-06** | **Enquiry-Only Fallback** | When `COMMERCE_CHECKOUT_ENABLED=false`, the cart generates an enquiry slip and WhatsApp link without storing financial liabilities. |
+| **BR-02** | **Price Snapshotting** | When a demo order is created, prices are snapshotted in `demo_orders`. |
+| **BR-03** | **Fixed Token (₹100)** | Fixed demo token amount is exactly ₹100 (`TOKEN_AMOUNT_PAISE = 10000`). It is NOT a percentage and does not vary with subtotal. |
+| **BR-04** | **Minimum Subtotal (₹100)** | A demo order must have a subtotal of at least ₹100 before simulated checkout. If `< ₹100`, shows: *"Add items until your subtotal reaches ₹100. The demo token amount is fixed at ₹100."* |
+| **BR-05** | **Balance Calculation** | Remaining Balance = `Math.max(0, subtotalPaise - 10000)`. Never negative. |
+| **BR-06** | **Unpriced Range Items Gating** | Items without confirmed numeric prices (e.g. range items like Pandav) can be added to the demo basket, but simulated payment is blocked until every item has a usable confirmed price. |
+| **BR-07** | **Portfolio Demo Simulation** | All checkouts, authorizations, and orders are simulated. Statuses include `PENDING`, `SUCCESS`, and `FAILED` with retry capability. No real banking APIs are called. |
 
 ---
 
 ## 7. Acceptance Criteria Summary
 
-1. Customers can browse all 6 categories on mobile devices without layout overflow or horizontal scroll.
-2. Unpriced variants (e.g. unconfirmed Tiger Bomb sizes) cannot be added to cart or submitted.
-3. Cart calculates correct subtotal, token (20%), and balance down to exact paise.
-4. Server verifies and recalculates all line items; modified client prices in dev tools are rejected.
-5. Bot submissions are blocked by Cloudflare Turnstile token validation.
-6. Order references are unguessable; customer can track status with reference + secret token.
-7. Admin dashboard requires verified authentication; unauthenticated requests receive HTTP 401/403.
-8. Payment verification requires admin action and logs operator ID, timestamp, and UTR.
+1. Customers can browse all 6 authentic poster categories on mobile devices without layout overflow.
+2. Sparkler prices reflect exact poster rates (₹180 to ₹350); Kumpi is restricted to Medium and Large only.
+3. Cart calculates correct subtotal, fixed ₹100 token (`10000` paise), and non-negative remaining balance in integer paise.
+4. If subtotal is below ₹100, simulated checkout is disabled with the prescribed minimum subtotal notice.
+5. If unpriced range items are present in the basket, simulated payment is gated with the price confirmation notice.
+6. Customer details remain transient and are never saved to `localStorage`.
+7. Simulated payment flow demonstrates pending authorization spinner, test success, test failure, and demo order confirmation record (`DEMO-NT-XXXX`).
+8. Notice clearly displayed on header, footer, cart, and checkout: *"Portfolio Demo Only. No real orders, fireworks sales, delivery, or payments are processed."*
