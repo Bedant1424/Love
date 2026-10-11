@@ -4,7 +4,7 @@ import { CustomerDetails } from '../types/customer';
 import { formatPaise } from '../utils/formatters';
 import { generateEnquiryText, getWhatsAppUrl } from '../utils/enquirySummary';
 import { apiClient } from '../services/apiClient';
-import { PaymentConfig } from '../server/types';
+import { PaymentConfig, PaymentIssueType } from '../server/types';
 import { TestQrCode } from './TestQrCode';
 
 export type ReviewStep =
@@ -54,6 +54,17 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
   const [statusLookupError, setStatusLookupError] = useState<string | null>(null);
   const [statusPolling, setStatusPolling] = useState(false);
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig | null>(null);
+
+  // Payment Issue Reporting State
+  const [showIssueModal, setShowIssueModal] = useState(false);
+  const [issueType, setIssueType] = useState<PaymentIssueType>('QR_NOT_SCANNING');
+  const [issueDescription, setIssueDescription] = useState('');
+  const [issueSubmitting, setIssueSubmitting] = useState(false);
+  const [issueResult, setIssueResult] = useState<{
+    reference: string;
+    message: string;
+  } | null>(null);
+  const [issueError, setIssueError] = useState<string | null>(null);
 
   const isSubmittingOrderRef = useRef(false);
 
@@ -245,6 +256,155 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
     }
   };
 
+  // Payment Issue Submission
+  const handleReportIssue = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIssueSubmitting(true);
+    setIssueError(null);
+
+    try {
+      const res = await apiClient.reportPaymentIssue({
+        orderReference: orderState?.orderReference,
+        customerName: customer.fullName || 'Customer',
+        customerMobile: customer.mobileNumber || '9999999999',
+        issueType,
+        description: issueDescription.trim() || undefined,
+      });
+
+      setIssueResult({
+        reference: res.issueReference,
+        message: res.message,
+      });
+    } catch (err: any) {
+      setIssueError(err.message || 'Failed to submit payment issue report.');
+    } finally {
+      setIssueSubmitting(false);
+    }
+  };
+
+  // ══════════════════════════════════════════════════════════════════
+  // PAYMENT SUPPORT ISSUE MODAL
+  // ══════════════════════════════════════════════════════════════════
+  const renderPaymentIssueModal = () => {
+    if (!showIssueModal) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+        <div className="w-full max-w-lg bg-white rounded-3xl border border-stone-200 p-6 md:p-8 shadow-warm-lg space-y-5 max-h-[90vh] overflow-y-auto">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-festive-marigold font-bold text-lg">
+                ?
+              </div>
+              <div>
+                <h3 className="text-xl font-bold font-display text-stone-900">
+                  Payment Support Assistance
+                </h3>
+                <p className="text-xs text-stone-500">
+                  Report a problem with UPI QR scanning, app payment, or UTR entry
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowIssueModal(false)}
+              className="text-stone-400 hover:text-stone-700 p-1.5 -m-1.5 rounded-lg text-lg leading-none"
+              aria-label="Close modal"
+            >
+              ✕
+            </button>
+          </div>
+
+          {issueResult ? (
+            <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 space-y-3">
+              <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
+                <span>✓</span>
+                <span>Issue Report Logged</span>
+              </div>
+              <p className="text-xs text-stone-700 leading-relaxed">
+                {issueResult.message}
+              </p>
+              <div className="p-3 rounded-xl bg-white border border-amber-200/80 font-mono text-xs flex justify-between items-center">
+                <span className="text-stone-500">Support Reference:</span>
+                <span className="font-bold text-festive-marigold text-sm">
+                  {issueResult.reference}
+                </span>
+              </div>
+              <p className="text-[11px] text-stone-500">
+                Our counter staff will review this ticket during your pickup verification. You can proceed with your order reference.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowIssueModal(false)}
+                className="w-full py-2.5 rounded-xl bg-stone-900 text-white text-xs font-bold hover:bg-stone-800 transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleReportIssue} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
+                  Issue Type <span className="text-festive-vermilion">*</span>
+                </label>
+                <select
+                  value={issueType}
+                  onChange={(e) => setIssueType(e.target.value as PaymentIssueType)}
+                  className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-stone-50 border border-stone-300 text-stone-900 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+                >
+                  <option value="QR_NOT_SCANNING">QR code not scanning in camera/app</option>
+                  <option value="QR_LIMIT_REACHED">Daily UPI bank transaction limit reached</option>
+                  <option value="APP_CANNOT_OPEN">UPI payment app cannot open / crashes</option>
+                  <option value="PAYMENT_APP_ERROR">Bank server declined or timed out</option>
+                  <option value="UTR_SUBMISSION_FAILED">UTR not generated or receipt missing</option>
+                  <option value="OTHER">Other enquiry or manual assistance needed</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-800 uppercase tracking-wider mb-1.5">
+                  Details / Description (Optional)
+                </label>
+                <textarea
+                  rows={3}
+                  maxLength={200}
+                  value={issueDescription}
+                  onChange={(e) => setIssueDescription(e.target.value)}
+                  placeholder="Describe what occurred in your payment app or bank..."
+                  className="w-full p-3 rounded-xl bg-stone-50 border border-stone-300 text-stone-900 text-xs placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+                />
+                <div className="text-right text-[11px] text-stone-400 mt-1">
+                  {issueDescription.length}/200 characters
+                </div>
+              </div>
+
+              {issueError && (
+                <p className="text-xs text-festive-vermilion">{issueError}</p>
+              )}
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowIssueModal(false)}
+                  className="px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={issueSubmitting}
+                  className="min-h-[44px] px-5 py-2.5 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover text-white text-xs font-bold shadow-md shadow-orange-500/20 disabled:opacity-50"
+                >
+                  {issueSubmitting ? 'Submitting...' : 'Submit Support Ticket →'}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   // ══════════════════════════════════════════════════════════════════
   // SCREEN 10: ORDER STATUS TRACKER
   // ══════════════════════════════════════════════════════════════════
@@ -253,12 +413,12 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
 
     return (
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+        <div className="flex items-center justify-between border-b border-stone-200 pb-4">
           <div>
-            <h2 className="text-2xl font-bold font-display text-content-primary">
+            <h2 className="text-2xl font-bold font-display text-stone-900">
               Order Status Tracker
             </h2>
-            <p className="text-xs text-content-muted mt-0.5">
+            <p className="text-xs text-stone-500 mt-0.5">
               Status for Reference: <span className="font-mono text-festive-marigold font-bold">{orderState.orderReference}</span>
             </p>
           </div>
@@ -266,15 +426,15 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
             type="button"
             onClick={handleRefreshStatus}
             disabled={statusPolling}
-            className="px-3.5 py-1.5 rounded-xl bg-bg-elevated hover:bg-white/10 border border-white/10 text-xs font-semibold text-content-primary flex items-center gap-1.5 transition-colors"
+            className="min-h-[40px] px-3.5 py-1.5 rounded-xl bg-white hover:bg-stone-50 border border-stone-300 text-xs font-semibold text-stone-800 flex items-center gap-1.5 transition-colors shadow-sm"
           >
             <span>{statusPolling ? 'Refreshing...' : '🔄 Refresh Status'}</span>
           </button>
         </div>
 
         {/* Operational Status Stepper */}
-        <div className="p-5 rounded-2xl bg-bg-surface border border-white/10 space-y-4">
-          <h3 className="text-sm font-bold text-content-primary uppercase tracking-wider font-mono">
+        <div className="p-5 rounded-2xl bg-white border border-stone-200 shadow-warm-sm space-y-4">
+          <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider font-mono">
             Fulfilment Progress
           </h3>
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center text-xs">
@@ -301,10 +461,10 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
                   key={step.key}
                   className={`p-2.5 rounded-xl border transition-colors ${
                     isCurrent
-                      ? 'bg-festive-marigold/20 border-festive-marigold text-festive-marigold font-bold shadow-md'
+                      ? 'bg-amber-50 border-festive-marigold text-festive-marigold font-bold shadow-sm'
                       : isPastOrCurrent
-                      ? 'bg-emerald-950/30 border-emerald-700/40 text-emerald-300 font-medium'
-                      : 'bg-bg-elevated/40 border-white/5 text-content-muted'
+                      ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-medium'
+                      : 'bg-stone-50 border-stone-200 text-stone-400'
                   }`}
                 >
                   <div className="text-xs font-mono">{step.label}</div>
@@ -315,35 +475,35 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
         </div>
 
         {/* Payment & Token Status Card */}
-        <div className="p-5 rounded-2xl bg-bg-surface border border-white/10 space-y-3">
-          <h3 className="text-sm font-bold text-content-primary uppercase tracking-wider font-mono">
+        <div className="p-5 rounded-2xl bg-white border border-stone-200 shadow-warm-sm space-y-3">
+          <h3 className="text-sm font-bold text-stone-900 uppercase tracking-wider font-mono">
             Advance Token & Payment State
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-            <div className="p-3 rounded-xl bg-bg-elevated border border-white/5">
-              <span className="text-[11px] text-content-muted block">Advance Token</span>
+            <div className="p-3 rounded-xl bg-amber-50/50 border border-amber-200">
+              <span className="text-[11px] text-stone-500 block">Advance Token</span>
               <span className="text-base font-bold font-mono text-festive-marigold">
                 {formatPaise(orderState.tokenDuePaise)}
               </span>
             </div>
 
-            <div className="p-3 rounded-xl bg-bg-elevated border border-white/5">
-              <span className="text-[11px] text-content-muted block">Remaining Balance</span>
-              <span className="text-base font-bold font-mono text-content-primary">
+            <div className="p-3 rounded-xl bg-stone-50 border border-stone-200">
+              <span className="text-[11px] text-stone-500 block">Remaining Balance</span>
+              <span className="text-base font-bold font-mono text-stone-900">
                 {formatPaise(orderState.balanceDuePaise)}
               </span>
             </div>
 
-            <div className="p-3 rounded-xl bg-bg-elevated border border-white/5">
-              <span className="text-[11px] text-content-muted block">Payment State</span>
+            <div className="p-3 rounded-xl bg-stone-50 border border-stone-200">
+              <span className="text-[11px] text-stone-500 block">Payment State</span>
               <span
                 className={`text-xs font-bold font-mono px-2 py-0.5 rounded inline-block mt-1 ${
                   isUnverified
-                    ? 'bg-amber-950 text-amber-300 border border-amber-700'
+                    ? 'bg-amber-100 text-amber-900 border border-amber-300'
                     : orderState.paymentStatus === 'UNPAID'
-                    ? 'bg-bg-elevated text-content-muted border border-white/10'
-                    : 'bg-red-950 text-red-300 border border-red-700'
+                    ? 'bg-stone-200 text-stone-700 border border-stone-300'
+                    : 'bg-rose-100 text-rose-900 border border-rose-300'
                 }`}
               >
                 {isUnverified ? 'RECORDED (UNVERIFIED)' : orderState.paymentStatus}
@@ -352,14 +512,14 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
           </div>
 
           {orderState.paymentReference && (
-            <div className="mt-3 p-3 rounded-xl bg-bg-base border border-white/5 text-xs text-content-secondary space-y-1">
+            <div className="mt-3 p-3 rounded-xl bg-stone-50 border border-stone-200 text-xs text-stone-700 space-y-1">
               <div>
                 <strong>Submitted 12-Digit UTR:</strong>{' '}
-                <span className="font-mono text-festive-amber font-bold">
+                <span className="font-mono text-festive-marigold font-bold">
                   {orderState.paymentReference}
                 </span>
               </div>
-              <div className="text-[11px] text-content-muted">
+              <div className="text-[11px] text-stone-500">
                 Note: This reference is recorded as unverified. This application does not verify payments or establish receipt of funds.
               </div>
             </div>
@@ -367,15 +527,15 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
         </div>
 
         {/* Collection Information */}
-        <div className="p-5 rounded-2xl bg-bg-surface border border-white/10 space-y-2 text-xs text-content-secondary">
-          <h3 className="text-sm font-bold text-content-primary font-display">
+        <div className="p-5 rounded-2xl bg-white border border-stone-200 shadow-warm-sm space-y-2 text-xs text-stone-600">
+          <h3 className="text-sm font-bold text-stone-900 font-display">
             Order Collection Information
           </h3>
           <p>
-            • Present your order reference <strong className="text-content-primary font-mono">{orderState.orderReference}</strong> and registered mobile number at collection.
+            • Present your order reference <strong className="text-stone-900 font-mono">{orderState.orderReference}</strong> and registered mobile number at collection.
           </p>
           <p>
-            • Remaining balance of <strong className="text-content-primary font-mono">{formatPaise(orderState.balanceDuePaise)}</strong> is due upon collection.
+            • Remaining balance of <strong className="text-stone-900 font-mono">{formatPaise(orderState.balanceDuePaise)}</strong> is due upon collection.
           </p>
           <p>
             • Age confirmation (18+) required at collection.
@@ -386,7 +546,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
           <button
             type="button"
             onClick={() => setCurrentStep('REVIEW')}
-            className="w-full sm:w-auto min-h-touch px-5 py-2.5 rounded-xl bg-bg-elevated hover:bg-white/10 border border-white/10 text-content-primary font-semibold text-sm transition-colors text-center"
+            className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-800 font-semibold text-sm transition-colors text-center"
           >
             ← Back to Order Summary
           </button>
@@ -394,7 +554,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
             <button
               type="button"
               onClick={onResetOrder}
-              className="w-full sm:w-auto min-h-touch px-5 py-2.5 rounded-xl bg-bg-elevated hover:bg-white/10 border border-white/10 text-content-muted hover:text-content-primary font-semibold text-sm transition-colors text-center"
+              className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-600 hover:text-stone-900 font-semibold text-sm transition-colors text-center"
             >
               Start New Order
             </button>
@@ -411,63 +571,63 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
     return (
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
         {/* Success Card */}
-        <div className="p-6 md:p-8 rounded-2xl bg-bg-surface border border-emerald-500/30 text-center space-y-4 shadow-xl">
-          <div className="w-16 h-16 mx-auto rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-3xl">
+        <div className="p-6 md:p-8 rounded-3xl bg-white border border-emerald-300 text-center space-y-4 shadow-warm-md">
+          <div className="w-16 h-16 mx-auto rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center text-3xl text-emerald-700">
             ✓
           </div>
 
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-950/60 text-emerald-300 border border-emerald-800/40 mb-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 mb-2">
               <span>🎉</span>
               <span>Order Details Recorded</span>
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold font-display text-content-primary">
+            <h2 className="text-2xl md:text-3xl font-bold font-display text-stone-900">
               Order Reference: {orderState.orderReference}
             </h2>
-            <p className="text-xs text-content-muted mt-1 font-mono">
+            <p className="text-xs text-stone-500 mt-1 font-mono">
               Order Date: {new Date().toLocaleDateString('en-IN', { dateStyle: 'medium' })}
             </p>
           </div>
 
           {/* Payment & UTR Status Callout */}
-          <div className="max-w-md mx-auto p-4 rounded-xl bg-bg-elevated border border-white/10 text-left space-y-2 text-xs">
-            <div className="flex justify-between items-center pb-2 border-b border-white/5">
-              <span className="text-content-muted">Customer Name:</span>
-              <span className="font-semibold text-content-primary">{customer.fullName}</span>
+          <div className="max-w-md mx-auto p-5 rounded-2xl bg-[#FAF6EE] border border-stone-200 text-left space-y-2 text-xs">
+            <div className="flex justify-between items-center pb-2 border-b border-stone-200/60">
+              <span className="text-stone-500">Customer Name:</span>
+              <span className="font-semibold text-stone-900">{customer.fullName}</span>
             </div>
-            <div className="flex justify-between items-center pb-2 border-b border-white/5">
-              <span className="text-content-muted">Mobile Number:</span>
-              <span className="font-mono text-content-primary">+91 {customer.mobileNumber}</span>
+            <div className="flex justify-between items-center pb-2 border-b border-stone-200/60">
+              <span className="text-stone-500">Mobile Number:</span>
+              <span className="font-mono text-stone-900">+91 {customer.mobileNumber}</span>
             </div>
             {orderState.paymentReference && (
-              <div className="flex justify-between items-center pb-2 border-b border-white/5">
-                <span className="text-content-muted">Submitted 12-Digit UTR:</span>
-                <span className="font-mono text-festive-amber font-bold">
+              <div className="flex justify-between items-center pb-2 border-b border-stone-200/60">
+                <span className="text-stone-500">Submitted 12-Digit UTR:</span>
+                <span className="font-mono text-festive-marigold font-bold">
                   {orderState.paymentReference}
                 </span>
               </div>
             )}
-            <div className="flex justify-between items-center pb-2 border-b border-white/5">
-              <span className="text-content-muted">Payment Reference Status:</span>
-              <span className="px-2 py-0.5 rounded bg-amber-950/80 text-amber-300 font-mono font-bold text-[11px] border border-amber-800/60">
+            <div className="flex justify-between items-center pb-2 border-b border-stone-200/60">
+              <span className="text-stone-500">Payment Reference Status:</span>
+              <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-mono font-bold text-[11px] border border-amber-300">
                 RECORDED_UNVERIFIED
               </span>
             </div>
-            <div className="flex justify-between items-center pb-2 border-b border-white/5">
-              <span className="text-content-muted">Advance Token:</span>
+            <div className="flex justify-between items-center pb-2 border-b border-stone-200/60">
+              <span className="text-stone-500">Advance Token:</span>
               <span className="font-mono font-bold text-festive-marigold">
                 {formatPaise(orderState.tokenDuePaise)}
               </span>
             </div>
             <div className="flex justify-between items-center pt-1 text-sm">
-              <span className="font-bold text-content-primary">Balance Due at Collection:</span>
-              <span className="font-mono font-bold text-content-primary text-base">
+              <span className="font-bold text-stone-900">Balance Due at Collection:</span>
+              <span className="font-mono font-bold text-stone-900 text-base">
                 {formatPaise(orderState.balanceDuePaise)}
               </span>
             </div>
           </div>
 
-          <p className="text-xs text-content-muted max-w-md mx-auto leading-relaxed">
+          <p className="text-xs text-stone-500 max-w-md mx-auto leading-relaxed">
             Your 12-digit UTR has been recorded as unverified. This application does not verify payments or confirm receipt of funds. Please retain your order reference.
           </p>
 
@@ -475,7 +635,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
             <button
               type="button"
               onClick={() => setCurrentStep('ORDER_STATUS')}
-              className="w-full sm:w-auto min-h-touch px-6 py-3 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 text-black font-semibold text-sm transition-transform shadow-lg shadow-amber-500/10 focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+              className="w-full sm:w-auto min-h-[48px] px-6 py-3 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 text-white font-bold text-sm transition-transform shadow-lg shadow-orange-500/20 focus:outline-none focus:ring-2 focus:ring-festive-marigold"
             >
               <span>Track Live Order Status →</span>
             </button>
@@ -483,7 +643,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
             <button
               type="button"
               onClick={handleCopy}
-              className="w-full sm:w-auto min-h-touch px-5 py-2.5 rounded-xl bg-bg-elevated hover:bg-white/10 border border-white/10 text-content-primary font-semibold text-sm transition-colors text-center"
+              className="w-full sm:w-auto min-h-[48px] px-5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-800 font-semibold text-sm transition-colors text-center"
             >
               {copied ? '✓ Summary Copied!' : '📋 Copy Order Summary'}
             </button>
@@ -493,7 +653,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto min-h-touch px-5 py-2.5 rounded-xl bg-emerald-700/80 hover:bg-emerald-600 text-white font-semibold text-sm transition-colors text-center inline-flex items-center justify-center gap-1.5"
+                className="w-full sm:w-auto min-h-[48px] px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition-colors text-center inline-flex items-center justify-center gap-1.5"
               >
                 <span>💬 Share to WhatsApp</span>
               </a>
@@ -510,22 +670,22 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
   if (currentStep === 'UTR_SUBMIT' && orderState) {
     return (
       <div className="max-w-xl mx-auto px-4 py-6 space-y-6">
-        <div className="bg-bg-surface border border-white/10 rounded-2xl p-5 md:p-7 shadow-xl">
+        <div className="bg-white border border-stone-200 rounded-3xl p-6 md:p-8 shadow-warm-md">
           <div className="mb-6">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-festive-marigold/10 border border-festive-marigold/30 text-festive-amber mb-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 border border-amber-200 text-amber-800 mb-2">
               <span>💳</span>
               <span>Step 8 • UTR Submission</span>
             </div>
-            <h2 className="text-2xl font-bold font-display text-content-primary">
+            <h2 className="text-2xl font-bold font-display text-stone-900">
               Submit 12-Digit UTR
             </h2>
-            <p className="text-xs text-content-muted mt-1 leading-relaxed">
+            <p className="text-xs text-stone-500 mt-1 leading-relaxed">
               Order Reference:{' '}
               <span className="font-mono text-festive-marigold font-bold">
                 {orderState.orderReference}
               </span>{' '}
               • Token Due:{' '}
-              <span className="font-mono text-content-primary font-bold">
+              <span className="font-mono text-stone-900 font-bold">
                 {formatPaise(orderState.tokenDuePaise)}
               </span>
             </p>
@@ -535,10 +695,10 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
             <div>
               <label
                 htmlFor="utr-input"
-                className="block text-sm font-semibold text-content-primary mb-1.5"
+                className="block text-sm font-semibold text-stone-800 mb-1.5"
               >
                 12-Digit UPI Transaction Reference (UTR){' '}
-                <span className="text-festive-crimson">*</span>
+                <span className="text-festive-vermilion">*</span>
               </label>
               <input
                 id="utr-input"
@@ -553,20 +713,20 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
                   setUtrInput(digits);
                 }}
                 placeholder="e.g. 428912345678"
-                className="w-full min-h-touch px-4 py-2.5 rounded-xl bg-bg-elevated border border-white/10 text-content-primary font-mono text-base tracking-widest focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+                className="w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-300 text-stone-900 font-mono text-base tracking-widest focus:outline-none focus:ring-2 focus:ring-festive-marigold focus:bg-white"
               />
-              <p className="text-xs text-content-muted mt-1.5">
+              <p className="text-xs text-stone-500 mt-1.5">
                 Exact 12 digits from your UPI payment receipt.
               </p>
               {utrError && (
-                <p className="mt-1.5 text-xs text-festive-crimson flex items-center gap-1">
+                <p className="mt-1.5 text-xs text-festive-vermilion flex items-center gap-1">
                   <span>⚠️</span> {utrError}
                 </p>
               )}
             </div>
 
-            <div className="p-3 rounded-xl bg-bg-elevated border border-white/5 text-xs text-content-muted space-y-1">
-              <p className="text-content-primary font-semibold">
+            <div className="p-3.5 rounded-xl bg-amber-50/60 border border-amber-200/80 text-xs text-stone-600 space-y-1">
+              <p className="text-stone-900 font-semibold">
                 ℹ️ Status Notice:
               </p>
               <p>
@@ -574,24 +734,41 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
               </p>
             </div>
 
+            {/* Support Link */}
+            <div className="pt-1 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setIssueResult(null);
+                  setIssueError(null);
+                  setShowIssueModal(true);
+                }}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-festive-marigold hover:text-orange-700 underline underline-offset-4 focus:outline-none"
+              >
+                <span>Facing an issue with UTR submission or payment? Click for assistance</span>
+              </button>
+            </div>
+
             <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
               <button
                 type="button"
                 onClick={() => setCurrentStep('QR_PAYMENT')}
-                className="w-full sm:w-auto min-h-touch px-5 py-2.5 rounded-xl bg-bg-elevated hover:bg-white/10 border border-white/10 text-content-primary font-semibold text-sm transition-colors text-center"
+                className="w-full sm:w-auto min-h-[48px] px-5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-800 font-semibold text-sm transition-colors text-center"
               >
                 ← Back to QR
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting || utrInput.length !== 12}
-                className="w-full sm:flex-1 min-h-touch px-6 py-3 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 disabled:opacity-50 text-black font-semibold text-base transition-transform flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+                className="w-full sm:flex-1 min-h-[48px] px-6 py-3 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 disabled:opacity-50 text-white font-bold text-base transition-transform flex items-center justify-center gap-2 shadow-md shadow-orange-500/20 focus:outline-none focus:ring-2 focus:ring-festive-marigold"
               >
                 <span>{isSubmitting ? 'Recording UTR...' : 'Submit UTR Reference →'}</span>
               </button>
             </div>
           </form>
         </div>
+
+        {renderPaymentIssueModal()}
       </div>
     );
   }
@@ -605,16 +782,16 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
 
     return (
       <div className="max-w-xl mx-auto px-4 py-6 space-y-6">
-        <div className="bg-bg-surface border border-white/10 rounded-2xl p-5 md:p-7 shadow-xl space-y-6">
+        <div className="bg-white border border-stone-200 rounded-3xl p-6 md:p-8 shadow-warm-md space-y-6">
           <div className="text-center space-y-1">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-festive-marigold/10 border border-festive-marigold/30 text-festive-amber mb-1">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 border border-amber-200 text-amber-800 mb-1">
               <span>📱</span>
               <span>Step 7 • Advance Token QR</span>
             </div>
-            <h2 className="text-2xl font-bold font-display text-content-primary">
+            <h2 className="text-2xl font-bold font-display text-stone-900">
               UPI QR Payment Instructions
             </h2>
-            <p className="text-xs text-content-muted">
+            <p className="text-xs text-stone-500">
               Scan the QR code to submit your advance order token.
             </p>
           </div>
@@ -629,37 +806,52 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
           />
 
           {/* Payment Guidance Card */}
-          <div className="p-4 rounded-xl bg-bg-elevated border border-white/10 text-xs space-y-2">
-            <div className="flex justify-between items-center text-content-secondary">
+          <div className="p-4 rounded-2xl bg-[#FAF6EE] border border-stone-200 text-xs space-y-2">
+            <div className="flex justify-between items-center text-stone-600">
               <span>Order Reference:</span>
               <span className="font-mono text-festive-marigold font-bold">
                 {orderState.orderReference}
               </span>
             </div>
-            <div className="flex justify-between items-center text-content-secondary">
+            <div className="flex justify-between items-center text-stone-600">
               <span>Advance Token Required:</span>
-              <span className="font-mono font-bold text-content-primary">
+              <span className="font-mono font-bold text-stone-900">
                 ₹{amountInr} ({orderState.tokenDuePaise < 20000 ? 'Tier ₹50' : 'Tier ₹100'})
               </span>
             </div>
-            <div className="flex justify-between items-center text-content-secondary">
+            <div className="flex justify-between items-center text-stone-600">
               <span>Remaining Balance:</span>
-              <span className="font-mono font-bold text-content-primary">
+              <span className="font-mono font-bold text-stone-900">
                 {formatPaise(orderState.balanceDuePaise)} (Payable at collection)
               </span>
             </div>
             {isRestricted && (
-              <div className="pt-2 border-t border-white/5 text-[11px] text-amber-300 leading-relaxed">
+              <div className="pt-2 border-t border-stone-200 text-[11px] text-amber-800 leading-relaxed">
                 ⚠️ Restricted Test Environment: Non-payable test QR fixture active. Real payment collection is disabled. Do not transfer actual money.
               </div>
             )}
+          </div>
+
+          {/* Support Link */}
+          <div className="pt-1 text-center">
+            <button
+              type="button"
+              onClick={() => {
+                setIssueResult(null);
+                setIssueError(null);
+                setShowIssueModal(true);
+              }}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-festive-marigold hover:text-orange-700 underline underline-offset-4 focus:outline-none"
+            >
+              <span>Facing an issue with scanning or payment? Click for assistance</span>
+            </button>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-3">
             <button
               type="button"
               onClick={() => setCurrentStep('REVIEW')}
-              className="w-full sm:w-auto min-h-touch px-5 py-2.5 rounded-xl bg-bg-elevated hover:bg-white/10 border border-white/10 text-content-primary font-semibold text-sm transition-colors text-center"
+              className="w-full sm:w-auto min-h-[48px] px-5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-800 font-semibold text-sm transition-colors text-center"
             >
               ← Back to Review
             </button>
@@ -667,12 +859,14 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
             <button
               type="button"
               onClick={handleProceedToUtr}
-              className="w-full sm:flex-1 min-h-touch px-6 py-3 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 text-black font-semibold text-base transition-transform flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+              className="w-full sm:flex-1 min-h-[48px] px-6 py-3 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 text-white font-bold text-base transition-transform flex items-center justify-center gap-2 shadow-md shadow-orange-500/20 focus:outline-none focus:ring-2 focus:ring-festive-marigold"
             >
               <span>I Have Paid / Enter 12-Digit UTR →</span>
             </button>
           </div>
         </div>
+
+        {renderPaymentIssueModal()}
       </div>
     );
   }
@@ -683,23 +877,23 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
       {/* Header */}
-      <div className="border-b border-white/10 pb-4">
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-festive-marigold/10 border border-festive-marigold/30 text-festive-amber mb-2">
+      <div className="border-b border-stone-200 pb-4">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 border border-amber-200 text-amber-800 mb-2">
           <span>📋</span>
           <span>Step 6 • Order Review</span>
         </div>
-        <h2 className="text-2xl font-bold font-display text-content-primary">
+        <h2 className="text-2xl font-bold font-display text-stone-900">
           Order Review & Advance Token
         </h2>
-        <p className="text-xs text-content-muted mt-0.5">
+        <p className="text-xs text-stone-500 mt-0.5">
           Review your items, customer details, and advance token before proceeding.
         </p>
       </div>
 
       {/* Customer Verification Box */}
-      <div className="p-4 rounded-2xl bg-bg-surface border border-white/10 space-y-3">
+      <div className="p-5 rounded-2xl bg-white border border-stone-200 shadow-warm-sm space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-content-primary font-display">
+          <h3 className="text-sm font-bold text-stone-900 font-display">
             Customer Information
           </h3>
           <button
@@ -713,28 +907,28 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
           <div>
-            <span className="text-content-muted block">Full Name:</span>
-            <span className="font-semibold text-content-primary">
+            <span className="text-stone-500 block">Full Name:</span>
+            <span className="font-semibold text-stone-900">
               {customer.fullName || '—'}
             </span>
           </div>
           <div>
-            <span className="text-content-muted block">Mobile Number:</span>
-            <span className="font-mono text-content-primary">
+            <span className="text-stone-500 block">Mobile Number:</span>
+            <span className="font-mono text-stone-900">
               {customer.mobileNumber ? `+91 ${customer.mobileNumber}` : '—'}
             </span>
           </div>
           <div>
-            <span className="text-content-muted block">Collection Preference:</span>
-            <span className="text-content-primary">
+            <span className="text-stone-500 block">Collection Preference:</span>
+            <span className="text-stone-900 font-medium">
               {customer.fulfilmentPreference === 'SPECIAL_ENQUIRY'
                 ? 'Special Enquiry'
-                : 'Counter Pickup'}
+                : 'Store Counter Pickup'}
             </span>
           </div>
           <div>
-            <span className="text-content-muted block">Age Attestation:</span>
-            <span className="text-emerald-400 font-semibold">
+            <span className="text-stone-500 block">Age Attestation:</span>
+            <span className="text-emerald-700 font-semibold">
               {customer.ageConfirmed ? '✓ 18+ Confirmed' : 'Not confirmed'}
             </span>
           </div>
@@ -742,9 +936,9 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
       </div>
 
       {/* Item Summary List */}
-      <div className="p-4 rounded-2xl bg-bg-surface border border-white/10 space-y-3">
+      <div className="p-5 rounded-2xl bg-white border border-stone-200 shadow-warm-sm space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-content-primary font-display">
+          <h3 className="text-sm font-bold text-stone-900 font-display">
             Items in Order ({totals.totalQuantity} items)
           </h3>
           <button
@@ -760,17 +954,17 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
           {items.map((item) => (
             <div
               key={`${item.productId}-${item.variantId}`}
-              className="p-2.5 rounded-xl bg-bg-elevated border border-white/5 flex items-center justify-between text-xs"
+              className="p-3 rounded-xl bg-stone-50 border border-stone-200 flex items-center justify-between text-xs"
             >
               <div>
-                <span className="font-semibold text-content-primary">
+                <span className="font-semibold text-stone-900">
                   {item.productName} ({item.variantName})
                 </span>
-                <span className="text-content-muted block text-[11px]">
+                <span className="text-stone-500 block text-[11px]">
                   Qty: {item.quantity} × {item.pricePaise !== null ? formatPaise(item.pricePaise) : item.printedPriceText}
                 </span>
               </div>
-              <span className="font-mono font-bold text-content-primary">
+              <span className="font-mono font-bold text-stone-900">
                 {item.lineSubtotalPaise !== null
                   ? formatPaise(item.lineSubtotalPaise)
                   : 'Unpriced'}
@@ -781,41 +975,41 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
       </div>
 
       {/* Financial Breakdown Card with Tiered Token Rules */}
-      <div className="p-5 rounded-2xl bg-bg-surface border border-white/10 space-y-3">
-        <h3 className="text-base font-bold font-display text-content-primary">
+      <div className="p-6 rounded-2xl bg-white border border-stone-200 shadow-warm-sm space-y-3">
+        <h3 className="text-base font-bold font-display text-stone-900">
           Price & Advance Token Accounting
         </h3>
 
-        <div className="space-y-2 text-sm border-b border-white/5 pb-3">
+        <div className="space-y-2 text-sm border-b border-stone-200 pb-3">
           <div className="flex justify-between items-center">
-            <span className="text-content-muted">Order Subtotal:</span>
-            <span className="font-mono font-bold text-content-primary">
+            <span className="text-stone-500">Order Subtotal:</span>
+            <span className="font-mono font-bold text-stone-900">
               {formatPaise(totals.subtotalPaise)}
             </span>
           </div>
 
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-1.5">
-              <span className="text-content-muted">Advance Token Required:</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-festive-amber border border-amber-500/20">
+              <span className="text-stone-500">Advance Token Required:</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-200 font-semibold">
                 {totals.subtotalPaise < 20000 ? '₹50 (< ₹200)' : '₹100 (≥ ₹200)'}
               </span>
             </div>
-            <span className="font-mono font-bold text-festive-amber">
+            <span className="font-mono font-bold text-festive-marigold">
               {formatPaise(totals.tokenAmountPaise)}
             </span>
           </div>
 
           <div className="flex justify-between items-center">
-            <span className="text-content-muted">Balance Due at Collection:</span>
-            <span className="font-mono font-bold text-content-primary">
+            <span className="text-stone-500">Balance Due at Collection:</span>
+            <span className="font-mono font-bold text-stone-900">
               {formatPaise(totals.remainingBalancePaise)}
             </span>
           </div>
         </div>
 
         <div className="flex justify-between items-baseline pt-1">
-          <span className="text-base font-bold text-content-primary">
+          <span className="text-base font-bold text-stone-900">
             Subtotal Due Overall
           </span>
           <span className="text-2xl font-bold font-mono text-festive-marigold">
@@ -826,12 +1020,12 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
 
       {/* Payment Disabled Truthful Notice */}
       {paymentConfig && !isPaymentAvailable && (
-        <div className="p-4 rounded-2xl bg-amber-950/30 border border-amber-600/30 text-amber-200 text-xs space-y-2">
-          <div className="flex items-center gap-2 font-bold text-sm text-amber-300">
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-2">
+          <div className="flex items-center gap-2 font-bold text-sm text-amber-900">
             <span>ℹ️</span>
             <span>Payment instructions are currently unavailable.</span>
           </div>
-          <p className="text-amber-200/80 leading-relaxed">
+          <p className="text-amber-800 leading-relaxed">
             Public online payment collection is currently disabled. Real customer details and payments are not being accepted online. You may copy your order summary or share it via WhatsApp for order enquiry.
           </p>
         </div>
@@ -839,7 +1033,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
 
       {/* Warnings & Action Button */}
       {!canProceedToPayment && (
-        <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-800/40 text-xs text-amber-300">
+        <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800">
           {!totals.minOrderRequirementMet && totals.totalQuantity > 0
             ? '⚠️ Order subtotal must be at least ₹50.00 because the required advance token is ₹50.00.'
             : '⚠️ Please ensure customer details are complete (including 18+ confirmation) and items are selected before proceeding.'}
@@ -850,7 +1044,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
         <button
           type="button"
           onClick={onEditCart}
-          className="w-full sm:w-auto min-h-touch px-5 py-2.5 rounded-xl bg-bg-elevated hover:bg-white/10 border border-white/10 text-content-primary font-semibold text-sm transition-colors text-center"
+          className="w-full sm:w-auto min-h-[48px] px-5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-800 font-semibold text-sm transition-colors text-center"
         >
           ← Edit Cart
         </button>
@@ -860,7 +1054,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
             type="button"
             disabled={!canProceedToPayment || isSubmitting}
             onClick={handleProceedToQr}
-            className="w-full sm:flex-1 min-h-touch px-6 py-3 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 disabled:opacity-50 text-black font-semibold text-base transition-transform flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+            className="w-full sm:flex-1 min-h-[48px] px-6 py-3 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 disabled:opacity-50 text-white font-bold text-base transition-transform flex items-center justify-center gap-2 shadow-md shadow-orange-500/20 focus:outline-none focus:ring-2 focus:ring-festive-marigold"
           >
             <span>{isSubmitting ? 'Creating Order...' : 'Proceed to QR Payment Instructions →'}</span>
           </button>
@@ -869,7 +1063,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
             <button
               type="button"
               onClick={handleCopy}
-              className="w-full sm:flex-1 min-h-touch px-5 py-2.5 rounded-xl bg-bg-elevated hover:bg-white/10 border border-white/10 text-content-primary font-semibold text-sm transition-colors text-center"
+              className="w-full sm:flex-1 min-h-[48px] px-5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-800 font-semibold text-sm transition-colors text-center"
             >
               {copied ? '✓ Summary Copied!' : '📋 Copy Order Summary'}
             </button>
@@ -879,7 +1073,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:flex-1 min-h-touch px-5 py-2.5 rounded-xl bg-emerald-700/80 hover:bg-emerald-600 text-white font-semibold text-sm transition-colors text-center inline-flex items-center justify-center gap-1.5"
+                className="w-full sm:flex-1 min-h-[48px] px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition-colors text-center inline-flex items-center justify-center gap-1.5"
               >
                 <span>💬 Share to WhatsApp</span>
               </a>
@@ -889,9 +1083,9 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
       </div>
 
       {/* Quick Order Lookup Form */}
-      <div className="pt-6 border-t border-white/5">
-        <details className="text-xs text-content-muted">
-          <summary className="cursor-pointer hover:text-content-primary font-semibold py-1">
+      <div className="pt-6 border-t border-stone-200">
+        <details className="text-xs text-stone-500">
+          <summary className="cursor-pointer hover:text-stone-900 font-semibold py-1">
             Already placed an order? Track with Order Reference & Token
           </summary>
           <form onSubmit={handleLookupOrder} className="mt-3 flex flex-col sm:flex-row gap-2">
@@ -900,28 +1094,30 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
               value={statusLookupRef}
               onChange={(e) => setStatusLookupRef(e.target.value)}
               placeholder="Order Reference (e.g. NT-4921)"
-              className="flex-1 px-3 py-2 rounded-xl bg-bg-elevated border border-white/10 font-mono text-content-primary text-xs"
+              className="flex-1 px-3 py-2 rounded-xl bg-stone-50 border border-stone-300 font-mono text-stone-900 text-xs focus:bg-white"
             />
             <input
               type="password"
               value={statusLookupToken}
               onChange={(e) => setStatusLookupToken(e.target.value)}
               placeholder="Access Token"
-              className="w-full sm:w-44 px-3 py-2 rounded-xl bg-bg-elevated border border-white/10 font-mono text-content-primary text-xs"
+              className="w-full sm:w-44 px-3 py-2 rounded-xl bg-stone-50 border border-stone-300 font-mono text-stone-900 text-xs focus:bg-white"
             />
             <button
               type="submit"
               disabled={statusPolling}
-              className="px-4 py-2 rounded-xl bg-bg-surface hover:bg-white/10 border border-white/10 text-content-primary font-semibold text-xs"
+              className="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-800 font-semibold text-xs"
             >
               Lookup
             </button>
           </form>
           {statusLookupError && (
-            <p className="mt-1 text-festive-crimson">{statusLookupError}</p>
+            <p className="mt-1 text-festive-vermilion">{statusLookupError}</p>
           )}
         </details>
       </div>
+
+      {renderPaymentIssueModal()}
     </div>
   );
 };

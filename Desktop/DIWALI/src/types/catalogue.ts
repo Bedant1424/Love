@@ -12,6 +12,7 @@ export interface Category {
   description: string;
   complianceWarning?: string;
   sortOrder: number;
+  imageUrl?: string;
 }
 
 /**
@@ -48,6 +49,11 @@ export interface ProductVariant {
   pricingOrigin: PricingOrigin;
   isAvailable: boolean;
   stockQuantity?: number;
+  currentStock?: number;
+  reservedStock?: number;
+  availableStock?: number;
+  lowStockThreshold?: number;
+  imageUrl?: string;
   notes?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -64,4 +70,5 @@ export interface Product {
   variants: ProductVariant[];
   complianceNotice?: string;
   notes?: string;
+  imageUrl?: string;
 }

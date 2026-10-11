@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Product, ProductVariant } from '../types/catalogue';
 import { formatPaise } from '../utils/formatters';
+import { getProductImage } from '../data/catalogueData';
 import { QuantityControl } from './QuantityControl';
 
 interface ProductCardProps {
@@ -31,50 +32,73 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     ? getItemQuantity(product.id, activeVariant.id)
     : 0;
 
+  const isPriced =
+    activeVariant &&
+    activeVariant.demoPricePaise !== null &&
+    activeVariant.demoPricePaise !== undefined &&
+    activeVariant.demoPricePaise > 0;
+
+  const productImage = getProductImage(product);
+
   return (
     <article
-      className="rounded-2xl bg-bg-surface border border-white/10 p-4 md:p-5 flex flex-col justify-between transition-colors hover:border-white/20 focus-within:border-festive-marigold/50"
+      className="rounded-2xl bg-white border border-stone-200 hover:border-amber-300 shadow-warm-sm hover:shadow-warm-md transition-all duration-200 p-4 flex flex-col justify-between group focus-within:ring-2 focus-within:ring-festive-marigold"
       aria-labelledby={`prod-title-${product.id}`}
     >
       <div>
-        {/* Compliance Warning Badge (e.g. Laddis) */}
+        {/* Product Image Tile with Category Badge */}
+        <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-stone-100 mb-3.5 border border-stone-100">
+          <img
+            src={productImage}
+            alt={product.name}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+            width="400"
+            height="300"
+          />
+          <span className="absolute top-2 left-2 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-white/95 text-stone-800 shadow-sm backdrop-blur-sm">
+            {product.printedPriceText}
+          </span>
+          {activeVariant?.isAvailable === false && (
+            <span className="absolute top-2 right-2 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-rose-600 text-white shadow-sm">
+              Out of Stock
+            </span>
+          )}
+        </div>
+
+        {/* Environmental Notice for Laddis if applicable */}
         {product.complianceNotice && (
-          <div className="mb-3 p-2.5 rounded-lg bg-amber-950/40 border border-amber-800/40 text-[11px] text-amber-300 flex items-start gap-1.5 leading-tight">
-            <span aria-hidden="true" className="shrink-0 text-sm">⚠️</span>
+          <div className="mb-2.5 p-2 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-800 flex items-start gap-1.5 leading-tight">
+            <span aria-hidden="true" className="shrink-0 text-xs">⚠️</span>
             <span>{product.complianceNotice}</span>
           </div>
         )}
 
-        {/* Product Title & Printed Range */}
-        <div className="flex items-start justify-between gap-2">
-          <h3
-            id={`prod-title-${product.id}`}
-            className="text-lg md:text-xl font-bold text-content-primary font-display"
-          >
-            {product.name}
-          </h3>
-          <span className="shrink-0 px-2 py-0.5 rounded text-[11px] font-mono bg-bg-elevated text-content-muted border border-white/5">
-            {product.printedPriceText}
-          </span>
-        </div>
+        {/* Product Title */}
+        <h3
+          id={`prod-title-${product.id}`}
+          className="text-base sm:text-lg font-bold text-stone-900 font-display group-hover:text-festive-marigold transition-colors"
+        >
+          {product.name}
+        </h3>
 
-        {/* Pack Information with Verification Badge */}
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-content-muted">
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-bg-elevated border border-white/5 text-content-secondary">
-            📦 {product.packInfo}
+        {/* Pack Info */}
+        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-stone-500">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-stone-100 text-stone-700">
+            {product.packInfo}
           </span>
           {product.isPackInfoVerified ? (
-            <span className="text-emerald-400 text-[11px]">✓ Pack verified</span>
+            <span className="text-emerald-700 text-[11px] font-medium">✓ Pack confirmed</span>
           ) : (
-            <span className="text-amber-400 text-[11px]">⚠️ Pack count unconfirmed</span>
+            <span className="text-amber-700 text-[11px]">⚠️ Pack estimate</span>
           )}
         </div>
 
-        {/* Variant Selector (if more than 1 variant) */}
+        {/* Variant Selector (if multiple variants) */}
         {product.variants.length > 1 && (
-          <div className="mt-4 pt-3 border-t border-white/5">
-            <label className="block text-xs font-medium text-content-muted mb-2">
-              Select Variant / Size:
+          <div className="mt-3 pt-2.5 border-t border-stone-100">
+            <label className="block text-[11px] font-semibold text-stone-600 mb-1.5">
+              Available Options / Sizes:
             </label>
             <div
               className="grid grid-cols-2 gap-1.5"
@@ -83,6 +107,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             >
               {product.variants.map((v) => {
                 const isSelected = v.id === selectedVariantId;
+                const vPrice = v.demoPricePaise ? formatPaise(v.demoPricePaise) : 'Enquiry';
                 return (
                   <button
                     key={v.id}
@@ -92,15 +117,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                     onClick={() => setSelectedVariantId(v.id)}
                     className={`min-h-[44px] p-2 rounded-xl text-left text-xs transition-colors border ${
                       isSelected
-                        ? 'bg-festive-marigold/15 border-festive-marigold text-content-primary font-semibold'
-                        : 'bg-bg-elevated border-white/5 text-content-muted hover:border-white/20'
+                        ? 'bg-amber-50 border-festive-marigold text-stone-900 font-semibold'
+                        : 'bg-stone-50 border-stone-200 text-stone-600 hover:border-stone-300'
                     }`}
                   >
                     <div className="truncate font-medium">{v.name}</div>
-                    <div className="text-[11px] font-mono mt-0.5 text-festive-amber">
-                      {v.pricePaise !== null
-                        ? formatPaise(v.pricePaise)
-                        : 'On enquiry'}
+                    <div className="text-[11px] font-mono mt-0.5 text-festive-marigold font-bold">
+                      {vPrice}
                     </div>
                   </button>
                 );
@@ -110,55 +133,41 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         )}
       </div>
 
-      {/* Pricing & Cart Action Area */}
-      <div className="mt-5 pt-4 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        {/* Active Variant Price Display */}
+      {/* Pricing & Add to Cart Action Footer */}
+      <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
         <div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-content-primary">
-              {activeVariant?.pricePaise !== null
-                ? formatPaise(activeVariant?.pricePaise)
-                : 'Price on enquiry'}
-            </span>
-          </div>
-          <div className="text-[11px] text-content-muted mt-0.5">
-            {activeVariant?.priceStatus === 'PRINTED_ESTIMATE' && (
-              <span className="text-amber-300">Printed catalogue estimate</span>
-            )}
-            {activeVariant?.priceStatus === 'PRICE_ON_ENQUIRY' && (
-              <span className="text-amber-400">Owner quote required</span>
-            )}
-            {activeVariant?.priceStatus === 'CONFIRMED' && (
-              <span className="text-emerald-400">Confirmed price</span>
-            )}
-          </div>
+          <span className="text-[11px] text-stone-500 block">Catalogue Estimate</span>
+          <span className="text-base sm:text-lg font-bold font-mono text-stone-900">
+            {isPriced && activeVariant?.demoPricePaise
+              ? formatPaise(activeVariant.demoPricePaise)
+              : 'Enquiry Only'}
+          </span>
         </div>
 
-        {/* Add or Stepper Controls */}
-        <div className="shrink-0">
-          {activeVariant && currentQuantity > 0 ? (
-            <QuantityControl
-              quantity={currentQuantity}
-              onIncrement={() => onIncrement(product.id, activeVariant.id)}
-              onDecrement={() => onDecrement(product.id, activeVariant.id)}
-              productName={`${product.name} (${activeVariant.name})`}
-            />
+        <div>
+          {isPriced ? (
+            currentQuantity > 0 ? (
+              <QuantityControl
+                quantity={currentQuantity}
+                onIncrement={() => activeVariant && onIncrement(product.id, activeVariant.id)}
+                onDecrement={() => activeVariant && onDecrement(product.id, activeVariant.id)}
+                ariaLabelPrefix={`${product.name} ${activeVariant?.name || ''}`}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => activeVariant && onAddItem(product.id, activeVariant.id, 1)}
+                className="min-h-[44px] px-4 py-2 rounded-xl bg-stone-900 hover:bg-festive-marigold text-white text-xs font-bold transition-all active:scale-95 shadow-sm focus:outline-none focus:ring-2 focus:ring-festive-marigold flex items-center gap-1.5"
+                aria-label={`Add ${product.name} to enquiry basket`}
+              >
+                <span>Add to Cart</span>
+                <span aria-hidden="true">+</span>
+              </button>
+            )
           ) : (
-            <button
-              type="button"
-              disabled={!activeVariant?.isAvailable}
-              onClick={() => {
-                if (activeVariant) {
-                  onAddItem(product.id, activeVariant.id, 1);
-                }
-              }}
-              className="w-full sm:w-auto min-h-touch px-5 py-2.5 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 text-black font-semibold text-sm transition-transform flex items-center justify-center gap-2 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-festive-marigold"
-              aria-label={`Add ${product.name} ${
-                activeVariant ? activeVariant.name : ''
-              } to enquiry basket`}
-            >
-              <span>+ Add to Box</span>
-            </button>
+            <span className="text-xs px-2.5 py-1.5 rounded-lg bg-stone-100 text-stone-600 font-medium">
+              Price on Enquiry
+            </span>
           )}
         </div>
       </div>

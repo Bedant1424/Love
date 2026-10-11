@@ -156,3 +156,136 @@ export interface UpdateDemoPriceRequest {
   reason?: string;
   allowOverride?: boolean;
 }
+
+// Payment Support Issues
+export type PaymentIssueType =
+  | 'QR_LIMIT_REACHED'
+  | 'QR_NOT_SCANNING'
+  | 'APP_CANNOT_OPEN'
+  | 'PAYMENT_APP_ERROR'
+  | 'UTR_SUBMISSION_FAILED'
+  | 'OTHER';
+
+export type PaymentIssueStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'DISMISSED';
+
+export interface DbPaymentIssue {
+  id: string;
+  issue_reference: string;
+  order_reference?: string | null;
+  customer_name: string;
+  customer_mobile: string;
+  issue_type: PaymentIssueType;
+  description?: string | null;
+  status: PaymentIssueStatus;
+  staff_notes?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreatePaymentIssueRequest {
+  orderReference?: string;
+  customerName: string;
+  customerMobile: string;
+  issueType: PaymentIssueType;
+  description?: string;
+}
+
+// QR Versions Management
+export interface DbQrVersion {
+  id: string;
+  version_number: number;
+  label: string;
+  vpa: string;
+  account_name: string;
+  image_url: string;
+  is_active: number;
+  upload_operator_id: string;
+  activation_notes?: string | null;
+  activated_at?: string | null;
+  deactivated_at?: string | null;
+  created_at: string;
+}
+
+export interface UploadQrRequest {
+  label: string;
+  vpa: string;
+  accountName: string;
+  imageDataUri: string; // Base64 data URI (image/png, image/jpeg, image/webp)
+  operatorId?: string;
+}
+
+// Inventory Tracking
+export interface DbInventoryItem {
+  variant_id: string;
+  product_id: string;
+  product_name: string;
+  variant_name: string;
+  current_stock: number;
+  reserved_stock: number;
+  available_stock: number;
+  low_stock_threshold: number;
+  is_low_stock: boolean;
+}
+
+export interface DbInventoryAuditLog {
+  id: string;
+  variant_id: string;
+  action: 'MANUAL_ADJUST' | 'RESERVATION' | 'RELEASE' | 'COMMIT' | 'CANCEL';
+  quantity_delta: number;
+  stock_before: number;
+  stock_after: number;
+  operator_id: string;
+  reason?: string | null;
+  created_at: string;
+}
+
+export interface AdjustStockRequest {
+  variantId: string;
+  newStock: number;
+  operatorId?: string;
+  reason?: string;
+}
+
+// Customer Directory
+export interface DbCustomerDirectoryItem {
+  id: string;
+  full_name: string;
+  mobile_number: string;
+  total_orders: number;
+  lifetime_spent_paise: number;
+  last_order_date?: string | null;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Sales Analytics and Reporting
+export interface SalesReportSummary {
+  totalOrders: number;
+  totalGrossOrderPaise: number;
+  totalVerifiedFundsPaise: number;
+  totalPendingUnverifiedPaise: number;
+  averageOrderValuePaise: number;
+  dateRange: string;
+}
+
+export interface SalesReportDailyTrend {
+  date: string;
+  orderCount: number;
+  grossPaise: number;
+  verifiedPaise: number;
+}
+
+export interface SalesReportProductBreakdown {
+  productId: string;
+  productName: string;
+  quantitySold: number;
+  totalRevenuePaise: number;
+}
+
+export interface SalesReportResponse {
+  summary: SalesReportSummary;
+  dailyTrends: SalesReportDailyTrend[];
+  productBreakdown: SalesReportProductBreakdown[];
+}
+

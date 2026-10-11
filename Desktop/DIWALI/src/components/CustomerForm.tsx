@@ -59,16 +59,16 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
 
   return (
     <div className="max-w-xl mx-auto px-4 py-6">
-      <div className="bg-bg-surface border border-white/10 rounded-2xl p-5 md:p-7 shadow-xl">
+      <div className="bg-white border border-stone-200 rounded-3xl p-6 md:p-8 shadow-warm-md">
         <div className="mb-6">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-festive-marigold/10 border border-festive-marigold/30 text-festive-amber mb-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 border border-amber-200 text-amber-800 mb-2">
             <span>👤</span>
             <span>Counter Collection Verification</span>
           </div>
-          <h2 className="text-2xl font-bold font-display text-content-primary">
+          <h2 className="text-2xl font-bold font-display text-stone-900">
             Customer Information
           </h2>
-          <p className="text-sm text-content-muted mt-1 leading-relaxed">
+          <p className="text-xs sm:text-sm text-stone-500 mt-1 leading-relaxed">
             Please enter your contact details for counter pickup reservation and order reference tracking.
           </p>
         </div>
@@ -78,9 +78,9 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
           <div>
             <label
               htmlFor="customer-full-name"
-              className="block text-sm font-semibold text-content-primary mb-1.5"
+              className="block text-sm font-semibold text-stone-800 mb-1.5"
             >
-              Full Name <span className="text-festive-crimson">*</span>
+              Full Name <span className="text-festive-vermilion">*</span>
             </label>
             <input
               id="customer-full-name"
@@ -92,85 +92,67 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                 setDetails((prev) => ({ ...prev, fullName: e.target.value }))
               }
               onBlur={() => handleBlur('fullName')}
-              placeholder="e.g. Ravi Kumar"
-              className={`w-full min-h-touch px-4 py-2.5 rounded-xl bg-bg-elevated border text-content-primary placeholder-content-muted text-base transition-colors focus:outline-none focus:ring-2 focus:ring-festive-marigold ${
+              placeholder="e.g. Kalyan Varma"
+              className={`w-full min-h-[48px] px-4 py-2.5 rounded-xl bg-stone-50 border text-stone-900 placeholder-stone-400 text-sm sm:text-base transition-colors focus:outline-none focus:ring-2 focus:ring-festive-marigold focus:bg-white ${
                 touched.fullName && errors.fullName
-                  ? 'border-festive-crimson ring-1 ring-festive-crimson'
-                  : 'border-white/10 hover:border-white/20'
+                  ? 'border-festive-vermilion ring-1 ring-festive-vermilion'
+                  : 'border-stone-300 hover:border-stone-400'
               }`}
-              aria-invalid={!!(touched.fullName && errors.fullName)}
-              aria-describedby={
-                touched.fullName && errors.fullName ? 'name-error' : undefined
-              }
             />
             {touched.fullName && errors.fullName && (
-              <p
-                id="name-error"
-                className="mt-1.5 text-xs text-festive-crimson flex items-center gap-1"
-              >
+              <p className="mt-1.5 text-xs text-festive-vermilion flex items-center gap-1">
                 <span aria-hidden="true">⚠️</span> {errors.fullName}
               </p>
             )}
           </div>
 
-          {/* Mobile Number Field */}
+          {/* 10-Digit Mobile Number */}
           <div>
             <label
-              htmlFor="customer-mobile"
-              className="block text-sm font-semibold text-content-primary mb-1.5"
+              htmlFor="customer-mobile-number"
+              className="block text-sm font-semibold text-stone-800 mb-1.5"
             >
-              10-Digit Mobile Number{' '}
-              <span className="text-festive-crimson">*</span>
+              10-Digit Mobile Number <span className="text-festive-vermilion">*</span>
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-mono text-content-muted select-none">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500 text-sm font-semibold select-none">
                 +91
               </span>
               <input
-                id="customer-mobile"
+                id="customer-mobile-number"
                 type="tel"
                 required
-                maxLength={10}
+                autoComplete="tel"
                 inputMode="numeric"
-                autoComplete="tel-national"
+                maxLength={10}
                 value={details.mobileNumber}
                 onChange={(e) => {
                   const cleaned = e.target.value.replace(/\D/g, '').slice(0, 10);
                   setDetails((prev) => ({ ...prev, mobileNumber: cleaned }));
                 }}
                 onBlur={() => handleBlur('mobileNumber')}
-                placeholder="9876543210"
-                className={`w-full min-h-touch pl-14 pr-4 py-2.5 rounded-xl bg-bg-elevated border text-content-primary font-mono placeholder-content-muted text-base transition-colors focus:outline-none focus:ring-2 focus:ring-festive-marigold ${
+                placeholder="9848022338"
+                className={`w-full min-h-[48px] pl-14 pr-4 py-2.5 rounded-xl bg-stone-50 border text-stone-900 placeholder-stone-400 text-sm sm:text-base font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-festive-marigold focus:bg-white ${
                   touched.mobileNumber && errors.mobileNumber
-                    ? 'border-festive-crimson ring-1 ring-festive-crimson'
-                    : 'border-white/10 hover:border-white/20'
+                    ? 'border-festive-vermilion ring-1 ring-festive-vermilion'
+                    : 'border-stone-300 hover:border-stone-400'
                 }`}
-                aria-invalid={!!(touched.mobileNumber && errors.mobileNumber)}
-                aria-describedby={
-                  touched.mobileNumber && errors.mobileNumber
-                    ? 'mobile-error'
-                    : undefined
-                }
               />
             </div>
-            {touched.mobileNumber && errors.mobileNumber ? (
-              <p
-                id="mobile-error"
-                className="mt-1.5 text-xs text-festive-crimson flex items-center gap-1"
-              >
+            {touched.mobileNumber && errors.mobileNumber && (
+              <p className="mt-1.5 text-xs text-festive-vermilion flex items-center gap-1">
                 <span aria-hidden="true">⚠️</span> {errors.mobileNumber}
               </p>
-            ) : (
-              <p className="mt-1 text-xs text-content-muted">
-                Used to verify pickup identity at the counter.
-              </p>
             )}
+            <p className="text-[11px] text-stone-500 mt-1">
+              Required for pickup confirmation SMS and order reference identification.
+            </p>
           </div>
 
           {/* Fulfilment Preference */}
           <div>
-            <label className="block text-sm font-semibold text-content-primary mb-1.5">
-              Collection Method
+            <label className="block text-sm font-semibold text-stone-800 mb-1.5">
+              Pickup & Collection Preference
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button
@@ -181,15 +163,15 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                     fulfilmentPreference: 'COUNTER_PICKUP',
                   }))
                 }
-                className={`min-h-touch p-3 rounded-xl border text-left text-xs transition-colors ${
+                className={`min-h-[48px] p-3 rounded-xl border text-left text-xs transition-colors ${
                   details.fulfilmentPreference === 'COUNTER_PICKUP'
-                    ? 'bg-festive-marigold/15 border-festive-marigold text-content-primary font-semibold'
-                    : 'bg-bg-elevated border-white/10 text-content-muted hover:border-white/20'
+                    ? 'bg-amber-50 border-festive-marigold text-stone-900 font-semibold shadow-sm'
+                    : 'bg-stone-50 border-stone-200 text-stone-600 hover:border-stone-300'
                 }`}
               >
-                <div className="font-bold text-sm">Store Counter Pickup</div>
-                <div className="text-content-muted mt-0.5">
-                  Direct physical collection at Sivakasi depot
+                <div className="font-bold text-sm text-stone-900">Store Counter Pickup</div>
+                <div className="text-stone-500 mt-0.5">
+                  Direct pickup at Sivakasi counter
                 </div>
               </button>
 
@@ -201,15 +183,15 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                     fulfilmentPreference: 'SPECIAL_ENQUIRY',
                   }))
                 }
-                className={`min-h-touch p-3 rounded-xl border text-left text-xs transition-colors ${
+                className={`min-h-[48px] p-3 rounded-xl border text-left text-xs transition-colors ${
                   details.fulfilmentPreference === 'SPECIAL_ENQUIRY'
-                    ? 'bg-festive-marigold/15 border-festive-marigold text-content-primary font-semibold'
-                    : 'bg-bg-elevated border-white/10 text-content-muted hover:border-white/20'
+                    ? 'bg-amber-50 border-festive-marigold text-stone-900 font-semibold shadow-sm'
+                    : 'bg-stone-50 border-stone-200 text-stone-600 hover:border-stone-300'
                 }`}
               >
-                <div className="font-bold text-sm">Wholesale Enquiry</div>
-                <div className="text-content-muted mt-0.5">
-                  Bulk order reservation for commercial lots
+                <div className="font-bold text-sm text-stone-900">Wholesale Enquiry</div>
+                <div className="text-stone-500 mt-0.5">
+                  Order reservation for festival groups
                 </div>
               </button>
             </div>
@@ -217,7 +199,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
 
           {/* Age Attestation Checkbox */}
           <div className="pt-2">
-            <label className="flex items-start gap-3 p-3 rounded-xl bg-bg-elevated border border-white/5 cursor-pointer hover:border-white/10">
+            <label className="flex items-start gap-3 p-3.5 rounded-xl bg-stone-50 border border-stone-200 cursor-pointer hover:border-stone-300">
               <input
                 type="checkbox"
                 required
@@ -229,19 +211,19 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                   }))
                 }
                 onBlur={() => handleBlur('ageConfirmed')}
-                className="w-5 h-5 mt-0.5 rounded text-festive-marigold focus:ring-festive-marigold border-white/20 bg-bg-base"
+                className="w-5 h-5 mt-0.5 rounded text-festive-marigold focus:ring-festive-marigold border-stone-300"
               />
-              <span className="text-xs text-content-secondary leading-relaxed">
+              <span className="text-xs text-stone-700 leading-relaxed">
                 I confirm that I am{' '}
-                <strong className="text-content-primary">
+                <strong className="text-stone-900">
                   18 years of age or older
                 </strong>{' '}
                 as required by Explosives Rules and safety regulations.{' '}
-                <span className="text-festive-crimson">*</span>
+                <span className="text-festive-vermilion">*</span>
               </span>
             </label>
             {touched.ageConfirmed && errors.ageConfirmed && (
-              <p className="mt-1.5 text-xs text-festive-crimson flex items-center gap-1">
+              <p className="mt-1.5 text-xs text-festive-vermilion flex items-center gap-1">
                 <span aria-hidden="true">⚠️</span> {errors.ageConfirmed}
               </p>
             )}
@@ -251,7 +233,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
           <div>
             <label
               htmlFor="customer-notes"
-              className="block text-sm font-semibold text-content-primary mb-1.5"
+              className="block text-sm font-semibold text-stone-800 mb-1.5"
             >
               Special Instructions / Notes (Optional)
             </label>
@@ -264,9 +246,9 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                 setDetails((prev) => ({ ...prev, notes: e.target.value }))
               }
               placeholder="e.g. Expected pickup date or packaging preferences."
-              className="w-full p-3 rounded-xl bg-bg-elevated border border-white/10 text-content-primary placeholder-content-muted text-sm focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+              className="w-full p-3 rounded-xl bg-stone-50 border border-stone-300 text-stone-900 placeholder-stone-400 text-sm focus:outline-none focus:ring-2 focus:ring-festive-marigold focus:bg-white"
             />
-            <div className="text-right text-[11px] text-content-muted mt-1">
+            <div className="text-right text-[11px] text-stone-400 mt-1">
               {details.notes.length}/150 characters
             </div>
           </div>
@@ -277,14 +259,14 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
               <button
                 type="button"
                 onClick={onBackToCatalogue}
-                className="w-full sm:w-auto min-h-touch px-5 py-2.5 rounded-xl bg-bg-elevated hover:bg-white/10 border border-white/10 text-content-primary font-semibold text-sm transition-colors text-center"
+                className="w-full sm:w-auto min-h-[48px] px-5 py-2.5 rounded-xl bg-stone-100 hover:bg-stone-200 border border-stone-200 text-stone-800 font-semibold text-sm transition-colors text-center"
               >
                 ← Back to Catalogue
               </button>
             )}
             <button
               type="submit"
-              className="w-full sm:flex-1 min-h-touch px-6 py-3 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 text-black font-semibold text-base transition-transform flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+              className="w-full sm:flex-1 min-h-[48px] px-6 py-3 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 text-white font-bold text-base transition-transform flex items-center justify-center gap-2 shadow-md focus:outline-none focus:ring-2 focus:ring-festive-marigold"
             >
               <span>Save & Continue to Review →</span>
             </button>

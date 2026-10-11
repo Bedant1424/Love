@@ -140,7 +140,7 @@ export const App: React.FC = () => {
       )}
 
       {/* Global Footer with Disclaimers */}
-      <Footer />
+      <Footer onSelectTab={handleNavigateToTab} />
     </div>
   );
 };

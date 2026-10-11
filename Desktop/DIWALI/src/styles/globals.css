@@ -4,12 +4,12 @@
 
 @layer base {
   :root {
-    color-scheme: dark;
+    color-scheme: light;
   }
 
   body {
-    background-color: #0F0E13;
-    color: #F9FAFB;
+    background-color: #FFFDF9;
+    color: #1C1917;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -21,18 +21,70 @@
   }
 }
 
+/* Festive subtle animations */
+@keyframes float-subtle {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes diya-flicker {
+  0%, 100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.6));
+  }
+  50% {
+    opacity: 0.85;
+    filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.9));
+  }
+}
+
+@keyframes sparkle-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+.animate-float-subtle {
+  animation: float-subtle 4s ease-in-out infinite;
+}
+
+.animate-diya-flicker {
+  animation: diya-flicker 2.5s ease-in-out infinite;
+}
+
+.animate-sparkle-pulse {
+  animation: sparkle-pulse 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float-subtle,
+  .animate-diya-flicker,
+  .animate-sparkle-pulse {
+    animation: none !important;
+  }
+}
+
 /* Ensure minimum touch targets for touch devices */
 @media (pointer: coarse) {
   button, 
   [role="button"],
   input[type="checkbox"],
   select {
-    min-height: 44px;
+    min-height: 48px;
   }
 }
 
 /* Accessible focus visible rings */
 :focus-visible {
-  outline: 2px solid #FF8800;
+  outline: 2px solid #EA580C;
   outline-offset: 2px;
 }

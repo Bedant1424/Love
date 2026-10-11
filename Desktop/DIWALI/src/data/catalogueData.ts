@@ -1,5 +1,25 @@
 import { Category, Product } from '../types/catalogue';
 
+export const CATEGORY_IMAGES: Record<string, string> = {
+  laddis: '/images/cat-laddis.jpg',
+  skyshots: '/images/cat-skyshots.jpg',
+  bombs: '/images/cat-bombs.jpg',
+  sparklers: '/images/cat-sparklers.jpg',
+  'flowerpots-spinners': '/images/cat-chakri-kumpi.jpg',
+  others: '/images/cat-novelties.jpg',
+};
+
+export const PRODUCT_IMAGES: Record<string, string> = {
+  prod_big_lanka_laddi: '/images/prod-lanka-laddi.jpg',
+  prod_laxmi_bomb: '/images/prod-laxmi-bomb.jpg',
+};
+
+export function getProductImage(product: { id: string; categoryId: string; imageUrl?: string }): string {
+  if (product.imageUrl) return product.imageUrl;
+  if (PRODUCT_IMAGES[product.id]) return PRODUCT_IMAGES[product.id];
+  return CATEGORY_IMAGES[product.categoryId] || '/images/cat-laddis.jpg';
+}
+
 export const CATEGORIES: Category[] = [
   {
     id: 'laddis',
@@ -7,36 +27,42 @@ export const CATEGORIES: Category[] = [
     description: 'Garland / series crackers from the Diwali catalogue poster.',
     complianceWarning: 'Notice: Series/garland crackers are shown for catalogue demonstration purposes only.',
     sortOrder: 1,
+    imageUrl: '/images/cat-laddis.jpg',
   },
   {
     id: 'skyshots',
     name: 'Skyshots',
     description: 'Aerial single tubes and multi-break shell fireworks.',
     sortOrder: 2,
+    imageUrl: '/images/cat-skyshots.jpg',
   },
   {
     id: 'bombs',
     name: 'Bombs',
     description: 'Traditional sound crackers and paper-wrapped crackers.',
     sortOrder: 3,
+    imageUrl: '/images/cat-bombs.jpg',
   },
   {
     id: 'sparklers',
     name: 'Jharjhari & Sparklers',
     description: 'Handheld festive sparklers and color crackling sparklers.',
     sortOrder: 4,
+    imageUrl: '/images/cat-sparklers.jpg',
   },
   {
     id: 'flowerpots-spinners',
     name: 'Kumpi & Chakri',
     description: 'Ground sparkling fountain flower pots (Kumpi) and spinning wheel crackers (Chakri).',
     sortOrder: 5,
+    imageUrl: '/images/cat-chakri-kumpi.jpg',
   },
   {
     id: 'others',
     name: 'Others',
     description: 'Novelty aerial spinners and combination fireworks.',
     sortOrder: 6,
+    imageUrl: '/images/cat-novelties.jpg',
   },
 ];
 

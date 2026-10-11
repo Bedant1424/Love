@@ -15,22 +15,22 @@ export const StickyCartBar: React.FC<StickyCartBarProps> = ({
 
   return (
     <aside
-      className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-bg-surface/95 backdrop-blur-md border-t border-white/10 px-4 py-3 shadow-2xl"
-      aria-label="Enquiry basket quick summary"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-stone-200 px-4 py-3 shadow-warm-lg"
+      aria-label="Shopping cart quick summary"
     >
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 max-w-md mx-auto">
         <div className="min-w-0">
-          <div className="text-xs text-content-muted">
-            {totals.totalQuantity} item{totals.totalQuantity > 1 ? 's' : ''} in box
+          <div className="text-xs text-stone-500 font-medium">
+            {totals.totalQuantity} item{totals.totalQuantity > 1 ? 's' : ''} selected
           </div>
-          <div className="text-lg font-bold font-mono text-content-primary truncate">
+          <div className="text-base sm:text-lg font-bold font-mono text-stone-900 truncate">
             {totals.pricedItemCount > 0
               ? formatPaise(totals.provisionalSubtotalPaise)
               : 'Price on enquiry'}
           </div>
           {totals.unpricedItemCount > 0 && totals.pricedItemCount > 0 && (
-            <div className="text-[10px] text-festive-amber font-medium">
-              +{totals.unpricedItemCount} items needing quote
+            <div className="text-[10px] text-amber-700 font-medium">
+              +{totals.unpricedItemCount} items needing price confirmation
             </div>
           )}
         </div>
@@ -38,7 +38,7 @@ export const StickyCartBar: React.FC<StickyCartBarProps> = ({
         <button
           type="button"
           onClick={onReviewCart}
-          className="min-h-touch px-5 py-2.5 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 text-black font-semibold text-sm transition-transform flex items-center gap-1.5 whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+          className="min-h-[48px] px-5 py-2.5 rounded-xl bg-festive-marigold hover:bg-festive-marigold-hover active:scale-95 text-white font-bold text-sm transition-transform flex items-center gap-1.5 whitespace-nowrap shadow-md focus:outline-none focus:ring-2 focus:ring-amber-400"
         >
           <span>Review Box</span>
           <span aria-hidden="true">→</span>

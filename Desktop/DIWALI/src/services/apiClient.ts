@@ -3,11 +3,20 @@ import {
   AdminDashboardKPIs,
   ApiResponse,
   CreateOrderRequest,
+  CreatePaymentIssueRequest,
+  DbCustomerDirectoryItem,
+  DbInventoryAuditLog,
+  DbInventoryItem,
+  DbPaymentIssue,
+  DbQrVersion,
   DemoOrderRecordWithItems,
   OperationalStatus,
   PaymentConfig,
+  PaymentIssueStatus,
   PaymentStatus,
   PriceAuditLog,
+  SalesReportResponse,
+  UploadQrRequest,
 } from '../server/types';
 import { ProductVariant } from '../types/catalogue';
 
@@ -247,5 +256,125 @@ export const apiClient = {
     return executeApi<PriceAuditLog[]>('/admin/audit-logs', {
       method: 'GET',
     });
+  },
+
+  // Payment Support Issue Submission (Customer)
+  async reportPaymentIssue(req: CreatePaymentIssueRequest) {
+    return executeApi<{
+      issueReference: string;
+      message: string;
+      status: PaymentIssueStatus;
+    }>('/payment-issues', {
+      method: 'POST',
+      body: JSON.stringify(req),
+    });
+  },
+
+  // Payment Support Issue Management (Admin)
+  async getAdminPaymentIssues(status?: PaymentIssueStatus) {
+    const query = status ? `?status=${status}` : '';
+    return executeApi<DbPaymentIssue[]>(`/admin/payment-issues${query}`, {
+      method: 'GET',
+    });
+  },
+
+  async updatePaymentIssueStatus(
+    id: string,
+    status: PaymentIssueStatus,
+    staffNotes?: string
+  ) {
+    return executeApi<DbPaymentIssue>(`/admin/payment-issues/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, staffNotes }),
+    });
+  },
+
+  // Inventory Management (Admin)
+  async getAdminInventory() {
+    return executeApi<DbInventoryItem[]>('/admin/inventory', {
+      method: 'GET',
+    });
+  },
+
+  async adjustInventoryStock(
+    variantId: string,
+    newStock: number,
+    operatorId: string = 'OP-ADMIN',
+    reason?: string
+  ) {
+    return executeApi<DbInventoryItem>('/admin/inventory/adjust', {
+      method: 'POST',
+      body: JSON.stringify({ variantId, newStock, operatorId, reason }),
+    });
+  },
+
+  async getInventoryAuditLogs() {
+    return executeApi<DbInventoryAuditLog[]>('/admin/inventory/audit-logs', {
+      method: 'GET',
+    });
+  },
+
+  // QR Version Rotation (Admin)
+  async getAdminQrVersions() {
+    return executeApi<DbQrVersion[]>('/admin/qr', {
+      method: 'GET',
+    });
+  },
+
+  async uploadAdminQr(req: UploadQrRequest) {
+    return executeApi<DbQrVersion>('/admin/qr/upload', {
+      method: 'POST',
+      body: JSON.stringify(req),
+    });
+  },
+
+  async activateAdminQr(id: string, notes?: string) {
+    return executeApi<DbQrVersion>(`/admin/qr/${id}/activate`, {
+      method: 'POST',
+      body: JSON.stringify({ notes }),
+    });
+  },
+
+  async deactivateAdminQr(id: string) {
+    return executeApi<DbQrVersion>(`/admin/qr/${id}/deactivate`, {
+      method: 'POST',
+    });
+  },
+
+  // Customer History & Directory (Admin)
+  async getAdminCustomers(search?: string) {
+    const query = search ? `?search=${encodeURIComponent(search)}` : '';
+    return executeApi<DbCustomerDirectoryItem[]>(`/admin/customers${query}`, {
+      method: 'GET',
+    });
+  },
+
+  async getAdminCustomerDetails(id: string) {
+    return executeApi<{
+      customer: DbCustomerDirectoryItem;
+      orders: DemoOrderRecordWithItems[];
+    }>(`/admin/customers/${id}`, {
+      method: 'GET',
+    });
+  },
+
+  // Sales Analytics & Reporting (Admin)
+  async getAdminSalesReport(range: 'today' | '7d' | '30d' | 'all' = 'today') {
+    return executeApi<SalesReportResponse>(`/admin/reports/sales?range=${range}`, {
+      method: 'GET',
+    });
+  },
+
+  async exportAdminSalesReportCsv(range: 'today' | '7d' | '30d' | 'all' = 'today') {
+    const url = `${API_BASE}/admin/reports/export?range=${range}`;
+    const token = getAdminAuthToken();
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch(url, { headers });
+    if (!res.ok) {
+      throw new Error('Failed to export CSV report');
+    }
+    return res.text();
   },
 };
