@@ -45,11 +45,11 @@ describe('Cloudflare Backend API Route Suite (/api/v1)', () => {
     expect(json.data.categories.length).toBe(6);
   });
 
-  it('POST /api/v1/orders validates customer name, phone, and age confirmation', async () => {
+  it('POST /api/v1/orders validates customer name and phone', async () => {
     const req1 = new Request('http://localhost/api/v1/orders', {
       method: 'POST',
       body: JSON.stringify({
-        customer: { fullName: '', mobileNumber: '123', ageConfirmed: true },
+        customer: { fullName: '', mobileNumber: '9876543210' },
         items: [{ variantId: 'var_sparklers_9cm_box', quantity: 1 }],
       }),
     });
@@ -60,13 +60,13 @@ describe('Cloudflare Backend API Route Suite (/api/v1)', () => {
     const req2 = new Request('http://localhost/api/v1/orders', {
       method: 'POST',
       body: JSON.stringify({
-        customer: { fullName: 'Valid Name', mobileNumber: '9876543210', ageConfirmed: false },
+        customer: { fullName: 'Valid Name', mobileNumber: '123' },
         items: [{ variantId: 'var_sparklers_9cm_box', quantity: 1 }],
       }),
     });
     const res2 = await handleApiRequest(req2);
     expect(res2.status).toBe(400);
-    expect(((await res2.json()) as any).error.code).toBe('AGE_VERIFICATION_REQUIRED');
+    expect(((await res2.json()) as any).error.code).toBe('INVALID_MOBILE_NUMBER');
   });
 
   it('POST /api/v1/orders blocks orders with unpriced range items', async () => {

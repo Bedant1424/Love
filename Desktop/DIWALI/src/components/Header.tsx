@@ -5,8 +5,7 @@ export type ActiveTab =
   | 'catalogue'
   | 'customer'
   | 'cart'
-  | 'review'
-  | 'admin';
+  | 'review';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -116,22 +115,6 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
       </div>
-
-      {/* Admin Mode Bar when viewing Admin */}
-      {activeTab === 'admin' && (
-        <div className="bg-stone-900 text-amber-300 px-4 py-2 text-xs font-semibold flex items-center justify-between border-t border-stone-800">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Administrator Operations Console Active</span>
-          </div>
-          <button
-            onClick={() => onSelectTab('home')}
-            className="text-white hover:text-amber-200 underline text-xs"
-          >
-            Back to Customer Storefront →
-          </button>
-        </div>
-      )}
     </header>
   );
 };

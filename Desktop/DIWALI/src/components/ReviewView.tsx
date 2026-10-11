@@ -85,8 +85,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
 
   const isCustomerValid =
     customer.fullName.trim().length >= 2 &&
-    /^[6-9]\d{9}$/.test(customer.mobileNumber.trim()) &&
-    customer.ageConfirmed;
+    /^[6-9]\d{9}$/.test(customer.mobileNumber.trim());
 
   const canProceedToPayment =
     isCustomerValid &&
@@ -537,9 +536,6 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
           <p>
             • Remaining balance of <strong className="text-stone-900 font-mono">{formatPaise(orderState.balanceDuePaise)}</strong> is due upon collection.
           </p>
-          <p>
-            • Age confirmation (18+) required at collection.
-          </p>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
@@ -909,13 +905,13 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
           <div>
             <span className="text-stone-500 block">Full Name:</span>
             <span className="font-semibold text-stone-900">
-              {customer.fullName || '—'}
+              {customer.fullName || '-'}
             </span>
           </div>
           <div>
             <span className="text-stone-500 block">Mobile Number:</span>
             <span className="font-mono text-stone-900">
-              {customer.mobileNumber ? `+91 ${customer.mobileNumber}` : '—'}
+              {customer.mobileNumber ? `+91 ${customer.mobileNumber}` : '-'}
             </span>
           </div>
           <div>
@@ -924,12 +920,6 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
               {customer.fulfilmentPreference === 'SPECIAL_ENQUIRY'
                 ? 'Special Enquiry'
                 : 'Store Counter Pickup'}
-            </span>
-          </div>
-          <div>
-            <span className="text-stone-500 block">Age Attestation:</span>
-            <span className="text-emerald-700 font-semibold">
-              {customer.ageConfirmed ? '✓ 18+ Confirmed' : 'Not confirmed'}
             </span>
           </div>
         </div>
@@ -1036,7 +1026,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
         <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800">
           {!totals.minOrderRequirementMet && totals.totalQuantity > 0
             ? '⚠️ Order subtotal must be at least ₹50.00 because the required advance token is ₹50.00.'
-            : '⚠️ Please ensure customer details are complete (including 18+ confirmation) and items are selected before proceeding.'}
+            : '⚠️ Please ensure customer details are complete and items are selected before proceeding.'}
         </div>
       )}
 

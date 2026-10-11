@@ -36,7 +36,6 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [passphrase, setPassphrase] = useState<string>('');
-  const [cfJwtToken, setCfJwtToken] = useState<string>('');
   const [authError, setAuthError] = useState<string>('');
   const [operatorId, setOperatorId] = useState<string>('OP-NAGARJUNA');
 
@@ -186,7 +185,22 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
     }
   }, [isAuthenticated, reportRange]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleRetryAuth = async () => {
+    setAuthError('');
+    setLoading(true);
+    try {
+      const kpisData = await apiClient.getDashboardKPIs();
+      setKpis(kpisData);
+      setIsAuthenticated(true);
+      showNotification('Administrator session verified.');
+    } catch (err: any) {
+      setAuthError(err?.message || 'Access Not Authorised');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDevLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
     try {
@@ -195,32 +209,13 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
       setIsAuthenticated(true);
       showNotification('Administrator console unlocked.');
     } catch (err: any) {
-      setAuthError(err?.message || 'Incorrect passphrase. Use: nagarjuna-demo-2026');
-    }
-  };
-
-  const handleCfAccessLogin = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    setAuthError('');
-    setLoading(true);
-    try {
-      const kpisData = await apiClient.verifyCfAccessSession(
-        cfJwtToken.trim() || undefined
-      );
-      setKpis(kpisData);
-      setIsAuthenticated(true);
-      showNotification('Cloudflare Access Zero Trust session verified.');
-    } catch (err: any) {
-      setAuthError(err?.message || 'Cloudflare Access JWT verification failed.');
-    } finally {
-      setLoading(false);
+      setAuthError(err?.message || 'Invalid passphrase.');
     }
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
     setPassphrase('');
-    setCfJwtToken('');
     apiClient.setAdminAuthToken(null);
     showNotification('Logged out from admin console.');
   };
@@ -495,105 +490,85 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
     (i) => i.status === 'OPEN' || i.status === 'IN_PROGRESS'
   ).length;
 
-  // If not authenticated, render Login Screen
+  const isDevEnvironment =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') ||
+      import.meta.env.DEV ||
+      import.meta.env.MODE === 'test');
+
+  // If not authenticated, render minimal "Access Not Authorised" card
   if (!isAuthenticated) {
     return (
-      <div className="max-w-lg mx-auto my-12 px-4">
-        <div className="bg-bg-surface border border-white/10 rounded-2xl p-6 md:p-8 shadow-xl">
-          <div className="text-center mb-6">
-            <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-amber-950/60 text-amber-300 border border-amber-800/40 mb-3">
-              Store Operations Console
-            </span>
-            <h1 className="text-2xl font-bold font-display text-content-primary">
-              Nagarjuna Traders Admin
-            </h1>
-            <p className="text-xs text-content-muted mt-1">
-              Order Fulfillment, Inventory Control & Cloudflare Zero Trust Operations
-            </p>
+      <div className="max-w-md mx-auto my-16 px-4">
+        <div className="bg-bg-surface border border-white/10 rounded-2xl p-6 md:p-8 shadow-xl text-center">
+          <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              />
+            </svg>
           </div>
+          <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-amber-950/60 text-amber-300 border border-amber-800/40 mb-3">
+            Store Operations Console
+          </span>
+          <h1 className="text-xl font-bold font-display text-content-primary mb-2">
+            Access Not Authorised
+          </h1>
+          <p className="text-xs text-content-secondary leading-relaxed mb-6">
+            This administration portal is reserved for authorized store operators. Access is protected by Cloudflare Access Zero Trust.
+          </p>
 
           {authError && (
-            <div className="mb-6 p-3 rounded-xl bg-red-950/40 border border-red-900/60 text-xs text-red-300 leading-relaxed">
-              <strong className="block font-semibold mb-0.5">Authentication Error:</strong>
+            <div className="mb-4 p-3 rounded-xl bg-red-950/40 border border-red-900/60 text-xs text-red-300 text-left">
+              <strong className="block font-semibold mb-0.5">Authorization Notice:</strong>
               {authError}
             </div>
           )}
 
-          {/* Cloudflare Access Zero Trust Section (Hosted & Production) */}
-          <div className="bg-bg-elevated/70 border border-white/10 rounded-xl p-4 mb-5">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <h2 className="text-xs font-bold uppercase tracking-wider text-festive-marigold">
-                Cloudflare Access Zero Trust
-              </h2>
-            </div>
-            <p className="text-xs text-content-secondary mb-3 leading-relaxed">
-              Hosted environments (<code className="text-amber-300">*.pages.dev</code>) require cryptographic Cloudflare Access authentication. If you are routed through the Zero Trust gateway, click below to verify your session.
-            </p>
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={handleRetryAuth}
+              disabled={loading}
+              className="w-full min-h-touch bg-festive-marigold hover:bg-festive-amber disabled:opacity-50 text-black font-semibold rounded-xl text-xs py-2.5 transition-transform active:scale-[0.98] shadow-md shadow-festive-marigold/10 flex items-center justify-center gap-2"
+            >
+              {loading ? 'Verifying Session...' : 'Retry / Re-authenticate'}
+            </button>
 
-            <form onSubmit={handleCfAccessLogin} className="space-y-3">
-              <div>
+            {isDevEnvironment && (
+              <form onSubmit={handleDevLogin} className="mt-4 pt-4 border-t border-white/5 text-left space-y-2">
                 <label
-                  htmlFor="cf-access-jwt"
-                  className="block text-[11px] font-medium text-content-muted mb-1"
+                  htmlFor="admin-passphrase"
+                  className="block text-[11px] font-medium text-content-muted"
                 >
-                  Cloudflare Access Assertion / JWT Token (Optional)
+                  Authorized Staff Passphrase
                 </label>
-                <textarea
-                  id="cf-access-jwt"
-                  rows={2}
-                  value={cfJwtToken}
-                  onChange={(e) => setCfJwtToken(e.target.value)}
-                  placeholder="Paste Cf-Access-Jwt-Assertion token or leave blank if signed in via Access..."
-                  className="w-full bg-bg-surface border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-content-primary placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-festive-marigold"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full min-h-touch bg-festive-marigold hover:bg-festive-amber disabled:opacity-50 text-black font-semibold rounded-xl text-xs transition-transform active:scale-[0.98] shadow-md shadow-festive-marigold/10 py-2.5 flex items-center justify-center gap-2"
-              >
-                {loading ? 'Verifying Session...' : 'Verify Cloudflare Access Session'}
-              </button>
-            </form>
-          </div>
-
-          {/* Local Developer Passphrase Section */}
-          <div className="border-t border-white/10 pt-4">
-            <form onSubmit={handleLogin} className="space-y-3">
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label
-                    htmlFor="admin-passphrase"
-                    className="block text-xs font-semibold uppercase tracking-wider text-content-secondary"
+                <div className="flex gap-2">
+                  <input
+                    id="admin-passphrase"
+                    type="password"
+                    value={passphrase}
+                    onChange={(e) => setPassphrase(e.target.value)}
+                    placeholder="Enter passphrase"
+                    className="flex-1 bg-bg-elevated border border-white/10 rounded-lg px-3 py-1.5 text-xs text-content-primary placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-festive-marigold"
+                  />
+                  <button
+                    type="submit"
+                    className="px-3 py-1.5 bg-white/10 hover:bg-white/15 text-xs font-semibold rounded-lg text-content-primary border border-white/10"
                   >
-                    Authorized Staff Passphrase
-                  </label>
-                  <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded border border-white/10 text-content-muted">
-                    Dev / Local Only
-                  </span>
+                    Unlock Admin Console
+                  </button>
                 </div>
-                <input
-                  id="admin-passphrase"
-                  type="password"
-                  value={passphrase}
-                  onChange={(e) => setPassphrase(e.target.value)}
-                  placeholder="Enter passphrase (hint: nagarjuna-demo-2026)"
-                  className="w-full bg-bg-elevated border border-white/10 rounded-xl px-4 py-2.5 text-sm text-content-primary placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-festive-marigold"
-                  autoComplete="current-password"
-                />
-              </div>
-              <button
-                type="submit"
-                className="w-full min-h-touch bg-white/10 hover:bg-white/15 text-content-primary font-semibold rounded-xl text-xs transition-all py-2.5 border border-white/10"
-              >
-                Unlock Admin Console
-              </button>
-            </form>
+              </form>
+            )}
           </div>
 
-          <div className="pt-4 mt-2 text-center border-t border-white/5">
+          <div className="pt-4 mt-4 text-center border-t border-white/5">
             <button
               type="button"
               onClick={onBackToCustomerSite}

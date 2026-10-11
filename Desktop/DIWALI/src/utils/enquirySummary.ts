@@ -6,31 +6,31 @@ export function generateEnquiryText(
   customer: CustomerDetails,
   items: CartItem[],
   totals: CartTotals,
-  demoOrderId?: string
+  orderRef?: string
 ): string {
   const lines: string[] = [];
 
   lines.push('=========================================');
-  lines.push('   NAGARJUNA TRADERS — PORTFOLIO DEMO');
-  lines.push('   SIMULATED DIWALI ORDER SUMMARY');
+  lines.push('          NAGARJUNA TRADERS');
+  lines.push('         DIWALI ORDER ENQUIRY');
   lines.push('=========================================');
-  if (demoOrderId) {
-    lines.push(`DEMO ORDER REF: ${demoOrderId}`);
-    lines.push('STATUS: SIMULATED DEMO RECORD');
+  if (orderRef) {
+    lines.push(`ORDER REFERENCE: ${orderRef}`);
+    lines.push('STATUS: SUBMITTED');
   }
   lines.push('');
-  lines.push('SAMPLE CUSTOMER DETAILS:');
+  lines.push('CUSTOMER DETAILS:');
   lines.push(`• Name: ${customer.fullName}`);
   lines.push(`• Mobile: ${customer.mobileNumber}`);
   lines.push(
-    `• Preference: ${
+    `• Fulfilment: ${
       customer.fulfilmentPreference === 'COUNTER_PICKUP'
-        ? 'Simulated Store Counter Pickup'
-        : 'Simulated Wholesale Enquiry'
+        ? 'Store Counter Pickup'
+        : 'Wholesale Enquiry'
     }`
   );
   if (customer.notes.trim()) {
-    lines.push(`• Notes: ${customer.notes.trim()}`);
+    lines.push(`• Instructions: ${customer.notes.trim()}`);
   }
   lines.push('');
   lines.push('SELECTED ITEMS:');
@@ -47,16 +47,16 @@ export function generateEnquiryText(
       );
     } else {
       lines.push(
-        `   Price: Requires Confirmation (Printed: ${item.printedPriceText})`
+        `   Price: Confirmation upon pickup (Printed: ${item.printedPriceText})`
       );
     }
     lines.push('');
   });
 
-  lines.push('FINANCIAL SUMMARY (INTEGER PAISE):');
-  lines.push(`• Order Subtotal: ${formatPaise(totals.subtotalPaise)}`);
-  lines.push(`• Fixed Demo Token: ${formatPaise(totals.tokenAmountPaise)}`);
-  lines.push(`• Remaining Balance: ${formatPaise(totals.remainingBalancePaise)}`);
+  lines.push('FINANCIAL SUMMARY:');
+  lines.push(`• Subtotal: ${formatPaise(totals.subtotalPaise)}`);
+  lines.push(`• Advance Booking Token: ${formatPaise(totals.tokenAmountPaise)}`);
+  lines.push(`• Remaining Balance at Counter: ${formatPaise(totals.remainingBalancePaise)}`);
   if (totals.unpricedItemCount > 0) {
     lines.push(
       `• Items Needing Price Confirmation: ${totals.unpricedItemCount} item(s)`
@@ -64,10 +64,7 @@ export function generateEnquiryText(
   }
   lines.push(`• Total Items: ${totals.totalQuantity} unit(s)`);
   lines.push('');
-  lines.push('PORTFOLIO DEMO NOTICE:');
-  lines.push(
-    'Portfolio Demo Only. No real orders, fireworks sales, delivery, or payments are processed. All amounts and order states shown are simulated.'
-  );
+  lines.push('Make every celebration a little brighter.');
   lines.push('=========================================');
 
   return lines.join('\n');

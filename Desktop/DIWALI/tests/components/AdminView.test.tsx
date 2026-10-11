@@ -11,14 +11,14 @@ describe('AdminView Component Suite', () => {
     globalMemoryDb.seed();
   });
 
-  it('renders login prompt initially and prevents unauthorized access', () => {
+  it('renders Access Not Authorised prompt initially and prevents unauthorized access', () => {
     render(<AdminView onBackToCustomerSite={mockBackToCustomer} />);
 
-    expect(screen.getByText('Nagarjuna Traders Admin')).toBeInTheDocument();
-    expect(screen.getByLabelText(/Authorized Staff Passphrase/i)).toBeInTheDocument();
+    expect(screen.getByText('Access Not Authorised')).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /Unlock Admin Console/i })
+      screen.getByRole('button', { name: /Retry \/ Re-authenticate/i })
     ).toBeInTheDocument();
+    expect(screen.getByLabelText(/Authorized Staff Passphrase/i)).toBeInTheDocument();
   });
 
   it('shows error on invalid passphrase and unlocks on correct passphrase', async () => {
@@ -36,7 +36,7 @@ describe('AdminView Component Suite', () => {
     });
 
     // 2. Correct passphrase
-    fireEvent.change(input, { target: { value: 'nagarjuna-demo-2026' } });
+    fireEvent.change(input, { target: { value: 'admin' } });
     fireEvent.click(submitBtn);
 
     await waitFor(() => {

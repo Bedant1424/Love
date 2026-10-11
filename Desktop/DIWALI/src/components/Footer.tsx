@@ -9,52 +9,55 @@ export const Footer: React.FC<FooterProps> = ({ onSelectTab }) => {
   return (
     <footer className="bg-stone-950 border-t border-stone-800 mt-16 pb-24 md:pb-12 text-stone-400">
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-        {/* Brand & Store Information */}
-        <div className="border-b border-stone-800 pb-6">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-festive-marigold animate-pulse" />
-            <h2 className="text-lg font-bold text-white font-display">
-              Nagarjuna Traders — Diwali Fireworks
-            </h2>
-          </div>
-          <p className="text-sm mt-1 text-stone-300">
-            Diwali catalogue enquiry and order reservation system.
-          </p>
-          <div className="mt-3 p-3.5 rounded-xl bg-stone-900 border border-stone-800 text-xs text-stone-300 space-y-1.5">
-            <p>
-              <strong className="text-amber-300">Order Reservation:</strong> Orders submitted online require an advance token (₹50 below ₹200, ₹100 for ₹200+) to reserve items.
-            </p>
-            <p>
-              <strong className="text-amber-300">Counter Collection:</strong> Remaining balance is payable at counter collection upon receiving items.
+        {/* Brand & Festive Slogan */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-stone-800/80 pb-6">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-festive-marigold animate-pulse" />
+              <h2 className="text-lg font-bold text-white font-display tracking-tight">
+                Nagarjuna Traders
+              </h2>
+            </div>
+            <p className="text-xs sm:text-sm text-amber-200/80 font-medium mt-1">
+              "Make every celebration a little brighter."
             </p>
           </div>
-        </div>
 
-        {/* Notice */}
-        <div className="p-4 rounded-xl bg-stone-900/60 border border-stone-800/80 text-xs space-y-1">
-          <p className="text-stone-400 leading-relaxed">
-            Please ensure you confirm quantities and item availability before finalizing your reservation. Strict 18+ age verification required upon collection as per Explosives Regulations.
-          </p>
-        </div>
-
-        {/* Footer Meta */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs pt-4 border-t border-stone-900">
-          <p className="text-stone-500">© 2026 Nagarjuna Traders. All rights reserved.</p>
-          <div className="flex items-center gap-4">
-            <span className="text-stone-500 font-mono text-[11px]">
-              Diwali Catalogue 2026
-            </span>
-            {onSelectTab && (
+          {/* Quick Helpful Customer Links */}
+          {onSelectTab && (
+            <nav className="flex items-center gap-4 text-xs" aria-label="Footer Navigation">
               <button
                 type="button"
-                onClick={() => onSelectTab('admin')}
-                className="text-stone-500 hover:text-amber-300 transition-colors text-xs underline underline-offset-4 focus:outline-none focus:ring-1 focus:ring-festive-marigold rounded px-1"
-                aria-label="Staff Administration Console"
+                onClick={() => onSelectTab('catalogue')}
+                className="text-stone-400 hover:text-amber-300 transition-colors focus:outline-none focus:underline"
               >
-                Staff Operations
+                Catalogue
               </button>
-            )}
-          </div>
+              <span className="text-stone-700">|</span>
+              <button
+                type="button"
+                onClick={() => onSelectTab('review')}
+                className="text-stone-400 hover:text-amber-300 transition-colors focus:outline-none focus:underline"
+              >
+                Track Order
+              </button>
+            </nav>
+          )}
+        </div>
+
+        {/* Store Location & Hours */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-stone-500">
+          <p>
+            Counter Collection: Sivakasi Store Counter
+          </p>
+          <p className="font-mono text-[11px]">
+            Diwali Fireworks Catalogue 2026
+          </p>
+        </div>
+
+        {/* Copyright */}
+        <div className="pt-4 border-t border-stone-900 text-center text-xs text-stone-600">
+          <p>&copy; 2026 Nagarjuna Traders. All rights reserved.</p>
         </div>
       </div>
     </footer>

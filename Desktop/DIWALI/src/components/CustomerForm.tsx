@@ -29,11 +29,6 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
         'Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.';
     }
 
-    if (!values.ageConfirmed) {
-      errs.ageConfirmed =
-        'You must confirm that you are 18 years or older for fireworks ordering.';
-    }
-
     return errs;
   };
 
@@ -49,7 +44,6 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
     setTouched({
       fullName: true,
       mobileNumber: true,
-      ageConfirmed: true,
     });
 
     if (Object.keys(validationErrors).length === 0) {
@@ -197,37 +191,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
             </div>
           </div>
 
-          {/* Age Attestation Checkbox */}
-          <div className="pt-2">
-            <label className="flex items-start gap-3 p-3.5 rounded-xl bg-stone-50 border border-stone-200 cursor-pointer hover:border-stone-300">
-              <input
-                type="checkbox"
-                required
-                checked={details.ageConfirmed}
-                onChange={(e) =>
-                  setDetails((prev) => ({
-                    ...prev,
-                    ageConfirmed: e.target.checked,
-                  }))
-                }
-                onBlur={() => handleBlur('ageConfirmed')}
-                className="w-5 h-5 mt-0.5 rounded text-festive-marigold focus:ring-festive-marigold border-stone-300"
-              />
-              <span className="text-xs text-stone-700 leading-relaxed">
-                I confirm that I am{' '}
-                <strong className="text-stone-900">
-                  18 years of age or older
-                </strong>{' '}
-                as required by Explosives Rules and safety regulations.{' '}
-                <span className="text-festive-vermilion">*</span>
-              </span>
-            </label>
-            {touched.ageConfirmed && errors.ageConfirmed && (
-              <p className="mt-1.5 text-xs text-festive-vermilion flex items-center gap-1">
-                <span aria-hidden="true">⚠️</span> {errors.ageConfirmed}
-              </p>
-            )}
-          </div>
+
 
           {/* Optional Notes */}
           <div>

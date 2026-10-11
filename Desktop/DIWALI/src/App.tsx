@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header, ActiveTab } from './components/Header';
 import { Footer } from './components/Footer';
 import { HomeView } from './components/HomeView';
@@ -6,7 +6,6 @@ import { CatalogueView } from './components/CatalogueView';
 import { CustomerForm } from './components/CustomerForm';
 import { CartView } from './components/CartView';
 import { ReviewView } from './components/ReviewView';
-import { AdminView } from './components/AdminView';
 import { StickyCartBar } from './components/StickyCartBar';
 import { useCart } from './hooks/useCart';
 import { CustomerDetails } from './types/customer';
@@ -23,11 +22,37 @@ export const App: React.FC = () => {
     fullName: '',
     mobileNumber: '',
     fulfilmentPreference: 'COUNTER_PICKUP',
-    ageConfirmed: false,
+    ageConfirmed: true,
     notes: '',
   });
 
   const cart = useCart();
+
+  useEffect(() => {
+    // Redirect any customer visit to /admin to the separate secure owner domain
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) {
+      window.location.replace('https://nagarjuna-traders-owner.pages.dev');
+    }
+  }, []);
+
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-bg-base text-content-primary p-4 text-center">
+        <div className="max-w-md p-6 bg-bg-surface border border-white/10 rounded-2xl shadow-xl">
+          <p className="text-sm font-semibold mb-2">Redirecting to Owner Portal</p>
+          <p className="text-xs text-content-muted mb-4">
+            Store administration is hosted separately. Redirecting to nagarjuna-traders-owner.pages.dev...
+          </p>
+          <a
+            href="https://nagarjuna-traders-owner.pages.dev"
+            className="inline-block px-4 py-2 bg-festive-marigold text-black font-semibold rounded-xl text-xs"
+          >
+            Go to Owner Portal →
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   const handleSelectCategoryFromHome = (catId: CategoryId) => {
     setSelectedCatalogueCategory(catId);
@@ -102,7 +127,7 @@ export const App: React.FC = () => {
             onProceedToReview={() => {
               if (
                 !customerDetails.fullName.trim() ||
-                !customerDetails.ageConfirmed
+                !customerDetails.mobileNumber.trim()
               ) {
                 handleNavigateToTab('customer');
               } else {
@@ -125,10 +150,6 @@ export const App: React.FC = () => {
             }}
           />
         )}
-
-        {activeTab === 'admin' && (
-          <AdminView onBackToCustomerSite={() => handleNavigateToTab('home')} />
-        )}
       </main>
 
       {/* Mobile Sticky Cart Bar (Shown only when browsing catalogue/home and cart is not empty) */}
@@ -139,7 +160,7 @@ export const App: React.FC = () => {
         />
       )}
 
-      {/* Global Footer with Disclaimers */}
+      {/* Global Footer */}
       <Footer onSelectTab={handleNavigateToTab} />
     </div>
   );

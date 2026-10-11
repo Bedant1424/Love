@@ -8,7 +8,7 @@ describe('CustomerForm Component', () => {
     fullName: '',
     mobileNumber: '',
     fulfilmentPreference: 'COUNTER_PICKUP',
-    ageConfirmed: false,
+    ageConfirmed: true,
     notes: '',
   };
 
@@ -17,16 +17,13 @@ describe('CustomerForm Component', () => {
     vi.clearAllMocks();
   });
 
-  it('renders all form input fields and legal notices', () => {
+  it('renders all form input fields and fulfilment options', () => {
     render(
       <CustomerForm initialValues={initialValues} onSubmit={vi.fn()} />
     );
 
     expect(screen.getByLabelText(/Full Name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/10-Digit Mobile Number/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/18 years of age or older/i)
-    ).toBeInTheDocument();
     expect(
       screen.getByText(/Store Counter Pickup/i)
     ).toBeInTheDocument();
@@ -36,6 +33,7 @@ describe('CustomerForm Component', () => {
     expect(
       screen.getByLabelText(/Special Instructions \/ Notes/i)
     ).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
   });
 
   it('displays validation errors when submitted empty', () => {
@@ -55,9 +53,6 @@ describe('CustomerForm Component', () => {
     expect(
       screen.getByText(/Please enter a valid 10-digit Indian mobile number/i)
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(/You must confirm that you are 18 years or older/i)
-    ).toBeInTheDocument();
     expect(handleSubmit).not.toHaveBeenCalled();
   });
 
@@ -69,13 +64,11 @@ describe('CustomerForm Component', () => {
 
     const nameInput = screen.getByLabelText(/Full Name/i);
     const mobileInput = screen.getByLabelText(/10-Digit Mobile Number/i);
-    const ageCheckbox = screen.getByRole('checkbox');
     const submitBtn = screen.getByRole('button', {
       name: /Save & Continue to Review/i,
     });
 
     fireEvent.change(nameInput, { target: { value: 'Ravi Kumar' } });
-    fireEvent.click(ageCheckbox);
 
     // Test with invalid prefix (e.g., starts with 5)
     fireEvent.change(mobileInput, { target: { value: '5555555555' } });
@@ -118,7 +111,6 @@ describe('CustomerForm Component', () => {
     fireEvent.change(screen.getByLabelText(/10-Digit Mobile Number/i), {
       target: { value: '7890123456' },
     });
-    fireEvent.click(screen.getByRole('checkbox'));
 
     // Select Wholesale Enquiry button
     const wholesaleBtn = screen.getByText(/Wholesale Enquiry/i).closest('button');
@@ -157,7 +149,6 @@ describe('CustomerForm Component', () => {
     fireEvent.change(screen.getByLabelText(/10-Digit Mobile Number/i), {
       target: { value: '9123456789' },
     });
-    fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.click(
       screen.getByRole('button', { name: /Save & Continue to Review/i })
     );

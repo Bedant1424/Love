@@ -44,7 +44,6 @@ export const CATEGORIES: Category[] = [
     id: 'laddis',
     name: 'Laddis',
     description: 'Traditional series & garland crackers from the authentic Diwali poster.',
-    complianceWarning: 'Statutory Notice: Garland crackers subject to local festival regulations.',
     sortOrder: 1,
     imageUrl: '/images/cat-laddis.jpg',
   },
@@ -86,23 +85,22 @@ export const CATEGORIES: Category[] = [
 ];
 
 export const PRODUCTS: Product[] = [
-  // ── CATEGORY 1: LADDIS ─────────────────────────────────────────────
+  // -- CATEGORY 1: LADDIS ---------------------------------------------
   {
     id: 'prod_bijli_laddi',
     categoryId: 'laddis',
     name: 'Bijli Laddi',
     printedPriceText: '₹50 / ₹60',
-    packInfo: 'Exact size mapping unconfirmed on poster',
+    packInfo: '',
     isPackInfoVerified: false,
     pricingOrigin: 'POSTER_RANGE',
-    complianceNotice: 'Statutory Notice: Garland crackers subject to local festival regulations.',
     variants: [
       {
         id: 'var_bijli_50',
         productId: 'prod_bijli_laddi',
         sku: 'LAD-BIJ-50',
         name: 'Printed Option: ₹50',
-        packInfo: 'Size unconfirmed on poster',
+        packInfo: '',
         isPackInfoVerified: false,
         printedPriceText: '₹50',
         printedMinPaise: 5000,
@@ -113,7 +111,7 @@ export const PRODUCTS: Product[] = [
         priceStatus: 'PRINTED_ESTIMATE',
         pricingOrigin: 'POSTER_RANGE',
         isAvailable: true,
-        sourceNotes: 'Printed ₹50 option on poster; exact size mapping unconfirmed',
+        sourceNotes: 'Printed ₹50 option on poster',
         notes: 'Printed ₹50 option on poster',
       },
       {
@@ -121,7 +119,7 @@ export const PRODUCTS: Product[] = [
         productId: 'prod_bijli_laddi',
         sku: 'LAD-BIJ-60',
         name: 'Printed Option: ₹60',
-        packInfo: 'Size unconfirmed on poster',
+        packInfo: '',
         isPackInfoVerified: false,
         printedPriceText: '₹60',
         printedMinPaise: 5000,
@@ -132,7 +130,7 @@ export const PRODUCTS: Product[] = [
         priceStatus: 'PRINTED_ESTIMATE',
         pricingOrigin: 'POSTER_RANGE',
         isAvailable: true,
-        sourceNotes: 'Printed ₹60 option on poster; exact size mapping unconfirmed',
+        sourceNotes: 'Printed ₹60 option on poster',
         notes: 'Printed ₹60 option on poster',
       },
     ],
@@ -142,17 +140,16 @@ export const PRODUCTS: Product[] = [
     categoryId: 'laddis',
     name: 'Big Lanka Laddi',
     printedPriceText: '₹200 / ₹200 / ₹550',
-    packInfo: 'Exact size mapping unconfirmed on poster',
+    packInfo: '',
     isPackInfoVerified: false,
     pricingOrigin: 'POSTER_RANGE',
-    complianceNotice: 'Statutory Notice: Garland crackers subject to local festival regulations.',
     variants: [
       {
         id: 'var_lanka_200_1',
         productId: 'prod_big_lanka_laddi',
         sku: 'LAD-LNK-200-1',
         name: 'Printed Option: ₹200 (1)',
-        packInfo: 'Size unconfirmed on poster',
+        packInfo: '',
         isPackInfoVerified: false,
         printedPriceText: '₹200',
         printedMinPaise: 20000,
@@ -163,7 +160,7 @@ export const PRODUCTS: Product[] = [
         priceStatus: 'PRINTED_ESTIMATE',
         pricingOrigin: 'POSTER_RANGE',
         isAvailable: true,
-        sourceNotes: 'Printed ₹200 option on poster; exact size mapping unconfirmed',
+        sourceNotes: 'Printed ₹200 option on poster',
         notes: 'Printed ₹200 option on poster',
       },
       {
@@ -171,7 +168,7 @@ export const PRODUCTS: Product[] = [
         productId: 'prod_big_lanka_laddi',
         sku: 'LAD-LNK-200-2',
         name: 'Printed Option: ₹200 (2)',
-        packInfo: 'Size unconfirmed on poster',
+        packInfo: '',
         isPackInfoVerified: false,
         printedPriceText: '₹200',
         printedMinPaise: 20000,
@@ -182,7 +179,7 @@ export const PRODUCTS: Product[] = [
         priceStatus: 'PRINTED_ESTIMATE',
         pricingOrigin: 'POSTER_RANGE',
         isAvailable: true,
-        sourceNotes: 'Repeated printed ₹200 option preserved as printed until owner confirmation',
+        sourceNotes: 'Repeated printed ₹200 option preserved as printed',
         notes: 'Repeated ₹200 option preserved as printed',
       },
       {
@@ -190,7 +187,7 @@ export const PRODUCTS: Product[] = [
         productId: 'prod_big_lanka_laddi',
         sku: 'LAD-LNK-550',
         name: 'Printed Option: ₹550',
-        packInfo: 'Size unconfirmed on poster',
+        packInfo: '',
         isPackInfoVerified: false,
         printedPriceText: '₹550',
         printedMinPaise: 20000,
@@ -201,19 +198,19 @@ export const PRODUCTS: Product[] = [
         priceStatus: 'PRINTED_ESTIMATE',
         pricingOrigin: 'POSTER_RANGE',
         isAvailable: true,
-        sourceNotes: 'Printed ₹550 option on poster; exact size mapping unconfirmed',
+        sourceNotes: 'Printed ₹550 option on poster',
         notes: 'Printed ₹550 option on poster',
       },
     ],
   },
 
-  // ── CATEGORY 2: SKYSHOTS ───────────────────────────────────────────
+  // -- CATEGORY 2: SKYSHOTS -------------------------------------------
   {
     id: 'prod_pandav',
     categoryId: 'skyshots',
-    name: 'Pandav',
+    name: 'Pandav Skyshots',
     printedPriceText: '₹180 to ₹200',
-    packInfo: '5 pcs',
+    packInfo: '5 pcs pack',
     isPackInfoVerified: true,
     pricingOrigin: 'POSTER_RANGE',
     variants: [
@@ -222,7 +219,7 @@ export const PRODUCTS: Product[] = [
         productId: 'prod_pandav',
         sku: 'SKY-PAN-5',
         name: '5 pcs pack',
-        packInfo: '5 pcs',
+        packInfo: '5 pcs pack',
         isPackInfoVerified: true,
         printedPriceText: '₹180 to ₹200',
         printedMinPaise: 18000,
@@ -240,9 +237,9 @@ export const PRODUCTS: Product[] = [
   {
     id: 'prod_single_shot',
     categoryId: 'skyshots',
-    name: 'Single Shot',
+    name: 'Single Shot Skyshots',
     printedPriceText: '₹150',
-    packInfo: 'Standard Unit',
+    packInfo: '',
     isPackInfoVerified: false,
     pricingOrigin: 'POSTER_EXACT',
     variants: [
@@ -251,7 +248,7 @@ export const PRODUCTS: Product[] = [
         productId: 'prod_single_shot',
         sku: 'SKY-SNG-1',
         name: 'Standard Unit',
-        packInfo: 'Standard Unit',
+        packInfo: '',
         isPackInfoVerified: false,
         printedPriceText: '₹150',
         printedMinPaise: 15000,
@@ -268,9 +265,9 @@ export const PRODUCTS: Product[] = [
   {
     id: 'prod_skyshot_bigboss',
     categoryId: 'skyshots',
-    name: 'Bigboss',
+    name: 'Bigboss Skyshots',
     printedPriceText: '₹400 to ₹450',
-    packInfo: '3 pcs',
+    packInfo: '3 pcs pack',
     isPackInfoVerified: true,
     pricingOrigin: 'POSTER_RANGE',
     variants: [
@@ -279,7 +276,7 @@ export const PRODUCTS: Product[] = [
         productId: 'prod_skyshot_bigboss',
         sku: 'SKY-BB-3',
         name: '3 pcs pack',
-        packInfo: '3 pcs',
+        packInfo: '3 pcs pack',
         isPackInfoVerified: true,
         printedPriceText: '₹400 to ₹450',
         printedMinPaise: 40000,
@@ -296,9 +293,9 @@ export const PRODUCTS: Product[] = [
   {
     id: 'prod_skyshot_jj',
     categoryId: 'skyshots',
-    name: 'JJ',
+    name: 'JJ Skyshots',
     printedPriceText: '₹450 to ₹500',
-    packInfo: '3 pcs',
+    packInfo: '3 pcs pack',
     isPackInfoVerified: true,
     pricingOrigin: 'POSTER_RANGE',
     variants: [
@@ -307,7 +304,7 @@ export const PRODUCTS: Product[] = [
         productId: 'prod_skyshot_jj',
         sku: 'SKY-JJ-3',
         name: '3 pcs pack',
-        packInfo: '3 pcs',
+        packInfo: '3 pcs pack',
         isPackInfoVerified: true,
         printedPriceText: '₹450 to ₹500',
         printedMinPaise: 45000,
@@ -325,9 +322,9 @@ export const PRODUCTS: Product[] = [
   {
     id: 'prod_skyshot_elephant',
     categoryId: 'skyshots',
-    name: 'Elephant',
+    name: 'Elephant Skyshots',
     printedPriceText: '₹550 to ₹600',
-    packInfo: '3 pcs',
+    packInfo: '3 pcs pack',
     isPackInfoVerified: true,
     pricingOrigin: 'POSTER_RANGE',
     variants: [
@@ -336,7 +333,7 @@ export const PRODUCTS: Product[] = [
         productId: 'prod_skyshot_elephant',
         sku: 'SKY-ELE-3',
         name: '3 pcs pack',
-        packInfo: '3 pcs',
+        packInfo: '3 pcs pack',
         isPackInfoVerified: true,
         printedPriceText: '₹550 to ₹600',
         printedMinPaise: 55000,
@@ -352,7 +349,7 @@ export const PRODUCTS: Product[] = [
     ],
   },
 
-  // ── CATEGORY 3: BOMBS ──────────────────────────────────────────────
+  // -- CATEGORY 3: BOMBS ----------------------------------------------
   {
     id: 'prod_kingkong_naji',
     categoryId: 'bombs',
@@ -545,7 +542,7 @@ export const PRODUCTS: Product[] = [
     ],
   },
 
-  // ── CATEGORY 4: JHARJHARI & SPARKLERS ──────────────────────────────
+  // -- CATEGORY 4: JHARJHARI & SPARKLERS ------------------------------
   {
     id: 'prod_sparklers_9cm',
     categoryId: 'sparklers',
@@ -687,7 +684,7 @@ export const PRODUCTS: Product[] = [
     ],
   },
 
-  // ── CATEGORY 5: KUMPI & CHAKRI ─────────────────────────────────────
+  // -- CATEGORY 5: KUMPI & CHAKRI -------------------------------------
   {
     id: 'prod_kumpi_pots',
     categoryId: 'flowerpots-spinners',
@@ -779,7 +776,7 @@ export const PRODUCTS: Product[] = [
     ],
   },
 
-  // ── CATEGORY 6: OTHERS ─────────────────────────────────────────────
+  // -- CATEGORY 6: OTHERS ---------------------------------------------
   {
     id: 'prod_helicopter',
     categoryId: 'others',

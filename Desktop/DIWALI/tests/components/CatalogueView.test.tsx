@@ -36,13 +36,13 @@ describe('CatalogueView Component', () => {
       />
     );
 
-    // Discrete priced item: Single Shot (₹150)
-    expect(screen.getByText('Single Shot')).toBeInTheDocument();
+    // Discrete priced item: Single Shot Skyshots (₹150)
+    expect(screen.getByText('Single Shot Skyshots')).toBeInTheDocument();
     expect(screen.getAllByText('₹150.00').length).toBeGreaterThan(0);
     expect(screen.getAllByText(/catalogue price/i).length).toBeGreaterThan(0);
 
-    // Range item with lower bound initial ordering price: Pandav (Printed: ₹180 to ₹200)
-    expect(screen.getByText('Pandav')).toBeInTheDocument();
+    // Range item with lower bound initial ordering price: Pandav Skyshots (Printed: ₹180 to ₹200)
+    expect(screen.getByText('Pandav Skyshots')).toBeInTheDocument();
     expect(screen.getAllByText(/range: ₹180 to ₹200/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText('₹180.00').length).toBeGreaterThan(0);
   });
@@ -66,7 +66,7 @@ describe('CatalogueView Component', () => {
     expect(screen.getByText('9 cm Sparklers')).toBeInTheDocument();
     expect(screen.getByText('15 cm Crackling Sparklers')).toBeInTheDocument();
     // Skyshot should not be in sparklers category
-    expect(screen.queryByText('Bigboss')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Bigboss/i)).not.toBeInTheDocument();
   });
 
   it('filters products using the search input', async () => {
@@ -83,8 +83,8 @@ describe('CatalogueView Component', () => {
     const searchInput = screen.getByPlaceholderText(/search products/i);
     await user.type(searchInput, 'elephant');
 
-    expect(screen.getByText('Elephant')).toBeInTheDocument();
-    expect(screen.queryByText('Bigboss')).not.toBeInTheDocument();
+    expect(screen.getByText('Elephant Skyshots')).toBeInTheDocument();
+    expect(screen.queryByText(/Bigboss/i)).not.toBeInTheDocument();
   });
 
   it('displays the environmental statutory notice for Category 1 (Laddis)', async () => {

@@ -115,7 +115,6 @@ describe('App End-to-End Integration Flow', () => {
     fireEvent.change(screen.getByLabelText(/10-Digit Mobile Number/i), {
       target: { value: '9848022338' },
     });
-    fireEvent.click(screen.getByRole('checkbox'));
 
     // Submit customer form
     const saveAndContinueBtn = screen.getByRole('button', {

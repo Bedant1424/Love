@@ -15,7 +15,7 @@ describe('Admin Operations Hub Component Tests', () => {
     render(<AdminView onBackToCustomerSite={mockBackToCustomer} />);
     const input = screen.getByLabelText(/Authorized Staff Passphrase/i);
     const submitBtn = screen.getByRole('button', { name: /Unlock Admin Console/i });
-    fireEvent.change(input, { target: { value: 'nagarjuna-demo-2026' } });
+    fireEvent.change(input, { target: { value: 'admin' } });
     fireEvent.click(submitBtn);
     await waitFor(() => {
       expect(screen.getByText('Nagarjuna Traders Admin Panel')).toBeInTheDocument();

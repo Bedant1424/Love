@@ -498,19 +498,6 @@ export async function handleApiRequest(
         );
       }
 
-      if (!body.customer?.ageConfirmed) {
-        return jsonResponse(
-          {
-            success: false,
-            error: {
-              code: 'AGE_VERIFICATION_REQUIRED',
-              message: 'Customer must confirm they are 18 years or older.',
-            },
-          },
-          400
-        );
-      }
-
       // 2. Validate items
       if (!body.items || body.items.length === 0) {
         return jsonResponse(
@@ -981,10 +968,7 @@ export async function handleApiRequest(
         }
 
         const body = (await request.json().catch(() => ({}))) as { passphrase?: string };
-        if (
-          body.passphrase === 'nagarjuna-demo-2026' ||
-          body.passphrase === 'admin'
-        ) {
+        if (body.passphrase === 'admin') {
           return jsonResponse(
             {
               success: true,

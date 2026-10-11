@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nagarjuna-traders-owner",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "pages_build_output_dir": "dist",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "nagarjuna-traders-d1-test",
+      "database_id": "aace32a4-8ec3-487e-b202-a98e898868bc"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "QR_BUCKET",
+      "bucket_name": "nagarjuna-qr-images"
+    }
+  ],
+  "vars": {
+    "ENVIRONMENT": "production",
+    "PAYMENT_COLLECTION_ENABLED": "false",
+    "RESTRICTED_TEST_MODE": "false",
+    "STORE_NAME": "NAGARJUNA TRADERS (OWNER HUB)",
+    "STORE_LOCATION": "Sivakasi / Internal Administration",
+    "STORE_UPI_VPA": "test-fixture@nagarjunatraders",
+    "STORE_PHONE": "+919876543210",
+    "CF_ACCESS_TEAM_DOMAIN": "nagarjuna-traders",
+    "CF_ACCESS_AUD": "aud_nagarjuna_owner_portal_tag_98765"
+  }
+}

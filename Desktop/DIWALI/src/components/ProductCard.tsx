@@ -69,14 +69,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           )}
         </div>
 
-        {/* Environmental Notice for Laddis if applicable */}
-        {product.complianceNotice && (
-          <div className="mb-2.5 p-2 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-800 flex items-start gap-1.5 leading-tight">
-            <span aria-hidden="true" className="shrink-0 text-xs">⚠️</span>
-            <span>{product.complianceNotice}</span>
-          </div>
-        )}
-
         {/* Product Title */}
         <h3
           id={`prod-title-${product.id}`}
@@ -85,17 +77,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {product.name}
         </h3>
 
-        {/* Pack Info */}
-        <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-stone-500">
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-stone-100 text-stone-700">
-            {product.packInfo}
-          </span>
-          {product.isPackInfoVerified ? (
-            <span className="text-emerald-700 text-[11px] font-medium">✓ Pack confirmed</span>
-          ) : (
-            <span className="text-amber-700 text-[11px]">⚠️ Pack estimate</span>
-          )}
-        </div>
+        {/* Pack Info (clean, omit if not specified) */}
+        {product.packInfo ? (
+          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-stone-500">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-stone-100 text-stone-700 font-medium">
+              {product.packInfo}
+            </span>
+          </div>
+        ) : null}
 
         {/* Variant Selector (if multiple variants) */}
         {product.variants.length > 1 && (
