@@ -778,24 +778,28 @@ export class D1DatabaseAdapter {
     const auditId = `audit_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
     const subStmt = this.d1.prepare(
-      'INSERT INTO payment_submissions (id, order_id, order_reference, utr, payment_status, created_at) VALUES (?, ?, ?, ?, "RECORDED_UNVERIFIED", datetime("now"))'
-    ).bind(submissionId, order.id, reference, utr);
+      'INSERT INTO payment_submissions (id, order_id, order_reference, utr, payment_status, created_at) VALUES (?, ?, ?, ?, ?, datetime("now"))'
+    ).bind(submissionId, order.id, reference, utr, 'RECORDED_UNVERIFIED');
 
     const updateStmt = this.d1.prepare(
-      'UPDATE orders SET payment_reference = ?, payment_status = "RECORDED_UNVERIFIED", payment_submitted_at = datetime("now"), updated_at = datetime("now") WHERE id = ?'
-    ).bind(utr, order.id);
+      'UPDATE orders SET payment_reference = ?, payment_status = ?, payment_submitted_at = datetime("now"), updated_at = datetime("now") WHERE id = ?'
+    ).bind(utr, 'RECORDED_UNVERIFIED', order.id);
 
     const auditStmt = this.d1.prepare(
-      'INSERT INTO price_audit_logs (id, entity_type, entity_id, action, operator_id, old_value_json, new_value_json, reason, is_override, created_at) VALUES (?, "PAYMENT_SUBMISSION", ?, "UTR_RECORDED_UNVERIFIED", "CUSTOMER", ?, ?, ?, 0, datetime("now"))'
+      'INSERT INTO price_audit_logs (id, entity_type, entity_id, action, operator_id, old_value_json, new_value_json, reason, is_override, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime("now"))'
     ).bind(
       auditId,
+      'PAYMENT_VERIFICATION',
       order.id,
+      'UTR_RECORDED_UNVERIFIED',
+      'CUSTOMER',
       JSON.stringify({ paymentStatus: order.payment_status }),
       JSON.stringify({
         utrMasked: `******${utr.slice(-4)}`,
         paymentStatus: 'RECORDED_UNVERIFIED',
       }),
-      'Customer submitted 12-digit UTR; recorded as unverified without claim of funds receipt'
+      'Customer submitted 12-digit UTR; recorded as unverified without claim of funds receipt',
+      0
     );
 
     await this.d1.batch([subStmt, updateStmt, auditStmt]);
@@ -829,14 +833,17 @@ export class D1DatabaseAdapter {
     ).bind(newStatus, orderId);
 
     const auditStmt = this.d1.prepare(
-      'INSERT INTO price_audit_logs (id, entity_type, entity_id, action, operator_id, old_value_json, new_value_json, reason, is_override, created_at) VALUES (?, "ORDER_STATUS", ?, "STATUS_TRANSITION", ?, ?, ?, ?, 0, datetime("now"))'
+      'INSERT INTO price_audit_logs (id, entity_type, entity_id, action, operator_id, old_value_json, new_value_json, reason, is_override, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime("now"))'
     ).bind(
       auditId,
+      'ORDER_STATUS',
       orderId,
+      'STATUS_TRANSITION',
       operatorId,
       JSON.stringify({ operationalStatus: existing.operational_status }),
       JSON.stringify({ operationalStatus: newStatus }),
-      notes || `Operational status transitioned to ${newStatus}`
+      notes || `Operational status transitioned to ${newStatus}`,
+      0
     );
 
     await this.d1.batch([updateStmt, auditStmt]);
@@ -854,16 +861,16 @@ export class D1DatabaseAdapter {
   public async getDashboardKPIs(): Promise<AdminDashboardKPIs> {
     const totalOrdersRes = await this.d1.prepare('SELECT COUNT(*) as count FROM orders').first<{ count: number }>();
     const utrRes = await this.d1.prepare(
-      'SELECT COUNT(*) as count FROM orders WHERE payment_reference IS NOT NULL OR payment_status = "RECORDED_UNVERIFIED"'
+      "SELECT COUNT(*) as count FROM orders WHERE payment_reference IS NOT NULL OR payment_status = 'RECORDED_UNVERIFIED'"
     ).first<{ count: number }>();
     const readyRes = await this.d1.prepare(
-      'SELECT COUNT(*) as count FROM orders WHERE operational_status = "READY_FOR_PICKUP"'
+      "SELECT COUNT(*) as count FROM orders WHERE operational_status = 'READY_FOR_PICKUP'"
     ).first<{ count: number }>();
     const compRes = await this.d1.prepare(
-      'SELECT COUNT(*) as count FROM orders WHERE operational_status = "COMPLETED"'
+      "SELECT COUNT(*) as count FROM orders WHERE operational_status = 'COMPLETED'"
     ).first<{ count: number }>();
     const confRes = await this.d1.prepare(
-      'SELECT COUNT(*) as count FROM orders WHERE operational_status = "CONFIRMED"'
+      "SELECT COUNT(*) as count FROM orders WHERE operational_status = 'CONFIRMED'"
     ).first<{ count: number }>();
     const unresRes = await this.d1.prepare(
       'SELECT COUNT(*) as count FROM product_variants WHERE demo_price_paise IS NULL'

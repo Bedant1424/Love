@@ -10,7 +10,12 @@
 
 PRAGMA foreign_keys = ON;
 
--- 1. CANONICAL ORDERS TABLE
+-- 1. DROP LEGACY DUPLICATE ORDER TABLES AND TEMPORARY SUBMISSIONS
+DROP TABLE IF EXISTS payment_submissions;
+DROP TABLE IF EXISTS demo_order_items;
+DROP TABLE IF EXISTS demo_orders;
+
+-- 2. CANONICAL ORDERS TABLE
 CREATE TABLE IF NOT EXISTS orders (
     id TEXT PRIMARY KEY,
     order_reference TEXT NOT NULL UNIQUE,      -- Format: NT-XXXX
@@ -40,7 +45,7 @@ CREATE INDEX IF NOT EXISTS idx_orders_op_status ON orders(operational_status);
 CREATE INDEX IF NOT EXISTS idx_orders_pay_status ON orders(payment_status);
 CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC);
 
--- 2. CANONICAL ORDER ITEMS TABLE
+-- 3. CANONICAL ORDER ITEMS TABLE
 CREATE TABLE IF NOT EXISTS order_items (
     id TEXT PRIMARY KEY,
     order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
@@ -56,7 +61,25 @@ CREATE TABLE IF NOT EXISTS order_items (
 
 CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
 
--- 3. ALIGN SYSTEM SETTINGS FOR EXACT TOKEN POLICY
+-- 4. CANONICAL PAYMENT SUBMISSIONS TABLE
+CREATE TABLE IF NOT EXISTS payment_submissions (
+    id TEXT PRIMARY KEY,
+    order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    order_reference TEXT NOT NULL,
+    utr TEXT NOT NULL UNIQUE CHECK (length(utr) = 12),
+    payment_status TEXT NOT NULL DEFAULT 'RECORDED_UNVERIFIED'
+        CHECK (payment_status IN ('RECORDED_UNVERIFIED', 'RECONCILED', 'REJECTED')),
+    reconciled_by TEXT,
+    reconciled_at TEXT,
+    reconciliation_notes TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_payment_submissions_utr ON payment_submissions(utr);
+CREATE INDEX IF NOT EXISTS idx_payment_submissions_order ON payment_submissions(order_id);
+CREATE INDEX IF NOT EXISTS idx_payment_submissions_ref ON payment_submissions(order_reference);
+
+-- 5. ALIGN SYSTEM SETTINGS FOR EXACT TOKEN POLICY
 INSERT OR REPLACE INTO system_settings (key, value, description) VALUES
     ('MIN_ORDER_SUBTOTAL_PAISE', '5000', 'Enforced minimum order subtotal (₹50.00) required to cover lowest token tier'),
     ('TOKEN_TIER_THRESHOLD_PAISE', '20000', 'Advance token tier transition threshold (₹200.00)'),

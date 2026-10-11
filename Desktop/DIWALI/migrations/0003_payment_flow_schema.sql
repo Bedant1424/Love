@@ -14,7 +14,7 @@ PRAGMA foreign_keys = ON;
 -- Explicitly records unverified state pending manual bank statement reconciliation.
 CREATE TABLE IF NOT EXISTS payment_submissions (
     id TEXT PRIMARY KEY,
-    order_id TEXT NOT NULL REFERENCES demo_orders(id) ON DELETE CASCADE,
+    order_id TEXT NOT NULL,
     order_reference TEXT NOT NULL,
     utr TEXT NOT NULL UNIQUE CHECK (length(utr) = 12),
     payment_status TEXT NOT NULL DEFAULT 'RECORDED_UNVERIFIED'

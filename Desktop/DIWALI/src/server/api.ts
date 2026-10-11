@@ -123,7 +123,9 @@ export async function verifyAdminRequest(
 ): Promise<AdminAuthResult> {
   const isProduction =
     env?.ENVIRONMENT === 'production' ||
-    (typeof process !== 'undefined' && process.env?.NODE_ENV === 'production');
+    (!env?.ENVIRONMENT &&
+      typeof process !== 'undefined' &&
+      process.env?.NODE_ENV === 'production');
 
   const cfAssertion = request.headers.get('Cf-Access-Jwt-Assertion');
   const authHeader = request.headers.get('Authorization') || '';
