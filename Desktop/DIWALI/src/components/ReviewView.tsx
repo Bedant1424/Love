@@ -8,6 +8,7 @@ import {
 import { CustomerDetails } from '../types/customer';
 import { formatPaise } from '../utils/formatters';
 import { generateEnquiryText, getWhatsAppUrl } from '../utils/enquirySummary';
+import { apiClient } from '../services/apiClient';
 
 interface ReviewViewProps {
   customer: CustomerDetails;
@@ -91,6 +92,22 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
     setDemoOrder(record);
     setPaymentStatus('SUCCESS');
     isSubmittingRef.current = false;
+
+    // Asynchronously dispatch to backend API for persistence in D1 / memory db
+    const utr = `4289${Math.floor(10000000 + Math.random() * 90000000)}`;
+    apiClient
+      .createDemoOrder({
+        customer,
+        items: items.map((it) => ({
+          variantId: it.variantId,
+          quantity: it.quantity,
+        })),
+        idempotencyKey: orderId,
+      })
+      .then((res) => {
+        apiClient.submitPaymentReference(res.orderReference, utr, res.accessToken).catch(() => {});
+      })
+      .catch(() => {});
   };
 
   // Simulate payment failure

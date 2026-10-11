@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nagarjuna-traders-api",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "pages_build_output_dir": "dist",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "nagarjuna-traders-d1",
+      "database_id": "nagarjuna-traders-d1-preview"
+    }
+  ],
+  "vars": {
+    "COMMERCE_CHECKOUT_ENABLED": "false",
+    "STORE_NAME": "NAGARJUNA TRADERS",
+    "STORE_LOCATION": "Sivakasi / Counter Collection",
+    "STORE_UPI_VPA": "nagarjunatraders@okhdfcbank",
+    "STORE_PHONE": "+919876543210",
+    "FIXED_TOKEN_AMOUNT_PAISE": "10000"
+  }
+}

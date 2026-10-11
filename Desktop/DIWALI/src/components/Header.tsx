@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type ActiveTab = 'home' | 'catalogue' | 'customer' | 'cart' | 'review';
+export type ActiveTab = 'home' | 'catalogue' | 'customer' | 'cart' | 'review' | 'admin';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -43,7 +43,7 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
 
-        {/* Operational Mode Pill & Cart Action */}
+        {/* Operational Mode Pill & Cart Action & Admin Quick Link */}
         <div className="flex items-center gap-2 md:gap-3">
           <span
             className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-950/60 text-amber-300 border border-amber-800/40"
@@ -52,6 +52,18 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
             Portfolio Demo Mode
           </span>
+
+          <button
+            onClick={() => onSelectTab('admin')}
+            className={`min-h-touch px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all active:scale-95 ${
+              activeTab === 'admin'
+                ? 'bg-festive-marigold text-black border-festive-marigold'
+                : 'bg-bg-elevated hover:bg-white/10 text-content-secondary border-white/10'
+            }`}
+            aria-label="Open Admin Operations Console"
+          >
+            Admin Portal
+          </button>
 
           <button
             onClick={() => onSelectTab('cart')}
@@ -130,6 +142,16 @@ export const Header: React.FC<HeaderProps> = ({
           }`}
         >
           Simulated Checkout
+        </button>
+        <button
+          onClick={() => onSelectTab('admin')}
+          className={`min-h-[40px] px-3.5 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+            activeTab === 'admin'
+              ? 'bg-festive-marigold/20 text-festive-marigold border border-festive-marigold/40'
+              : 'text-content-muted hover:text-content-primary'
+          }`}
+        >
+          Admin Console
         </button>
       </nav>
     </header>

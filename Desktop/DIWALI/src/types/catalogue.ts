@@ -32,15 +32,25 @@ export type PricingOrigin =
 
 export interface ProductVariant {
   id: string;
+  productId?: string;
   name: string;
+  sku?: string;
   packInfo: string;
   isPackInfoVerified: boolean;
   printedPriceText: string;
-  pricePaise: number | null;
+  printedMinPaise?: number | null;
+  printedMaxPaise?: number | null;
+  printedOptionsPaise?: number[];
+  sourceNotes?: string;
+  demoPricePaise?: number | null;
+  pricePaise: number | null; // Keeps backward compatibility with existing components
   priceStatus: PriceStatus;
   pricingOrigin: PricingOrigin;
   isAvailable: boolean;
+  stockQuantity?: number;
   notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Product {

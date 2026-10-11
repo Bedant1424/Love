@@ -14,6 +14,8 @@ export function formatPaise(paise: number | null): string {
   })}`;
 }
 
+export const formatPaiseToRupees = formatPaise;
+
 /**
  * Parses a rupee string or number to integer paise, avoiding float issues.
  */

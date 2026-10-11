@@ -85,13 +85,33 @@ To maintain repository safety and prevent accidental overrides:
    - 50 Vitest unit and component tests passing (100% green across 9 test suites).
    - Zero TypeScript errors (`tsc && vite build` clean: JS bundle 221.53 kB / gzip 61.64 kB).
 
-### Milestone 3: Backend Edge API & Admin Console
-1. **Wrangler Setup:** Create `wrangler.jsonc` with Cloudflare D1 database binding and environment variables.
-2. **Database Migrations:** Create `migrations/0001_initial_schema.sql` and `migrations/0002_seed_catalogue.sql`.
-3. **API Implementation:** Implement `/api/v1/catalogue`, `/api/v1/orders`, `/api/v1/orders/:id`.
-4. **Turnstile Middleware:** Integrate Cloudflare Turnstile token validation on order creation.
-5. **Admin Console:** Implement `/admin` protected interface with order management and variant price editing.
-
+### Milestone 3: Cloudflare Backend, D1 Database, Admin Dashboard & Demo Orders (COMPLETED)
+1. **Branch Safety:** Created and developed on `feature/nagarjuna-demo-backend-admin` based on `fix/nagarjuna-demo-mode-and-catalogue`.
+2. **Cloudflare Infrastructure Configuration:**
+   - Created `wrangler.jsonc` specifying Cloudflare Pages output directory `dist`, compatibility date `2026-10-01`, and D1 database binding `DB`.
+3. **Database Migrations (`migrations/`):**
+   - `migrations/0001_initial_schema.sql`: DDL for `categories`, `products`, `product_variants` (with separate printed pricing fields vs demo prices), `demo_orders`, `demo_order_items`, `price_audit_logs`, and `system_settings`.
+   - `migrations/0002_seed_catalogue.sql`: Authentic poster data for all 6 categories, products, and 26 variants with exact poster prices and verbatim notes.
+4. **Cloudflare Edge API (`src/server/` & `functions/`):**
+   - Implemented edge-compatible API router (`src/server/api.ts`) and Cloudflare Pages Functions adapter (`functions/api/[[route]].ts`).
+   - `GET /api/v1/catalogue`: Returns categories, products, and variants.
+   - `POST /api/v1/orders`: Validates customer details, blocks unpriced items, enforces ₹100 minimum subtotal, calculates fixed ₹100 token and non-negative remaining balance, generates `DEMO-NT-XXXX` reference.
+   - `GET /api/v1/orders/:reference`: Returns demo order with item snapshots.
+   - `POST /api/v1/orders/:reference/payment-reference`: Validates 12-digit UTR and moves status to `PENDING_VERIFICATION`.
+   - `GET /api/v1/admin/dashboard`: Real-time KPI aggregation.
+   - `GET /api/v1/admin/orders`: Filterable and searchable demo orders.
+   - `POST /api/v1/admin/orders/:id/status`: Controlled operational status transitions (`SUBMITTED` -> `CONFIRMED` -> `PREPARING` -> `READY_FOR_PICKUP` -> `COMPLETED`).
+   - `POST /api/v1/admin/orders/:id/verify-payment`: Approves simulated ₹100 token or rejects invalid UTR.
+   - `GET /api/v1/admin/variants`: Variant list with printed bounds vs demo price.
+   - `POST /api/v1/admin/variants/:id/demo-price`: Validates prices against printed bounds; enforces explicit override rationale when outside bounds.
+   - `GET /api/v1/admin/audit-logs`: Immutable stream of price overrides and status changes.
+   - `POST /api/v1/admin/auth/login`: Admin passphrase authentication (`nagarjuna-demo-2026`).
+5. **Interactive Administrator Dashboard (`AdminView.tsx`):**
+   - Fully interactive portal with tabs for Overview/KPIs, Orders, Catalogue Pricing, Audit Logs, and Settings.
+   - Accessible via Header navigation "Admin Portal" or "Admin Console" tab.
+6. **Automated Verification:**
+   - 63 Vitest tests passing across 11 test files (100% green).
+   - Zero TypeScript compile errors (`npm run build` succeeds).
 ### Milestone 4: Payment Workflow
 1. **Dynamic UPI Generator:** Implement dynamic UPI intent link and QR renderer using store VPA and order note.
 2. **UTR Ingestion API:** Implement `POST /api/v1/orders/:id/payment-reference` with 12-digit regex validation and unique constraint handling.

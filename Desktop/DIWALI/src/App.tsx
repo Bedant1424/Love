@@ -6,6 +6,7 @@ import { CatalogueView } from './components/CatalogueView';
 import { CustomerForm } from './components/CustomerForm';
 import { CartView } from './components/CartView';
 import { ReviewView } from './components/ReviewView';
+import { AdminView } from './components/AdminView';
 import { StickyCartBar } from './components/StickyCartBar';
 import { useCart } from './hooks/useCart';
 import { CustomerDetails } from './types/customer';
@@ -123,6 +124,10 @@ export const App: React.FC = () => {
               handleNavigateToTab('catalogue');
             }}
           />
+        )}
+
+        {activeTab === 'admin' && (
+          <AdminView onBackToCustomerSite={() => handleNavigateToTab('home')} />
         )}
       </main>
 
