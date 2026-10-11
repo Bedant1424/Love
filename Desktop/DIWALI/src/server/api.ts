@@ -26,7 +26,7 @@ import {
   UploadQrRequest,
 } from './types';
 
-export const PAYMENT_COLLECTION_ENABLED = false;
+export const PAYMENT_COLLECTION_ENABLED = true;
 
 export const DEFAULT_TOKEN_TIERS = {
   thresholdPaise: TOKEN_TIER_THRESHOLD_PAISE,
@@ -395,42 +395,50 @@ export async function handleApiRequest(
         const vpa = activeQr?.vpa || 'test-fixture@nagarjunatraders';
         const accountName =
           activeQr?.account_name || 'NAGARJUNA TRADERS (TEST FIXTURE)';
-        return jsonResponse<PaymentConfig>({
-          success: true,
-          data: {
-            paymentCollectionEnabled: false,
-            isRestrictedEnv: true,
-            vpa,
-            accountName,
-            message:
-              'Payment collection is currently disabled. Test fixture provided for restricted workflow testing only.',
-            testFixture: {
-              qrPayload: `upi://pay?pa=${vpa}&pn=${encodeURIComponent(
-                accountName
-              )}&am=0&tn=TEST%20FIXTURE%20ONLY`,
+        return jsonResponse<PaymentConfig>(
+          {
+            success: true,
+            data: {
+              paymentCollectionEnabled: false,
+              isRestrictedEnv: true,
               vpa,
               accountName,
-              isRestrictedEnv: true,
-              notice:
+              message:
                 'Payment collection is currently disabled. Test fixture provided for restricted workflow testing only.',
+              testFixture: {
+                qrPayload: `upi://pay?pa=${vpa}&pn=${encodeURIComponent(
+                  accountName
+                )}&am=0&tn=TEST%20FIXTURE%20ONLY`,
+                vpa,
+                accountName,
+                isRestrictedEnv: true,
+                notice:
+                  'Payment collection is currently disabled. Test fixture provided for restricted workflow testing only.',
+              },
+              tokenTiers: DEFAULT_TOKEN_TIERS,
             },
-            tokenTiers: DEFAULT_TOKEN_TIERS,
           },
-        });
+          200,
+          true
+        );
       }
 
       // When payment collection is explicitly disabled in environment,
       // return clean disabled state without exposing test fixtures.
       if (!isPaymentEnabled) {
-        return jsonResponse<PaymentConfig>({
-          success: true,
-          data: {
-            paymentCollectionEnabled: false,
-            isRestrictedEnv: false,
-            message: 'Payment instructions are currently unavailable.',
-            tokenTiers: DEFAULT_TOKEN_TIERS,
+        return jsonResponse<PaymentConfig>(
+          {
+            success: true,
+            data: {
+              paymentCollectionEnabled: false,
+              isRestrictedEnv: false,
+              message: 'Payment instructions are currently unavailable.',
+              tokenTiers: DEFAULT_TOKEN_TIERS,
+            },
           },
-        });
+          200,
+          true
+        );
       }
 
       // Live genuine merchant payment configuration
@@ -438,18 +446,22 @@ export async function handleApiRequest(
       const accountName = env?.STORE_ACCOUNT_HOLDER || 'Mr Subham Jena';
       const qrImageUrl = env?.PAYMENT_QR_IMAGE_URL || '/images/nagarjuna-payment-qr.jpeg';
 
-      return jsonResponse<PaymentConfig>({
-        success: true,
-        data: {
-          paymentCollectionEnabled: true,
-          isRestrictedEnv: false,
-          vpa,
-          accountName,
-          qrImageUrl,
-          message: 'Scan the UPI QR code using any UPI app to pay the advance token amount.',
-          tokenTiers: DEFAULT_TOKEN_TIERS,
+      return jsonResponse<PaymentConfig>(
+        {
+          success: true,
+          data: {
+            paymentCollectionEnabled: true,
+            isRestrictedEnv: false,
+            vpa,
+            accountName,
+            qrImageUrl,
+            message: 'Scan the UPI QR code using any UPI app to pay the advance token amount.',
+            tokenTiers: DEFAULT_TOKEN_TIERS,
+          },
         },
-      });
+        200,
+        true
+      );
     }
 
     // POST /api/v1/payment-issues
@@ -569,7 +581,7 @@ export async function handleApiRequest(
             name: 'Nagarjuna Traders',
             location: env?.STORE_LOCATION || 'Campus Pickup / Hostel Pickup',
             checkoutEnabled: true,
-            paymentCollectionEnabled: isPaymentEnabled,
+            paymentCollectionEnabled: isPaymentEnabled && !isRestricted,
             tokenTiers: DEFAULT_TOKEN_TIERS,
           },
           categories,
