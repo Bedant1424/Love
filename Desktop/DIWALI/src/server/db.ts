@@ -3,6 +3,8 @@ import { ProductVariant } from '../types/catalogue';
 import {
   AdminDashboardKPIs,
   CreatePaymentIssueRequest,
+  DbAdminSession,
+  DbAdminUser,
   DbCustomerDirectoryItem,
   DbInventoryAuditLog,
   DbInventoryItem,
@@ -55,6 +57,8 @@ class InMemoryDemoDatabase {
   private qrVersions: DbQrVersion[] = [];
   private paymentIssues: Map<string, DbPaymentIssue> = new Map();
   private customers: Map<string, DbCustomerDirectoryItem> = new Map();
+  private adminUsers: Map<string, DbAdminUser> = new Map();
+  private adminSessions: Map<string, DbAdminSession> = new Map();
 
   constructor() {
     this.seed();
@@ -70,6 +74,8 @@ class InMemoryDemoDatabase {
     this.inventoryAuditLogs = [];
     this.paymentIssues.clear();
     this.customers.clear();
+    this.adminUsers.clear();
+    this.adminSessions.clear();
 
     for (const prod of this.products) {
       for (const v of prod.variants) {
@@ -967,6 +973,116 @@ class InMemoryDemoDatabase {
     );
 
     return lines.join('\r\n');
+  }
+
+  // ── ADMIN USER & SESSION METHODS ──────────────────────────────
+  public async getAdminUserCount(): Promise<number> {
+    return this.adminUsers.size;
+  }
+
+  public async getAdminUserByEmail(email: string): Promise<DbAdminUser | null> {
+    const normalized = email.trim().toLowerCase();
+    for (const user of this.adminUsers.values()) {
+      if (user.email.toLowerCase() === normalized) {
+        return { ...user };
+      }
+    }
+    return null;
+  }
+
+  public async getAdminUserById(id: string): Promise<DbAdminUser | null> {
+    const user = this.adminUsers.get(id);
+    return user ? { ...user } : null;
+  }
+
+  public async createAdminUser(data: {
+    id: string;
+    email: string;
+    password_hash: string;
+    must_change_password?: number;
+  }): Promise<DbAdminUser> {
+    const normalized = data.email.trim().toLowerCase();
+    for (const user of this.adminUsers.values()) {
+      if (user.email.toLowerCase() === normalized) {
+        throw new Error('ADMIN_EXISTS: An admin user with this email already exists.');
+      }
+    }
+    const now = new Date().toISOString();
+    const user: DbAdminUser = {
+      id: data.id,
+      email: normalized,
+      password_hash: data.password_hash,
+      must_change_password:
+        data.must_change_password !== undefined ? data.must_change_password : 1,
+      created_at: now,
+      updated_at: now,
+    };
+    this.adminUsers.set(user.id, user);
+    return { ...user };
+  }
+
+  public async updateAdminPassword(
+    adminId: string,
+    passwordHash: string
+  ): Promise<void> {
+    const user = this.adminUsers.get(adminId);
+    if (!user) {
+      throw new Error(`Admin user ${adminId} not found`);
+    }
+    user.password_hash = passwordHash;
+    user.must_change_password = 0;
+    user.updated_at = new Date().toISOString();
+  }
+
+  public async createAdminSession(data: {
+    id: string;
+    admin_id: string;
+    session_token: string;
+    csrf_token: string;
+    expires_at: string;
+  }): Promise<DbAdminSession> {
+    const now = new Date().toISOString();
+    const session: DbAdminSession = {
+      id: data.id,
+      admin_id: data.admin_id,
+      session_token: data.session_token,
+      csrf_token: data.csrf_token,
+      expires_at: data.expires_at,
+      created_at: now,
+    };
+    this.adminSessions.set(session.session_token, session);
+    return { ...session };
+  }
+
+  public async getAdminSession(
+    sessionToken: string
+  ): Promise<{ session: DbAdminSession; user: DbAdminUser } | null> {
+    const session = this.adminSessions.get(sessionToken);
+    if (!session) return null;
+    const now = new Date().toISOString();
+    if (session.expires_at <= now) {
+      this.adminSessions.delete(sessionToken);
+      return null;
+    }
+    const user = this.adminUsers.get(session.admin_id);
+    if (!user) {
+      this.adminSessions.delete(sessionToken);
+      return null;
+    }
+    return { session: { ...session }, user: { ...user } };
+  }
+
+  public async deleteAdminSession(sessionToken: string): Promise<void> {
+    this.adminSessions.delete(sessionToken);
+  }
+
+  public async deleteExpiredAdminSessions(): Promise<void> {
+    const now = new Date().toISOString();
+    for (const [token, sess] of this.adminSessions.entries()) {
+      if (sess.expires_at <= now) {
+        this.adminSessions.delete(token);
+      }
+    }
   }
 }
 
@@ -2064,6 +2180,159 @@ export class D1DatabaseAdapter {
     );
 
     return lines.join('\r\n');
+  }
+
+  // ── ADMIN USER & SESSION METHODS ──────────────────────────────
+  public async getAdminUserCount(): Promise<number> {
+    const res = await this.d1
+      .prepare('SELECT COUNT(*) as count FROM admin_users')
+      .first<{ count: number }>();
+    return Number(res?.count) || 0;
+  }
+
+  public async getAdminUserByEmail(email: string): Promise<DbAdminUser | null> {
+    const normalized = email.trim().toLowerCase();
+    const res = await this.d1
+      .prepare(
+        'SELECT id, email, password_hash, must_change_password, created_at, updated_at FROM admin_users WHERE email = ? COLLATE NOCASE LIMIT 1'
+      )
+      .bind(normalized)
+      .first<DbAdminUser>();
+    return res || null;
+  }
+
+  public async getAdminUserById(id: string): Promise<DbAdminUser | null> {
+    const res = await this.d1
+      .prepare(
+        'SELECT id, email, password_hash, must_change_password, created_at, updated_at FROM admin_users WHERE id = ? LIMIT 1'
+      )
+      .bind(id)
+      .first<DbAdminUser>();
+    return res || null;
+  }
+
+  public async createAdminUser(data: {
+    id: string;
+    email: string;
+    password_hash: string;
+    must_change_password?: number;
+  }): Promise<DbAdminUser> {
+    const normalized = data.email.trim().toLowerCase();
+    const now = new Date().toISOString();
+    const mustChange =
+      data.must_change_password !== undefined ? data.must_change_password : 1;
+    await this.d1
+      .prepare(
+        'INSERT INTO admin_users (id, email, password_hash, must_change_password, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+      )
+      .bind(data.id, normalized, data.password_hash, mustChange, now, now)
+      .run();
+    return {
+      id: data.id,
+      email: normalized,
+      password_hash: data.password_hash,
+      must_change_password: mustChange,
+      created_at: now,
+      updated_at: now,
+    };
+  }
+
+  public async updateAdminPassword(
+    adminId: string,
+    passwordHash: string
+  ): Promise<void> {
+    const now = new Date().toISOString();
+    await this.d1
+      .prepare(
+        'UPDATE admin_users SET password_hash = ?, must_change_password = 0, updated_at = ? WHERE id = ?'
+      )
+      .bind(passwordHash, now, adminId)
+      .run();
+  }
+
+  public async createAdminSession(data: {
+    id: string;
+    admin_id: string;
+    session_token: string;
+    csrf_token: string;
+    expires_at: string;
+  }): Promise<DbAdminSession> {
+    const now = new Date().toISOString();
+    await this.d1
+      .prepare(
+        'INSERT INTO admin_sessions (id, admin_id, session_token, csrf_token, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+      )
+      .bind(
+        data.id,
+        data.admin_id,
+        data.session_token,
+        data.csrf_token,
+        data.expires_at,
+        now
+      )
+      .run();
+    return {
+      id: data.id,
+      admin_id: data.admin_id,
+      session_token: data.session_token,
+      csrf_token: data.csrf_token,
+      expires_at: data.expires_at,
+      created_at: now,
+    };
+  }
+
+  public async getAdminSession(
+    sessionToken: string
+  ): Promise<{ session: DbAdminSession; user: DbAdminUser } | null> {
+    const now = new Date().toISOString();
+    const row = await this.d1
+      .prepare(`
+        SELECT 
+          s.id as s_id, s.admin_id, s.session_token, s.csrf_token, s.expires_at, s.created_at as s_created_at,
+          u.id as u_id, u.email, u.password_hash, u.must_change_password, u.created_at as u_created_at, u.updated_at as u_updated_at
+        FROM admin_sessions s
+        JOIN admin_users u ON s.admin_id = u.id
+        WHERE s.session_token = ? AND s.expires_at > ?
+        LIMIT 1
+      `)
+      .bind(sessionToken, now)
+      .first<any>();
+
+    if (!row) return null;
+
+    return {
+      session: {
+        id: row.s_id,
+        admin_id: row.admin_id,
+        session_token: row.session_token,
+        csrf_token: row.csrf_token,
+        expires_at: row.expires_at,
+        created_at: row.s_created_at,
+      },
+      user: {
+        id: row.u_id,
+        email: row.email,
+        password_hash: row.password_hash,
+        must_change_password: Number(row.must_change_password),
+        created_at: row.u_created_at,
+        updated_at: row.u_updated_at,
+      },
+    };
+  }
+
+  public async deleteAdminSession(sessionToken: string): Promise<void> {
+    await this.d1
+      .prepare('DELETE FROM admin_sessions WHERE session_token = ?')
+      .bind(sessionToken)
+      .run();
+  }
+
+  public async deleteExpiredAdminSessions(): Promise<void> {
+    const now = new Date().toISOString();
+    await this.d1
+      .prepare('DELETE FROM admin_sessions WHERE expires_at <= ?')
+      .bind(now)
+      .run();
   }
 }
 

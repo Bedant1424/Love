@@ -7,6 +7,7 @@ import {
   MIN_ORDER_SUBTOTAL_PAISE,
 } from '../utils/tokenPolicy';
 import { verifyCloudflareAccessJwt } from './accessJwt';
+import { generateSecureToken, hashPassword, verifyPassword } from './authCrypto';
 import { getDb } from './db';
 import { storeQrImageInR2, getQrImageFromR2 } from './qrStorage';
 import {
@@ -143,17 +144,21 @@ export function parseJwtPayload(token: string): any | null {
   }
 }
 
-interface AdminAuthResult {
+export interface AdminAuthResult {
   authorized: boolean;
   operatorId: string;
+  adminId?: string;
+  email?: string;
+  mustChangePassword?: boolean;
+  csrfToken?: string;
   error?: string;
   status?: number;
 }
 
 /**
  * Validates administrative requests.
- * In production: strictly enforces cryptographic Cloudflare Access JWT Assertion verification.
- * In development: isolates dev auth tokens from production while supporting full JWT verification.
+ * Uses D1-backed session authentication with Secure, HttpOnly cookies and CSRF protection.
+ * Replaces Cloudflare Access with single owner account authentication.
  */
 export async function verifyAdminRequest(
   request: Request,
@@ -179,20 +184,19 @@ export async function verifyAdminRequest(
         process.env?.NODE_ENV === 'production')
   );
 
-  const cfAssertion = request.headers.get('Cf-Access-Jwt-Assertion');
   const authHeader = request.headers.get('Authorization') || '';
   const bearerToken = authHeader.startsWith('Bearer ')
     ? authHeader.slice(7).trim()
     : null;
   const cookieHeader = request.headers.get('Cookie') || '';
-  const cookieMatch = cookieHeader.match(/CF_Authorization=([^;]+)/);
-  const cookieJwt = cookieMatch ? decodeURIComponent(cookieMatch[1].trim()) : null;
+  const cookieMatch = cookieHeader.match(/admin_session=([^;]+)/);
+  const cookieSession = cookieMatch ? decodeURIComponent(cookieMatch[1].trim()) : null;
 
   // STRICT INVARIANT: The compromised token from previous tests is banned everywhere
   if (
     bearerToken === 'admin-jwt-session-nagarjuna' ||
-    cookieJwt === 'admin-jwt-session-nagarjuna' ||
-    cfAssertion === 'admin-jwt-session-nagarjuna'
+    cookieSession === 'admin-jwt-session-nagarjuna' ||
+    request.headers.get('Cf-Access-Jwt-Assertion') === 'admin-jwt-session-nagarjuna'
   ) {
     return {
       authorized: false,
@@ -202,12 +206,95 @@ export async function verifyAdminRequest(
     };
   }
 
+  // 1. D1-backed session validation (Primary authentication mechanism)
+  const sessionToken =
+    cookieSession ||
+    (bearerToken && !bearerToken.includes('.') ? bearerToken : null);
+
+  const db = getDb(env?.DB);
+
+  if (sessionToken) {
+    const sessionRecord = await db.getAdminSession(sessionToken);
+    if (!sessionRecord) {
+      return {
+        authorized: false,
+        operatorId: '',
+        error: 'Invalid or expired administrative session.',
+        status: 401,
+      };
+    }
+
+    // CSRF protection for mutating HTTP methods
+    const method = request.method?.toUpperCase();
+    if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+      const csrfHeader = request.headers.get('X-CSRF-Token');
+      if (!csrfHeader || csrfHeader !== sessionRecord.session.csrf_token) {
+        return {
+          authorized: false,
+          operatorId: sessionRecord.user.email,
+          error: 'CSRF token validation failed.',
+          status: 403,
+        };
+      }
+    }
+
+    // Check mandatory password change status
+    const pathname = url?.pathname || '';
+    const isExemptPath =
+      pathname === '/api/v1/admin/auth/change-password' ||
+      pathname === '/api/v1/admin/auth/logout' ||
+      pathname === '/api/v1/admin/auth/session';
+
+    if (sessionRecord.user.must_change_password === 1 && !isExemptPath) {
+      return {
+        authorized: false,
+        operatorId: sessionRecord.user.email,
+        adminId: sessionRecord.user.id,
+        email: sessionRecord.user.email,
+        mustChangePassword: true,
+        csrfToken: sessionRecord.session.csrf_token,
+        error:
+          'PASSWORD_CHANGE_REQUIRED: You must change your temporary password before accessing administrative features.',
+        status: 403,
+      };
+    }
+
+    return {
+      authorized: true,
+      operatorId: sessionRecord.user.email,
+      adminId: sessionRecord.user.id,
+      email: sessionRecord.user.email,
+      mustChangePassword: sessionRecord.user.must_change_password === 1,
+      csrfToken: sessionRecord.session.csrf_token,
+    };
+  }
+
+  // 2. Automated test runner legacy compatibility (vitest / local test mode only, NOT production)
+  const isDevOrTest =
+    (env?.ENVIRONMENT === 'test' ||
+      (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test')) &&
+    env?.ENVIRONMENT !== 'production' &&
+    !isHosted;
+
+  if (isDevOrTest) {
+    if (
+      bearerToken === 'dev-admin-token' ||
+      bearerToken === 'local-test-token'
+    ) {
+      return {
+        authorized: true,
+        operatorId: 'DEV-ADMIN',
+      };
+    }
+  }
+
+  // 3. Cloudflare Access assertion legacy support if JWT provided (for accessJwt unit tests)
+  const cfAssertion = request.headers.get('Cf-Access-Jwt-Assertion');
   const jwtToken =
     cfAssertion ||
-    (bearerToken && bearerToken.includes('.') ? bearerToken : null) ||
-    (cookieJwt && cookieJwt.includes('.') ? cookieJwt : null);
+    (bearerToken && bearerToken.includes('.') ? bearerToken : null);
 
-  if (jwtToken) {
+  if (jwtToken && (env?.CF_ACCESS_AUD || isDevOrTest)) {
     const teamDomain = env?.CF_ACCESS_TEAM_DOMAIN || 'bedant';
     const audience = env?.CF_ACCESS_AUD;
     const allowedAdminsRaw = env?.CF_ACCESS_ALLOWED_ADMINS;
@@ -228,47 +315,10 @@ export async function verifyAdminRequest(
       jwks,
     });
 
-    if (!result.valid) {
-      return {
-        authorized: false,
-        operatorId: '',
-        error: result.error,
-        status: result.status,
-      };
-    }
-
-    return {
-      authorized: true,
-      operatorId: result.operatorId || 'CF-ACCESS-OPERATOR',
-    };
-  }
-
-  // On any hosted environment (including preview *.pages.dev), fixed bearer tokens are strictly forbidden
-  if (isHosted) {
-    return {
-      authorized: false,
-      operatorId: '',
-      error:
-        'Cloudflare Access JWT Assertion is required on protected administrative routes in hosted environments.',
-      status: 401,
-    };
-  }
-
-  // In local development and automated test runner only: allow local dev token
-  const isDevOrTest =
-    env?.ENVIRONMENT === 'development' ||
-    env?.ENVIRONMENT === 'test' ||
-    (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test') ||
-    !env?.ENVIRONMENT;
-
-  if (isDevOrTest) {
-    if (
-      bearerToken === 'dev-admin-token' ||
-      bearerToken === 'local-test-token'
-    ) {
+    if (result.valid) {
       return {
         authorized: true,
-        operatorId: 'DEV-ADMIN',
+        operatorId: result.operatorId || 'CF-ACCESS-OPERATOR',
       };
     }
   }
@@ -276,7 +326,7 @@ export async function verifyAdminRequest(
   return {
     authorized: false,
     operatorId: '',
-    error: 'Admin authorization header required.',
+    error: 'Administrator authentication required.',
     status: 401,
   };
 }
@@ -294,14 +344,16 @@ export async function handleApiRequest(
   const jsonResponse = <T>(
     data: ApiResponse<T>,
     status: number = 200,
-    noStore: boolean = false
+    noStore: boolean = false,
+    extraHeaders?: Record<string, string>
   ) => {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
       'Access-Control-Allow-Headers':
-        'Content-Type, Authorization, X-Order-Token, Cf-Access-Jwt-Assertion',
+        'Content-Type, Authorization, X-Order-Token, Cf-Access-Jwt-Assertion, X-CSRF-Token',
+      ...(extraHeaders || {}),
     };
 
     if (noStore) {
@@ -320,9 +372,9 @@ export async function handleApiRequest(
       status: 204,
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
         'Access-Control-Allow-Headers':
-          'Content-Type, Authorization, X-Order-Token, Cf-Access-Jwt-Assertion',
+          'Content-Type, Authorization, X-Order-Token, Cf-Access-Jwt-Assertion, X-CSRF-Token',
       },
     });
   }
@@ -983,47 +1035,31 @@ export async function handleApiRequest(
 
     // Auth gate for all /api/v1/admin/* endpoints
     if (path.startsWith('/api/v1/admin/')) {
-      // GET /api/v1/admin/auth/session (or /api/v1/admin/auth/status)
-      if (
-        (path === '/api/v1/admin/auth/session' ||
-          path === '/api/v1/admin/auth/status') &&
-        method === 'GET'
-      ) {
-        const auth = await verifyAdminRequest(request, env);
-        return jsonResponse(
-          {
-            success: true,
-            data: {
-              authenticated: auth.authorized,
-              operatorId: auth.authorized ? auth.operatorId : undefined,
-              teamDomain: env?.CF_ACCESS_TEAM_DOMAIN || 'bedant',
-              error: auth.authorized ? undefined : auth.error,
-            },
-          },
-          200,
-          true
-        );
-      }
-
-      // Allow dev passphrase login endpoint to issue session token in dev only
-      if (path === '/api/v1/admin/auth/login' && method === 'POST') {
-        const isHosted =
-          url.hostname.includes('.pages.dev') ||
-          url.hostname.includes('workers.dev') ||
+      const isHosted = Boolean(
+        (url &&
+          (url.hostname.includes('.pages.dev') ||
+            url.hostname.includes('workers.dev'))) ||
           env?.IS_HOSTED === 'true' ||
           env?.IS_HOSTED === true ||
           env?.ENVIRONMENT === 'production' ||
-          (typeof process !== 'undefined' &&
-            process.env?.NODE_ENV === 'production');
+          (!env?.ENVIRONMENT &&
+            typeof process !== 'undefined' &&
+            process.env?.NODE_ENV === 'production')
+      );
+      const isSecure = isHosted || url.protocol === 'https:';
+      const secureFlag = isSecure ? '; Secure' : '';
 
-        if (isHosted) {
+      // 1. One-time Setup Initializer: POST /api/v1/admin/auth/init
+      if (path === '/api/v1/admin/auth/init' && method === 'POST') {
+        const count = await db.getAdminUserCount();
+        if (count > 0) {
           return jsonResponse(
             {
               success: false,
               error: {
-                code: 'PASSWORD_AUTH_DISABLED',
+                code: 'SETUP_DISABLED',
                 message:
-                  'Password-based login is disabled in hosted environments. Administration is protected by Cloudflare Access Zero Trust.',
+                  'Initial admin setup is permanently disabled. Single admin account already exists.',
               },
             },
             403,
@@ -1031,16 +1067,192 @@ export async function handleApiRequest(
           );
         }
 
-        const body = (await request.json().catch(() => ({}))) as { passphrase?: string };
-        if (body.passphrase === 'admin') {
+        const body = (await request.json().catch(() => ({}))) as any;
+        const email = (body.email || '').trim().toLowerCase();
+        const password = body.password || '';
+
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'INVALID_EMAIL',
+                message: 'Valid email address is required.',
+              },
+            },
+            400,
+            true
+          );
+        }
+
+        if (!password || typeof password !== 'string' || password.length < 8) {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'WEAK_PASSWORD',
+                message: 'Initial password must be at least 8 characters.',
+              },
+            },
+            400,
+            true
+          );
+        }
+
+        const passwordHash = await hashPassword(password);
+        const adminId = 'admin_' + generateSecureToken(8);
+        await db.createAdminUser({
+          id: adminId,
+          email,
+          password_hash: passwordHash,
+          must_change_password: 1,
+        });
+
+        return jsonResponse(
+          {
+            success: true,
+            data: {
+              message:
+                'Initial administrator created successfully. Setup is permanently disabled.',
+              email,
+            },
+          },
+          201,
+          true
+        );
+      }
+
+      // 2. Login Endpoint: POST /api/v1/admin/auth/login
+      if (path === '/api/v1/admin/auth/login' && method === 'POST') {
+        const body = (await request.json().catch(() => ({}))) as any;
+        const email = (body.email || '').trim().toLowerCase();
+        const password = body.password || '';
+
+        if (!email || !password) {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'INVALID_CREDENTIALS',
+                message: 'Email and password are required.',
+              },
+            },
+            400,
+            true
+          );
+        }
+
+        const user = await db.getAdminUserByEmail(email);
+        if (!user) {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'INVALID_CREDENTIALS',
+                message: 'Invalid email or password.',
+              },
+            },
+            401,
+            true
+          );
+        }
+
+        const isValid = await verifyPassword(password, user.password_hash);
+        if (!isValid) {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'INVALID_CREDENTIALS',
+                message: 'Invalid email or password.',
+              },
+            },
+            401,
+            true
+          );
+        }
+
+        const sessionToken = generateSecureToken(32);
+        const csrfToken = generateSecureToken(24);
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+        await db.createAdminSession({
+          id: 'sess_' + generateSecureToken(8),
+          admin_id: user.id,
+          session_token: sessionToken,
+          csrf_token: csrfToken,
+          expires_at: expiresAt,
+        });
+
+        const cookieValue = `admin_session=${sessionToken}; HttpOnly${secureFlag}; SameSite=Lax; Path=/; Max-Age=86400`;
+
+        return jsonResponse(
+          {
+            success: true,
+            data: {
+              authenticated: true,
+              email: user.email,
+              operatorId: user.email,
+              mustChangePassword: user.must_change_password === 1,
+              csrfToken,
+              sessionToken,
+            },
+          },
+          200,
+          true,
+          { 'Set-Cookie': cookieValue }
+        );
+      }
+
+      // 3. Logout Endpoint: POST /api/v1/admin/auth/logout
+      if (path === '/api/v1/admin/auth/logout' && method === 'POST') {
+        const cookieHeader = request.headers.get('Cookie') || '';
+        const cookieMatch = cookieHeader.match(/admin_session=([^;]+)/);
+        const cookieSession = cookieMatch
+          ? decodeURIComponent(cookieMatch[1].trim())
+          : null;
+        const authHeader = request.headers.get('Authorization') || '';
+        const bearerToken = authHeader.startsWith('Bearer ')
+          ? authHeader.slice(7).trim()
+          : null;
+        const tokenToDelete = cookieSession || bearerToken;
+
+        if (tokenToDelete) {
+          await db.deleteAdminSession(tokenToDelete);
+        }
+
+        const clearCookie = `admin_session=; HttpOnly${secureFlag}; SameSite=Lax; Path=/; Max-Age=0`;
+
+        return jsonResponse(
+          {
+            success: true,
+            data: {
+              message: 'Logged out successfully.',
+            },
+          },
+          200,
+          true,
+          { 'Set-Cookie': clearCookie }
+        );
+      }
+
+      // 4. Session Validation Endpoint: GET /api/v1/admin/auth/session
+      if (
+        (path === '/api/v1/admin/auth/session' ||
+          path === '/api/v1/admin/auth/status') &&
+        method === 'GET'
+      ) {
+        const auth = await verifyAdminRequest(request, env);
+        if (auth.authorized) {
           return jsonResponse(
             {
               success: true,
               data: {
-                token: 'dev-admin-token',
-                operatorId: 'DEV-ADMIN',
-                role: 'ADMINISTRATOR',
-                expiresIn: 43200,
+                authenticated: true,
+                email: auth.email,
+                operatorId: auth.operatorId,
+                mustChangePassword: !!auth.mustChangePassword,
+                csrfToken: auth.csrfToken,
               },
             },
             200,
@@ -1050,13 +1262,131 @@ export async function handleApiRequest(
 
         return jsonResponse(
           {
-            success: false,
-            error: {
-              code: 'INVALID_CREDENTIALS',
-              message: 'Invalid passphrase.',
+            success: true,
+            data: {
+              authenticated: false,
+              mustChangePassword: auth.mustChangePassword,
+              error: auth.error,
             },
           },
-          401,
+          200,
+          true
+        );
+      }
+
+      // 5. Password Change Endpoint: POST /api/v1/admin/auth/change-password
+      if (path === '/api/v1/admin/auth/change-password' && method === 'POST') {
+        const auth = await verifyAdminRequest(request, env);
+        if (!auth.authorized && !auth.mustChangePassword) {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'UNAUTHORIZED',
+                message: auth.error || 'Administrator authorization required.',
+              },
+            },
+            auth.status || 401,
+            true
+          );
+        }
+
+        const body = (await request.json().catch(() => ({}))) as any;
+        const currentPassword = body.currentPassword || '';
+        const newPassword = body.newPassword || '';
+
+        if (!currentPassword || !newPassword) {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'INVALID_PAYLOAD',
+                message: 'Current password and new password are required.',
+              },
+            },
+            400,
+            true
+          );
+        }
+
+        if (newPassword.length < 8) {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'WEAK_PASSWORD',
+                message: 'New password must be at least 8 characters.',
+              },
+            },
+            400,
+            true
+          );
+        }
+
+        if (currentPassword === newPassword) {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'SAME_PASSWORD',
+                message: 'New password must be different from current password.',
+              },
+            },
+            400,
+            true
+          );
+        }
+
+        const adminUser = auth.adminId
+          ? await db.getAdminUserById(auth.adminId)
+          : auth.email
+          ? await db.getAdminUserByEmail(auth.email)
+          : null;
+
+        if (!adminUser) {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'USER_NOT_FOUND',
+                message: 'Admin user not found.',
+              },
+            },
+            404,
+            true
+          );
+        }
+
+        const matches = await verifyPassword(
+          currentPassword,
+          adminUser.password_hash
+        );
+        if (!matches) {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'INVALID_CURRENT_PASSWORD',
+                message: 'Current password is incorrect.',
+              },
+            },
+            400,
+            true
+          );
+        }
+
+        const newHash = await hashPassword(newPassword);
+        await db.updateAdminPassword(adminUser.id, newHash);
+
+        return jsonResponse(
+          {
+            success: true,
+            data: {
+              message:
+                'Password updated successfully. Temporary password status cleared.',
+            },
+          },
+          200,
           true
         );
       }
@@ -1068,7 +1398,9 @@ export async function handleApiRequest(
           {
             success: false,
             error: {
-              code: 'UNAUTHORIZED',
+              code: auth.mustChangePassword
+                ? 'PASSWORD_CHANGE_REQUIRED'
+                : 'UNAUTHORIZED',
               message: auth.error || 'Administrator authorization required.',
             },
           },

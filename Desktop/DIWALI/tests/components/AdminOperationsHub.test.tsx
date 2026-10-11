@@ -3,20 +3,55 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { AdminView } from '../../src/components/AdminView';
 import { globalMemoryDb } from '../../src/server/db';
 
+import { handleApiRequest } from '../../src/server/api';
+
 describe('Admin Operations Hub Component Tests', () => {
   const mockBackToCustomer = vi.fn();
+  const testEmail = 'astar0017@gmail.com';
+  const initialPass = 'initialPass123';
+  const newPass = 'MyStrongPassword2026!';
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     globalMemoryDb.seed();
+    await handleApiRequest(
+      new Request('http://localhost/api/v1/admin/auth/init', {
+        method: 'POST',
+        body: JSON.stringify({ email: testEmail, password: initialPass }),
+      })
+    );
   });
 
   const loginToAdmin = async () => {
     render(<AdminView onBackToCustomerSite={mockBackToCustomer} />);
-    const input = screen.getByLabelText(/Authorized Staff Passphrase/i);
-    const submitBtn = screen.getByRole('button', { name: /Unlock Admin Console/i });
-    fireEvent.change(input, { target: { value: 'admin' } });
-    fireEvent.click(submitBtn);
+
+    // Login with initial credentials
+    fireEvent.change(screen.getByLabelText(/Owner Email Address/i), {
+      target: { value: testEmail },
+    });
+    fireEvent.change(screen.getByLabelText(/^Password$/i), {
+      target: { value: initialPass },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Sign In to Owner Portal/i }));
+
+    // Complete password change requirement
+    await waitFor(() => {
+      expect(screen.getByText('Change Initial Password')).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByLabelText(/Current Password/i), {
+      target: { value: initialPass },
+    });
+    fireEvent.change(screen.getByLabelText(/New Password \(min 8 chars\)/i), {
+      target: { value: newPass },
+    });
+    fireEvent.change(screen.getByLabelText(/Confirm New Password/i), {
+      target: { value: newPass },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: /Save Password & Enter Dashboard/i })
+    );
+
     await waitFor(() => {
       expect(screen.getByText('Nagarjuna Traders Admin Panel')).toBeInTheDocument();
     });

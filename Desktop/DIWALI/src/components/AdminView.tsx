@@ -35,10 +35,15 @@ type AdminTab =
 export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) => {
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [passphrase, setPassphrase] = useState<string>('');
+  const [mustChangePassword, setMustChangePassword] = useState<boolean>(false);
+  const [email, setEmail] = useState<string>('astar0017@gmail.com');
+  const [password, setPassword] = useState<string>('');
+  const [currentPassword, setCurrentPassword] = useState<string>('');
+  const [newPassword, setNewPassword] = useState<string>('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState<string>('');
   const [authError, setAuthError] = useState<string>('');
-  const [operatorId, setOperatorId] = useState<string>('OP-NAGARJUNA');
-  const [teamDomain, setTeamDomain] = useState<string>('bedant');
+  const [passwordChangeError, setPasswordChangeError] = useState<string>('');
+  const [operatorId, setOperatorId] = useState<string>('astar0017@gmail.com');
 
   // Navigation State
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
@@ -168,101 +173,102 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
   };
 
   useEffect(() => {
-    // Probe for existing authenticated session (e.g. Cloudflare Access header/cookie or restored token)
+    // Probe for existing authenticated session (via HttpOnly session cookie)
     apiClient
       .checkAdminAuthSession()
       .then((session) => {
-        if (session.teamDomain) {
-          setTeamDomain(session.teamDomain);
-        }
         if (session.authenticated) {
-          if (session.operatorId) {
-            setOperatorId(session.operatorId);
+          if (session.operatorId || session.email) {
+            setOperatorId(session.operatorId || session.email || 'astar0017@gmail.com');
           }
           setIsAuthenticated(true);
+          setMustChangePassword(Boolean(session.mustChangePassword));
         } else {
           setIsAuthenticated(false);
-          // Never display error notice on initial unauthenticated load
+          setMustChangePassword(false);
           setAuthError('');
         }
       })
       .catch(() => {
         setIsAuthenticated(false);
+        setMustChangePassword(false);
       });
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !mustChangePassword) {
       loadAllData();
     }
-  }, [isAuthenticated, reportRange]);
+  }, [isAuthenticated, mustChangePassword, reportRange]);
 
-  const handleSignInWithCloudflareAccess = async () => {
-    setAuthError('');
-    setLoading(true);
-    try {
-      // 1. Probe if browser now holds an authenticated session or cookie
-      const session = await apiClient.checkAdminAuthSession();
-      if (session.authenticated) {
-        if (session.operatorId) {
-          setOperatorId(session.operatorId);
-        }
-        setIsAuthenticated(true);
-        showNotification('Administrator session verified via Cloudflare Access.');
-        return;
-      }
-
-      // 2. Redirect to the Cloudflare Access sign-in portal
-      const targetTeam = session.teamDomain || teamDomain || 'bedant';
-      window.location.href = `https://${targetTeam}.cloudflareaccess.com`;
-    } catch (err: any) {
-      setAuthError(err?.message || 'Cloudflare Access sign-in failed.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRetryAuth = async () => {
-    setAuthError('');
-    setLoading(true);
-    try {
-      const session = await apiClient.checkAdminAuthSession();
-      if (session.authenticated) {
-        if (session.operatorId) {
-          setOperatorId(session.operatorId);
-        }
-        setIsAuthenticated(true);
-        showNotification('Administrator session verified.');
-      } else {
-        setAuthError(
-          session.error ||
-            'Cloudflare Access assertion required. Please click "Sign In with Cloudflare Access".'
-        );
-      }
-    } catch (err: any) {
-      setAuthError(err?.message || 'Access Not Authorised');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDevLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
+    setLoading(true);
     try {
-      const res = await apiClient.adminLogin(passphrase);
-      setOperatorId(res.operatorId);
+      const res = await apiClient.adminLogin(email, password);
+      if (res.operatorId || res.email) {
+        setOperatorId(res.operatorId || res.email);
+      }
       setIsAuthenticated(true);
-      showNotification('Administrator console unlocked.');
+      if (res.mustChangePassword) {
+        setMustChangePassword(true);
+        setCurrentPassword(password);
+        showNotification('Login successful. Password change is required.', 'error');
+      } else {
+        setMustChangePassword(false);
+        showNotification('Administrator console unlocked.');
+      }
     } catch (err: any) {
-      setAuthError(err?.message || 'Invalid passphrase.');
+      setAuthError(err?.message || 'Invalid email or password.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleLogout = () => {
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordChangeError('');
+    if (newPassword.length < 8) {
+      setPasswordChangeError('New password must be at least 8 characters.');
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setPasswordChangeError('New passwords do not match.');
+      return;
+    }
+    if (currentPassword === newPassword) {
+      setPasswordChangeError('New password must be different from current password.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await apiClient.adminChangePassword(currentPassword, newPassword);
+      setMustChangePassword(false);
+      setPassword('');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+      showNotification('Password updated successfully. Console unlocked.');
+      loadAllData();
+    } catch (err: any) {
+      setPasswordChangeError(err?.message || 'Failed to update password.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await apiClient.adminLogout();
+    } catch {}
     setIsAuthenticated(false);
-    setPassphrase('');
-    apiClient.setAdminAuthToken(null);
+    setMustChangePassword(false);
+    setPassword('');
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmNewPassword('');
     showNotification('Logged out from admin console.');
   };
 
@@ -536,12 +542,6 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
     (i) => i.status === 'OPEN' || i.status === 'IN_PROGRESS'
   ).length;
 
-  const isDevEnvironment =
-    typeof window !== 'undefined' &&
-    (window.location.hostname === 'localhost' ||
-      window.location.hostname === '127.0.0.1' ||
-      window.location.hostname === 'test.local');
-
   // If not authenticated, render clean branded Owner Administration portal card
   if (!isAuthenticated) {
     return (
@@ -553,7 +553,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={1.75}
-                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
               />
             </svg>
           </div>
@@ -564,65 +564,64 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
             Owner Administration Portal
           </h1>
           <p className="text-xs text-content-secondary leading-relaxed mb-6">
-            Secure administrative console for order management, catalogue verification, inventory adjustments, and sales reports. Protected by Cloudflare Access Zero Trust.
+            Secure administrative console for order management, catalogue verification, inventory adjustments, and sales reports.
           </p>
 
           {authError && (
             <div className="mb-5 p-3.5 rounded-xl bg-red-950/50 border border-red-800/60 text-xs text-red-200 text-left space-y-1">
-              <strong className="block font-semibold text-red-300">Authentication Notice:</strong>
+              <strong className="block font-semibold text-red-300">Authentication Error:</strong>
               <p className="leading-relaxed">{authError}</p>
             </div>
           )}
 
-          <div className="space-y-3">
+          <form onSubmit={handleLogin} className="space-y-4 text-left">
+            <div>
+              <label
+                htmlFor="admin-email"
+                className="block text-xs font-semibold text-content-secondary mb-1.5"
+              >
+                Owner Email Address
+              </label>
+              <input
+                id="admin-email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@example.com"
+                className="w-full bg-bg-elevated border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-content-primary placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-festive-marigold"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="admin-password"
+                className="block text-xs font-semibold text-content-secondary mb-1.5"
+              >
+                Password
+              </label>
+              <input
+                id="admin-password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password"
+                className="w-full bg-bg-elevated border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-content-primary placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-festive-marigold"
+              />
+            </div>
+
             <button
-              type="button"
-              onClick={handleSignInWithCloudflareAccess}
+              type="submit"
               disabled={loading}
-              className="w-full min-h-touch bg-festive-marigold hover:bg-festive-amber disabled:opacity-50 text-black font-semibold rounded-xl text-xs py-3 transition-transform active:scale-[0.98] shadow-md shadow-festive-marigold/10 flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full min-h-touch bg-festive-marigold hover:bg-festive-amber disabled:opacity-50 text-black font-semibold rounded-xl text-xs py-3 transition-transform active:scale-[0.98] shadow-md shadow-festive-marigold/10 flex items-center justify-center gap-2 cursor-pointer mt-2"
             >
               <svg className="w-4 h-4 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
               </svg>
-              {loading ? 'Verifying Credentials...' : 'Sign In with Cloudflare Access'}
+              {loading ? 'Authenticating...' : 'Sign In to Owner Portal'}
             </button>
-
-            <button
-              type="button"
-              onClick={handleRetryAuth}
-              disabled={loading}
-              className="w-full text-xs text-content-secondary hover:text-content-primary py-1.5 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <span>↻ Verify Active Session</span>
-            </button>
-
-            {isDevEnvironment && (
-              <form onSubmit={handleDevLogin} className="mt-4 pt-4 border-t border-white/5 text-left space-y-2">
-                <label
-                  htmlFor="admin-passphrase"
-                  className="block text-[11px] font-medium text-content-muted"
-                >
-                  Authorized Staff Passphrase
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    id="admin-passphrase"
-                    type="password"
-                    value={passphrase}
-                    onChange={(e) => setPassphrase(e.target.value)}
-                    placeholder="Enter passphrase"
-                    className="flex-1 bg-bg-elevated border border-white/10 rounded-lg px-3 py-1.5 text-xs text-content-primary placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-festive-marigold"
-                  />
-                  <button
-                    type="submit"
-                    className="px-3 py-1.5 bg-white/10 hover:bg-white/15 text-xs font-semibold rounded-lg text-content-primary border border-white/10"
-                  >
-                    Unlock Admin Console
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
+          </form>
 
           <div className="pt-4 mt-4 text-center border-t border-white/5">
             <button
@@ -631,6 +630,113 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
               className="text-xs text-content-muted hover:text-content-primary underline"
             >
               ← Return to Customer Website
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Mandatory password change screen when mustChangePassword is true
+  if (mustChangePassword) {
+    return (
+      <div className="max-w-md mx-auto my-16 px-4">
+        <div className="bg-bg-surface border border-amber-600/30 rounded-2xl p-6 md:p-8 shadow-xl text-center">
+          <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-inner">
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+          </div>
+          <span className="inline-block px-3 py-1 rounded-full text-[11px] font-semibold bg-amber-950/80 text-amber-300 border border-amber-700/50 mb-3 tracking-wide">
+            SECURITY ACTION REQUIRED
+          </span>
+          <h1 className="text-xl font-bold font-display text-content-primary mb-2">
+            Change Initial Password
+          </h1>
+          <p className="text-xs text-content-secondary leading-relaxed mb-6">
+            For security, you must replace the temporary password with a new personal password (minimum 8 characters) before accessing the owner dashboard.
+          </p>
+
+          {passwordChangeError && (
+            <div className="mb-5 p-3.5 rounded-xl bg-red-950/50 border border-red-800/60 text-xs text-red-200 text-left space-y-1">
+              <strong className="block font-semibold text-red-300">Password Update Error:</strong>
+              <p className="leading-relaxed">{passwordChangeError}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleChangePassword} className="space-y-4 text-left">
+            <div>
+              <label
+                htmlFor="current-password"
+                className="block text-xs font-semibold text-content-secondary mb-1.5"
+              >
+                Current Password
+              </label>
+              <input
+                id="current-password"
+                type="password"
+                required
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Enter current password"
+                className="w-full bg-bg-elevated border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-content-primary placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-festive-marigold"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="new-password"
+                className="block text-xs font-semibold text-content-secondary mb-1.5"
+              >
+                New Password (min 8 chars)
+              </label>
+              <input
+                id="new-password"
+                type="password"
+                required
+                minLength={8}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new strong password"
+                className="w-full bg-bg-elevated border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-content-primary placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-festive-marigold"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="confirm-password"
+                className="block text-xs font-semibold text-content-secondary mb-1.5"
+              >
+                Confirm New Password
+              </label>
+              <input
+                id="confirm-password"
+                type="password"
+                required
+                minLength={8}
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                placeholder="Re-enter new password"
+                className="w-full bg-bg-elevated border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-content-primary placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-festive-marigold"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full min-h-touch bg-festive-marigold hover:bg-festive-amber disabled:opacity-50 text-black font-semibold rounded-xl text-xs py-3 transition-transform active:scale-[0.98] shadow-md shadow-festive-marigold/10 flex items-center justify-center gap-2 cursor-pointer mt-2"
+            >
+              {loading ? 'Updating Password...' : 'Save Password & Enter Dashboard'}
+            </button>
+          </form>
+
+          <div className="pt-4 mt-4 text-center border-t border-white/5">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="text-xs text-content-muted hover:text-content-primary underline"
+            >
+              Cancel and Logout
             </button>
           </div>
         </div>

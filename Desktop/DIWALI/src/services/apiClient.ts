@@ -33,6 +33,17 @@ let currentAdminToken: string | null = (() => {
   return null;
 })();
 
+let currentCsrfToken: string | null = (() => {
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      return window.sessionStorage.getItem('nagarjuna_admin_csrf');
+    } catch {
+      return null;
+    }
+  }
+  return null;
+})();
+
 export function setAdminAuthToken(token: string | null) {
   currentAdminToken = token;
   if (typeof window !== 'undefined' && window.sessionStorage) {
@@ -50,6 +61,23 @@ export function getAdminAuthToken(): string | null {
   return currentAdminToken;
 }
 
+export function setAdminCsrfToken(token: string | null) {
+  currentCsrfToken = token;
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      if (token) {
+        window.sessionStorage.setItem('nagarjuna_admin_csrf', token);
+      } else {
+        window.sessionStorage.removeItem('nagarjuna_admin_csrf');
+      }
+    } catch {}
+  }
+}
+
+export function getAdminCsrfToken(): string | null {
+  return currentCsrfToken;
+}
+
 async function executeApi<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -57,23 +85,20 @@ async function executeApi<T>(
   const url = `${API_BASE}${endpoint}`;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string> || {}),
+    ...((options.headers as Record<string, string>) || {}),
   };
 
-  // Automatically check document cookie for Cloudflare Access token if not already stored
-  if (!currentAdminToken && typeof document !== 'undefined') {
-    const match = document.cookie.match(/CF_Authorization=([^;]+)/);
-    if (match) {
-      currentAdminToken = decodeURIComponent(match[1].trim());
-    }
-  }
-
-  if (endpoint.startsWith('/admin') && currentAdminToken) {
-    if (!headers['Authorization']) {
+  if (endpoint.startsWith('/admin')) {
+    if (currentAdminToken && !headers['Authorization']) {
       headers['Authorization'] = `Bearer ${currentAdminToken}`;
     }
-    if (!headers['Cf-Access-Jwt-Assertion'] && currentAdminToken.includes('.')) {
-      headers['Cf-Access-Jwt-Assertion'] = currentAdminToken;
+    const method = (options.method || 'GET').toUpperCase();
+    if (
+      ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method) &&
+      currentCsrfToken &&
+      !headers['X-CSRF-Token']
+    ) {
+      headers['X-CSRF-Token'] = currentCsrfToken;
     }
   }
 
@@ -90,9 +115,13 @@ async function executeApi<T>(
     }
   } catch (_fetchErr) {
     const fullUrl = `http://localhost${url}`;
+    const syntheticHeaders: Record<string, string> = { ...headers };
+    if (currentAdminToken && !syntheticHeaders['Cookie']) {
+      syntheticHeaders['Cookie'] = `admin_session=${currentAdminToken}`;
+    }
     const syntheticReq = new Request(fullUrl, {
       ...options,
-      headers,
+      headers: syntheticHeaders,
     });
     response = await handleApiRequest(syntheticReq);
   }
@@ -200,33 +229,81 @@ export const apiClient = {
     );
   },
 
-  // Admin Dashboard Operations
-  async adminLogin(passphrase: string) {
+  // Admin Authentication Operations
+  async adminInit(email: string, password: string) {
+    return executeApi<{ message: string; email: string }>('/admin/auth/init', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+  },
+
+  async adminLogin(emailOrPassphrase: string, password?: string) {
+    const payload =
+      password !== undefined
+        ? { email: emailOrPassphrase, password }
+        : {
+            email: emailOrPassphrase.includes('@')
+              ? emailOrPassphrase
+              : 'astar0017@gmail.com',
+            password: emailOrPassphrase,
+          };
+
     const result = await executeApi<{
-      token: string;
+      authenticated: boolean;
+      email: string;
       operatorId: string;
-      role: string;
-      expiresIn: number;
+      mustChangePassword: boolean;
+      csrfToken: string;
+      sessionToken?: string;
     }>('/admin/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ passphrase }),
+      body: JSON.stringify(payload),
     });
 
-    if (result.token) {
-      setAdminAuthToken(result.token);
+    if (result.sessionToken) {
+      setAdminAuthToken(result.sessionToken);
+    }
+    if (result.csrfToken) {
+      setAdminCsrfToken(result.csrfToken);
     }
     return result;
   },
 
+  async adminLogout() {
+    try {
+      await executeApi<{ message: string }>('/admin/auth/logout', {
+        method: 'POST',
+      });
+    } finally {
+      setAdminAuthToken(null);
+      setAdminCsrfToken(null);
+    }
+  },
+
+  async adminChangePassword(currentPassword: string, newPassword: string) {
+    return executeApi<{ message: string }>('/admin/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  },
+
   async checkAdminAuthSession() {
-    return executeApi<{
+    const res = await executeApi<{
       authenticated: boolean;
+      email?: string;
       operatorId?: string;
-      teamDomain: string;
+      mustChangePassword?: boolean;
+      csrfToken?: string;
       error?: string;
+      teamDomain?: string;
     }>('/admin/auth/session', {
       method: 'GET',
     });
+
+    if (res.csrfToken) {
+      setAdminCsrfToken(res.csrfToken);
+    }
+    return res;
   },
 
   async verifyCfAccessSession(token?: string) {

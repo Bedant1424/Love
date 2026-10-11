@@ -2,57 +2,102 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { AdminView } from '../../src/components/AdminView';
 import { globalMemoryDb } from '../../src/server/db';
+import { handleApiRequest } from '../../src/server/api';
 
 describe('AdminView Component Suite', () => {
   const mockBackToCustomer = vi.fn();
+  const testEmail = 'astar0017@gmail.com';
+  const initialPass = 'initialPass123';
+  const newPass = 'MyStrongPassword2026!';
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     globalMemoryDb.seed();
+    // Initialize the single admin account
+    await handleApiRequest(
+      new Request('http://localhost/api/v1/admin/auth/init', {
+        method: 'POST',
+        body: JSON.stringify({ email: testEmail, password: initialPass }),
+      })
+    );
   });
 
-  it('renders Owner Administration Portal sign-in state initially and prevents unauthorized access', () => {
+  const loginAndUnlockAdmin = async () => {
+    render(<AdminView onBackToCustomerSite={mockBackToCustomer} />);
+
+    // 1. Submit login
+    fireEvent.change(screen.getByLabelText(/Owner Email Address/i), {
+      target: { value: testEmail },
+    });
+    fireEvent.change(screen.getByLabelText(/^Password$/i), {
+      target: { value: initialPass },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Sign In to Owner Portal/i }));
+
+    // 2. Complete mandatory password change
+    await waitFor(() => {
+      expect(screen.getByText('Change Initial Password')).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByLabelText(/Current Password/i), {
+      target: { value: initialPass },
+    });
+    fireEvent.change(screen.getByLabelText(/New Password \(min 8 chars\)/i), {
+      target: { value: newPass },
+    });
+    fireEvent.change(screen.getByLabelText(/Confirm New Password/i), {
+      target: { value: newPass },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: /Save Password & Enter Dashboard/i })
+    );
+
+    // 3. Confirm admin panel unlocked
+    await waitFor(() => {
+      expect(screen.getByText('Nagarjuna Traders Admin Panel')).toBeInTheDocument();
+    });
+  };
+
+  it('renders Owner Administration Portal sign-in state initially and presents email & password fields', () => {
     render(<AdminView onBackToCustomerSite={mockBackToCustomer} />);
 
     expect(screen.getByText('Owner Administration Portal')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Owner Email Address/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Password$/i)).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /Sign In with Cloudflare Access/i })
+      screen.getByRole('button', { name: /Sign In to Owner Portal/i })
     ).toBeInTheDocument();
-    expect(screen.getByLabelText(/Authorized Staff Passphrase/i)).toBeInTheDocument();
   });
 
-  it('shows error on invalid passphrase and unlocks on correct passphrase', async () => {
+  it('shows error on invalid credentials and prompts for password change on initial login', async () => {
     render(<AdminView onBackToCustomerSite={mockBackToCustomer} />);
 
-    const input = screen.getByLabelText(/Authorized Staff Passphrase/i);
-    const submitBtn = screen.getByRole('button', { name: /Unlock Admin Console/i });
+    const emailInput = screen.getByLabelText(/Owner Email Address/i);
+    const passInput = screen.getByLabelText(/^Password$/i);
+    const submitBtn = screen.getByRole('button', { name: /Sign In to Owner Portal/i });
 
-    // 1. Invalid passphrase
-    fireEvent.change(input, { target: { value: 'wrong-passphrase' } });
+    // 1. Invalid credentials
+    fireEvent.change(emailInput, { target: { value: testEmail } });
+    fireEvent.change(passInput, { target: { value: 'wrong-password' } });
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(screen.getByText(/Invalid passphrase/i)).toBeInTheDocument();
+      expect(screen.getByText(/Invalid email or password/i)).toBeInTheDocument();
     });
 
-    // 2. Correct passphrase
-    fireEvent.change(input, { target: { value: 'admin' } });
+    // 2. Correct credentials -> prompts for password change
+    fireEvent.change(passInput, { target: { value: initialPass } });
     fireEvent.click(submitBtn);
 
     await waitFor(() => {
-      expect(screen.getByText('Nagarjuna Traders Admin Panel')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /Overview & KPIs/i })).toBeInTheDocument();
+      expect(screen.getByText('Change Initial Password')).toBeInTheDocument();
+      expect(screen.getByLabelText(/Current Password/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/New Password \(min 8 chars\)/i)).toBeInTheDocument();
     });
   });
 
   it('renders KPI cards and allows navigating between admin tabs', async () => {
-    render(<AdminView onBackToCustomerSite={mockBackToCustomer} />);
-
-    // Login
-    fireEvent.change(screen.getByLabelText(/Authorized Staff Passphrase/i), {
-      target: { value: 'admin' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /Unlock Admin Console/i }));
+    await loginAndUnlockAdmin();
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Overview & KPIs/i })).toBeInTheDocument();
@@ -81,17 +126,7 @@ describe('AdminView Component Suite', () => {
   });
 
   it('allows editing a price within printed bounds', async () => {
-    render(<AdminView onBackToCustomerSite={mockBackToCustomer} />);
-
-    // Login
-    fireEvent.change(screen.getByLabelText(/Authorized Staff Passphrase/i), {
-      target: { value: 'admin' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /Unlock Admin Console/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText('Nagarjuna Traders Admin Panel')).toBeInTheDocument();
-    });
+    await loginAndUnlockAdmin();
 
     // Switch to Catalogue tab
     fireEvent.click(screen.getByRole('button', { name: /Catalogue & Pricing/i }));

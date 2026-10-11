@@ -296,3 +296,46 @@ export interface SalesReportResponse {
   productBreakdown: SalesReportProductBreakdown[];
 }
 
+// Admin Authentication & Session Management
+export interface DbAdminUser {
+  id: string;
+  email: string;
+  password_hash: string;
+  must_change_password: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbAdminSession {
+  id: string;
+  admin_id: string;
+  session_token: string;
+  csrf_token: string;
+  expires_at: string;
+  created_at: string;
+}
+
+export interface AdminLoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface AdminChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface AdminInitRequest {
+  email: string;
+  password: string;
+}
+
+export interface AdminAuthSessionResponse {
+  authenticated: boolean;
+  email?: string;
+  operatorId?: string;
+  mustChangePassword?: boolean;
+  csrfToken?: string;
+  error?: string;
+}
+
