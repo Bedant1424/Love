@@ -151,9 +151,16 @@ export async function verifyAdminRequest(
   const bearerToken = authHeader.startsWith('Bearer ')
     ? authHeader.slice(7).trim()
     : null;
+  const cookieHeader = request.headers.get('Cookie') || '';
+  const cookieMatch = cookieHeader.match(/CF_Authorization=([^;]+)/);
+  const cookieJwt = cookieMatch ? cookieMatch[1].trim() : null;
 
   // STRICT INVARIANT: The compromised token from previous tests is banned everywhere
-  if (bearerToken === 'admin-jwt-session-nagarjuna') {
+  if (
+    bearerToken === 'admin-jwt-session-nagarjuna' ||
+    cookieJwt === 'admin-jwt-session-nagarjuna' ||
+    cfAssertion === 'admin-jwt-session-nagarjuna'
+  ) {
     return {
       authorized: false,
       operatorId: '',
@@ -163,7 +170,9 @@ export async function verifyAdminRequest(
   }
 
   const jwtToken =
-    cfAssertion || (bearerToken && bearerToken.includes('.') ? bearerToken : null);
+    cfAssertion ||
+    (bearerToken && bearerToken.includes('.') ? bearerToken : null) ||
+    (cookieJwt && cookieJwt.includes('.') ? cookieJwt : null);
 
   if (jwtToken) {
     const teamDomain = env?.CF_ACCESS_TEAM_DOMAIN;
@@ -1424,7 +1433,17 @@ export async function handleApiRequest(
               sha256Checksum: storedAsset.sha256Checksum,
             }
           );
-          return jsonResponse({ success: true, data: created }, 201, true);
+
+          let finalRecord = created;
+          if (body.activateNow) {
+            finalRecord = await db.activateQrVersion(
+              created.id,
+              operator,
+              'Initial activation upon upload'
+            );
+          }
+
+          return jsonResponse({ success: true, data: finalRecord }, 201, true);
         } catch (err: any) {
           const msg = err?.message || 'Failed to process QR image upload';
           const code = msg.includes('exceeds maximum 2MB')

@@ -218,6 +218,7 @@ export interface UploadQrRequest {
   accountName: string;
   imageDataUri: string; // Base64 data URI (image/png, image/jpeg, image/webp)
   operatorId?: string;
+  activateNow?: boolean;
 }
 
 // Inventory Tracking

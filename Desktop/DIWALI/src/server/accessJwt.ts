@@ -99,7 +99,7 @@ export async function verifyCloudflareAccessJwt(
   if (!teamDomain || !audience) {
     return {
       valid: false,
-      status: 401,
+      status: 500,
       error:
         'Cloudflare Access server configuration missing: CF_ACCESS_TEAM_DOMAIN and CF_ACCESS_AUD are required.',
     };

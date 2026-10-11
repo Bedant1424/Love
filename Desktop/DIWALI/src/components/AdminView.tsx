@@ -36,6 +36,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
   // Authentication State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [passphrase, setPassphrase] = useState<string>('');
+  const [cfJwtToken, setCfJwtToken] = useState<string>('');
   const [authError, setAuthError] = useState<string>('');
   const [operatorId, setOperatorId] = useState<string>('OP-NAGARJUNA');
 
@@ -100,10 +101,27 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
     orders: DemoOrderRecordWithItems[];
   } | null>(null);
 
+  const notificationTimeoutRef = React.useRef<any>(null);
+
   const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
     setNotification({ type, message });
-    setTimeout(() => setNotification(null), 4000);
+    if (notificationTimeoutRef.current) {
+      clearTimeout(notificationTimeoutRef.current);
+    }
+    notificationTimeoutRef.current = setTimeout(() => {
+      try {
+        setNotification(null);
+      } catch {}
+    }, 4000);
   };
+
+  useEffect(() => {
+    return () => {
+      if (notificationTimeoutRef.current) {
+        clearTimeout(notificationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const loadAllData = async () => {
     setLoading(true);
@@ -150,6 +168,19 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
   };
 
   useEffect(() => {
+    // Probe for existing authenticated session (e.g. Cloudflare Access header/cookie or restored token)
+    apiClient
+      .getDashboardKPIs()
+      .then((kpisData) => {
+        setKpis(kpisData);
+        setIsAuthenticated(true);
+      })
+      .catch(() => {
+        // Not pre-authenticated
+      });
+  }, []);
+
+  useEffect(() => {
     if (isAuthenticated) {
       loadAllData();
     }
@@ -168,9 +199,29 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
     }
   };
 
+  const handleCfAccessLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setAuthError('');
+    setLoading(true);
+    try {
+      const kpisData = await apiClient.verifyCfAccessSession(
+        cfJwtToken.trim() || undefined
+      );
+      setKpis(kpisData);
+      setIsAuthenticated(true);
+      showNotification('Cloudflare Access Zero Trust session verified.');
+    } catch (err: any) {
+      setAuthError(err?.message || 'Cloudflare Access JWT verification failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleLogout = () => {
     setIsAuthenticated(false);
     setPassphrase('');
+    setCfJwtToken('');
+    apiClient.setAdminAuthToken(null);
     showNotification('Logged out from admin console.');
   };
 
@@ -447,8 +498,8 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
   // If not authenticated, render Login Screen
   if (!isAuthenticated) {
     return (
-      <div className="max-w-md mx-auto my-12 px-4">
-        <div className="bg-bg-surface border border-white/10 rounded-2xl p-6 shadow-xl">
+      <div className="max-w-lg mx-auto my-12 px-4">
+        <div className="bg-bg-surface border border-white/10 rounded-2xl p-6 md:p-8 shadow-xl">
           <div className="text-center mb-6">
             <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-amber-950/60 text-amber-300 border border-amber-800/40 mb-3">
               Store Operations Console
@@ -457,52 +508,100 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
               Nagarjuna Traders Admin
             </h1>
             <p className="text-xs text-content-muted mt-1">
-              Order Management & Inventory Operations
+              Order Fulfillment, Inventory Control & Cloudflare Zero Trust Operations
             </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label
-                htmlFor="admin-passphrase"
-                className="block text-xs font-semibold uppercase tracking-wider text-content-secondary mb-1.5"
-              >
-                Authorized Staff Passphrase
-              </label>
-              <input
-                id="admin-passphrase"
-                type="password"
-                value={passphrase}
-                onChange={(e) => setPassphrase(e.target.value)}
-                placeholder="Enter passphrase (hint: nagarjuna-demo-2026)"
-                className="w-full bg-bg-elevated border border-white/10 rounded-xl px-4 py-2.5 text-sm text-content-primary placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-festive-marigold"
-                autoComplete="current-password"
-              />
+          {authError && (
+            <div className="mb-6 p-3 rounded-xl bg-red-950/40 border border-red-900/60 text-xs text-red-300 leading-relaxed">
+              <strong className="block font-semibold mb-0.5">Authentication Error:</strong>
+              {authError}
             </div>
+          )}
 
-            {authError && (
-              <p className="text-xs text-red-400 bg-red-950/30 border border-red-900/50 p-2.5 rounded-lg">
-                {authError}
-              </p>
-            )}
+          {/* Cloudflare Access Zero Trust Section (Hosted & Production) */}
+          <div className="bg-bg-elevated/70 border border-white/10 rounded-xl p-4 mb-5">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-festive-marigold">
+                Cloudflare Access Zero Trust
+              </h2>
+            </div>
+            <p className="text-xs text-content-secondary mb-3 leading-relaxed">
+              Hosted environments (<code className="text-amber-300">*.pages.dev</code>) require cryptographic Cloudflare Access authentication. If you are routed through the Zero Trust gateway, click below to verify your session.
+            </p>
 
-            <button
-              type="submit"
-              className="w-full min-h-touch bg-festive-marigold hover:bg-festive-amber text-black font-semibold rounded-xl text-sm transition-transform active:scale-[0.98] shadow-lg shadow-festive-marigold/10"
-            >
-              Unlock Admin Console
-            </button>
+            <form onSubmit={handleCfAccessLogin} className="space-y-3">
+              <div>
+                <label
+                  htmlFor="cf-access-jwt"
+                  className="block text-[11px] font-medium text-content-muted mb-1"
+                >
+                  Cloudflare Access Assertion / JWT Token (Optional)
+                </label>
+                <textarea
+                  id="cf-access-jwt"
+                  rows={2}
+                  value={cfJwtToken}
+                  onChange={(e) => setCfJwtToken(e.target.value)}
+                  placeholder="Paste Cf-Access-Jwt-Assertion token or leave blank if signed in via Access..."
+                  className="w-full bg-bg-surface border border-white/10 rounded-lg px-3 py-2 text-xs font-mono text-content-primary placeholder-content-muted focus:outline-none focus:ring-1 focus:ring-festive-marigold"
+                />
+              </div>
 
-            <div className="pt-2 text-center">
               <button
-                type="button"
-                onClick={onBackToCustomerSite}
-                className="text-xs text-content-muted hover:text-content-primary underline"
+                type="submit"
+                disabled={loading}
+                className="w-full min-h-touch bg-festive-marigold hover:bg-festive-amber disabled:opacity-50 text-black font-semibold rounded-xl text-xs transition-transform active:scale-[0.98] shadow-md shadow-festive-marigold/10 py-2.5 flex items-center justify-center gap-2"
               >
-                ← Return to Customer Website
+                {loading ? 'Verifying Session...' : 'Verify Cloudflare Access Session'}
               </button>
-            </div>
-          </form>
+            </form>
+          </div>
+
+          {/* Local Developer Passphrase Section */}
+          <div className="border-t border-white/10 pt-4">
+            <form onSubmit={handleLogin} className="space-y-3">
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label
+                    htmlFor="admin-passphrase"
+                    className="block text-xs font-semibold uppercase tracking-wider text-content-secondary"
+                  >
+                    Authorized Staff Passphrase
+                  </label>
+                  <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded border border-white/10 text-content-muted">
+                    Dev / Local Only
+                  </span>
+                </div>
+                <input
+                  id="admin-passphrase"
+                  type="password"
+                  value={passphrase}
+                  onChange={(e) => setPassphrase(e.target.value)}
+                  placeholder="Enter passphrase (hint: nagarjuna-demo-2026)"
+                  className="w-full bg-bg-elevated border border-white/10 rounded-xl px-4 py-2.5 text-sm text-content-primary placeholder-content-muted focus:outline-none focus:ring-2 focus:ring-festive-marigold"
+                  autoComplete="current-password"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full min-h-touch bg-white/10 hover:bg-white/15 text-content-primary font-semibold rounded-xl text-xs transition-all py-2.5 border border-white/10"
+              >
+                Unlock Admin Console
+              </button>
+            </form>
+          </div>
+
+          <div className="pt-4 mt-2 text-center border-t border-white/5">
+            <button
+              type="button"
+              onClick={onBackToCustomerSite}
+              className="text-xs text-content-muted hover:text-content-primary underline"
+            >
+              ← Return to Customer Website
+            </button>
+          </div>
         </div>
       </div>
     );

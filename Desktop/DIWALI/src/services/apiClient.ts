@@ -22,10 +22,28 @@ import { ProductVariant } from '../types/catalogue';
 
 const API_BASE = '/api/v1';
 
-let currentAdminToken: string | null = null;
+let currentAdminToken: string | null = (() => {
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      return window.sessionStorage.getItem('nagarjuna_admin_token');
+    } catch {
+      return null;
+    }
+  }
+  return null;
+})();
 
 export function setAdminAuthToken(token: string | null) {
   currentAdminToken = token;
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      if (token) {
+        window.sessionStorage.setItem('nagarjuna_admin_token', token);
+      } else {
+        window.sessionStorage.removeItem('nagarjuna_admin_token');
+      }
+    } catch {}
+  }
 }
 
 export function getAdminAuthToken(): string | null {
@@ -42,8 +60,13 @@ async function executeApi<T>(
     ...(options.headers as Record<string, string> || {}),
   };
 
-  if (endpoint.startsWith('/admin') && currentAdminToken && !headers['Authorization']) {
-    headers['Authorization'] = `Bearer ${currentAdminToken}`;
+  if (endpoint.startsWith('/admin') && currentAdminToken) {
+    if (!headers['Authorization']) {
+      headers['Authorization'] = `Bearer ${currentAdminToken}`;
+    }
+    if (!headers['Cf-Access-Jwt-Assertion'] && currentAdminToken.includes('.')) {
+      headers['Cf-Access-Jwt-Assertion'] = currentAdminToken;
+    }
   }
 
   let response: Response;
@@ -73,6 +96,9 @@ async function executeApi<T>(
 }
 
 export const apiClient = {
+  setAdminAuthToken,
+  getAdminAuthToken,
+
   // Public Customer Operations
   async getPaymentConfig(): Promise<PaymentConfig> {
     return executeApi<PaymentConfig>('/payment-config', {
@@ -181,6 +207,15 @@ export const apiClient = {
       setAdminAuthToken(result.token);
     }
     return result;
+  },
+
+  async verifyCfAccessSession(token?: string) {
+    if (token) {
+      setAdminAuthToken(token.trim());
+    }
+    return executeApi<AdminDashboardKPIs>('/admin/dashboard', {
+      method: 'GET',
+    });
   },
 
   async getDashboardKPIs() {

@@ -679,12 +679,35 @@ class InMemoryDemoDatabase {
 
   public async deactivateQrVersion(
     id: string,
-    _operatorId: string = 'OP-ADMIN'
+    operatorId: string = 'OP-ADMIN'
   ): Promise<DbQrVersion> {
     const target = this.qrVersions.find((q) => q.id === id);
     if (!target) throw new Error(`QR version ${id} not found`);
+    const now = new Date().toISOString();
     target.is_active = 0;
-    target.deactivated_at = new Date().toISOString();
+    target.deactivated_at = now;
+
+    const audit: PriceAuditLog = {
+      id: `audit_qr_deact_${Date.now()}`,
+      entity_type: 'SYSTEM_SETTING',
+      entity_id: target.id,
+      action: 'QR_VERSION_DEACTIVATED',
+      operator_id: operatorId,
+      old_value_json: JSON.stringify({
+        version: target.version_number,
+        vpa: target.vpa,
+        is_active: 1,
+      }),
+      new_value_json: JSON.stringify({
+        version: target.version_number,
+        is_active: 0,
+      }),
+      reason: `Deactivated QR Version ${target.version_number}`,
+      is_override: 0,
+      created_at: now,
+    };
+    this.auditLogs.unshift(audit);
+
     return target;
   }
 
@@ -1728,8 +1751,9 @@ export class D1DatabaseAdapter {
 
   public async deactivateQrVersion(
     id: string,
-    _operatorId: string = 'OP-ADMIN'
+    operatorId: string = 'OP-ADMIN'
   ): Promise<DbQrVersion> {
+    const now = new Date().toISOString();
     await this.d1.prepare(
       "UPDATE qr_versions SET is_active = 0, deactivated_at = datetime('now') WHERE id = ?"
     ).bind(id).run();
@@ -1737,6 +1761,20 @@ export class D1DatabaseAdapter {
       'SELECT * FROM qr_versions WHERE id = ?'
     ).bind(id).first<DbQrVersion>();
     if (!updated) throw new Error(`QR version ${id} not found`);
+
+    const auditId = `audit_qr_deact_${Date.now()}`;
+    await this.d1.prepare(`
+      INSERT INTO price_audit_logs (id, entity_type, entity_id, action, operator_id, new_value_json, reason, is_override, created_at)
+      VALUES (?, 'SYSTEM_SETTING', ?, 'QR_VERSION_DEACTIVATED', ?, ?, ?, 0, ?)
+    `).bind(
+      auditId,
+      id,
+      operatorId,
+      JSON.stringify({ version: updated.version_number, is_active: 0 }),
+      `Deactivated QR Version ${updated.version_number}`,
+      now
+    ).run();
+
     return updated;
   }
 

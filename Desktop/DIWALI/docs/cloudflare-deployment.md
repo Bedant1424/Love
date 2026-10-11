@@ -11,24 +11,30 @@
 
 ```
 +───────────────────────────────────────────────────────────────────────────────────+
-| CLOUDFLARE ACCOUNT DASHBOARD                                                      |
+| CLOUDFLARE ACCOUNT DASHBOARD (Account: f5007499f208d03d531ad81e9d1f33aa)          |
 |                                                                                   |
-| 1. Cloudflare Pages Project: 'nagarjuna-traders-web'                              |
-|    - Source: GitHub Repository (`main` branch)                                    |
-|    - Build Command: `npm run build`                                               |
-|    - Build Output Directory: `dist`                                               |
+| 1. Clean Production Pages Project: 'nagarjuna-traders'                            |
+|    - Production URL: https://nagarjuna-traders.pages.dev                          |
+|    - Direct Deployment: https://cf638cde.nagarjuna-traders.pages.dev              |
+|    - Build Command: `npm run build` (Output Directory: `dist`)                    |
+|    - Pages Functions: `functions/[[path]].ts` edge proxy                          |
 |                                                                                   |
-| 2. Cloudflare D1 Database: 'nagarjuna-traders-d1'                                 |
-|    - Region: APAC / India (Closest Edge Replica)                                  |
-|    - Database ID: Auto-generated UUID from `wrangler d1 create`                   |
+| 2. Isolated Test Pages Project: 'nagarjuna-traders-test' (Preserved Intact)       |
+|    - Preview URL: https://nagarjuna-traders-test.pages.dev                        |
 |                                                                                   |
-| 3. Cloudflare Turnstile Site: 'Nagarjuna Traders Web'                             |
-|    - Domain: `*.pages.dev` and custom production domain                           |
-|    - Mode: Managed Challenge (Invisible by default, challenges bots)             |
+| 3. Cloudflare D1 Database: 'nagarjuna-traders-d1-test'                            |
+|    - Database ID: aace32a4-8ec3-487e-b202-a98e898868bc                           |
+|    - Migrations: 0001 through 0007 applied                                        |
 |                                                                                   |
-| 4. Cloudflare Zero Trust (Access Application):                                    |
-|    - Path: `/admin*` and `/api/v1/admin*`                                         |
-|    - Identity Provider: One-Time PIN (OTP) or Google Workspace                    |
+| 4. Cloudflare R2 Bucket: 'nagarjuna-qr-images' (Pending Dashboard Activation)     |
+|    - Storage Strategy: Decoupled metadata in D1, binary raster bytes in R2        |
+|    - Fallback: Deterministic simulated in-memory storage until R2 enabled (10042)  |
+|    - Public Proxy Route: `/api/v1/qr-images/:id`                                  |
+|                                                                                   |
+| 5. Cloudflare Zero Trust (Access Application):                                    |
+|    - Protected Routes: `/admin*` and `/api/v1/admin/*`                            |
+|    - Cryptographic Verification: RS256 signature, JWKS rotation, aud & iss checks |
+|    - Revoked Tokens: admin-jwt-session-nagarjuna permanently blocked               |
 +───────────────────────────────────────────────────────────────────────────────────+
 ```
 
