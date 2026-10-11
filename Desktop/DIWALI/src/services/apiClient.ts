@@ -53,6 +53,9 @@ async function executeApi<T>(
       ...options,
       headers,
     });
+    if (!response.ok && !response.headers.get('content-type')?.includes('application/json')) {
+      throw new Error('Static host non-JSON response');
+    }
   } catch (_fetchErr) {
     const fullUrl = `http://localhost${url}`;
     const syntheticReq = new Request(fullUrl, {

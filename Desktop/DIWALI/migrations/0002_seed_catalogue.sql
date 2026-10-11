@@ -56,7 +56,7 @@ INSERT OR IGNORE INTO products (id, category_id, name, slug, printed_price_text,
     ('prod_helicopter', 'others', 'Helicopter', 'helicopter', '₹150 to ₹200 per box', 'Per box', 0, 'POSTER_RANGE', NULL, 'Printed as ₹150 to ₹200 per box on poster (unresolved demo price)'),
     ('prod_ganga_jamuna', 'others', 'Ganga Jamuna', 'ganga-jamuna', '₹150 per box', 'Per box', 0, 'POSTER_EXACT', NULL, 'Printed exact price ₹150 per box on poster');
 
--- 3. SEED PRODUCT VARIANTS (Total: 26 Variants)
+-- 3. SEED PRODUCT VARIANTS (Total: 31 Variants across 23 Products)
 -- Category 1 Variants: Laddis
 INSERT OR IGNORE INTO product_variants (id, product_id, variant_name, sku, pack_info, is_pack_verified, printed_price_text, printed_min_paise, printed_max_paise, printed_options_json, source_notes, demo_price_paise, price_status, pricing_origin, stock_quantity, is_available) VALUES
     ('var_bijli_60', 'prod_bijli_laddi', 'Printed Option: ₹60', 'LAD-BIJ-60', 'Size unconfirmed on poster', 0, '₹60', 6000, 7000, '[6000, 7000]', 'Printed ₹60 option on poster; exact size mapping unconfirmed', 6000, 'PRINTED_ESTIMATE', 'DEMO_NUMERIC', 100, 1),

@@ -212,6 +212,17 @@ class InMemoryDemoDatabase {
       const inv = this.inventory.get(it.variant_id);
       if (inv) {
         inv.reservedStock += it.quantity;
+        this.inventoryAuditLogs.unshift({
+          id: `inv_audit_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          variant_id: it.variant_id,
+          action: 'RESERVATION',
+          quantity_delta: it.quantity,
+          stock_before: inv.currentStock,
+          stock_after: inv.currentStock,
+          operator_id: 'SYSTEM',
+          reason: `Reserved for order ${order.order_reference}`,
+          created_at: now,
+        });
       }
     }
 
@@ -511,7 +522,13 @@ class InMemoryDemoDatabase {
       lowStockThreshold: 10,
     };
     const stockBefore = inv.currentStock;
-    inv.currentStock = Math.max(0, Math.floor(newStock));
+    const safeStock = Math.max(0, Math.floor(newStock));
+    if (safeStock < inv.reservedStock) {
+      throw new Error(
+        `Cannot reduce stock to ${safeStock} below active reservation of ${inv.reservedStock} units.`
+      );
+    }
+    inv.currentStock = safeStock;
     this.inventory.set(variantId, inv);
 
     const log: DbInventoryAuditLog = {
@@ -1173,7 +1190,42 @@ export class D1DatabaseAdapter {
       );
     });
 
-    await this.d1.batch([orderStmt, ...itemStmts]);
+    const reserveStmts = items.map((it) =>
+      this.d1.prepare(
+        'UPDATE product_variants SET reserved_stock = reserved_stock + ? WHERE id = ?'
+      ).bind(it.quantity, it.variant_id)
+    );
+
+    const invAuditStmts = items.map((it) => {
+      const invAuditId = `inv_audit_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      return this.d1.prepare(`
+        INSERT INTO inventory_audit_logs (id, variant_id, action, quantity_delta, stock_before, stock_after, operator_id, reason)
+        VALUES (?, ?, 'RESERVATION', ?, 0, 0, 'SYSTEM', ?)
+      `).bind(
+        invAuditId,
+        it.variant_id,
+        it.quantity,
+        `Reserved for order ${order.order_reference}`
+      );
+    });
+
+    const custStmt = this.d1.prepare(`
+      INSERT INTO customers (id, full_name, mobile_number, total_orders, lifetime_spent_paise, last_order_date, created_at, updated_at)
+      VALUES (?, ?, ?, 1, ?, datetime("now"), datetime("now"), datetime("now"))
+      ON CONFLICT(mobile_number) DO UPDATE SET
+        full_name = excluded.full_name,
+        total_orders = total_orders + 1,
+        lifetime_spent_paise = lifetime_spent_paise + excluded.lifetime_spent_paise,
+        last_order_date = datetime("now"),
+        updated_at = datetime("now")
+    `).bind(
+      `cust_${order.customer_mobile}`,
+      order.customer_name,
+      order.customer_mobile,
+      order.subtotal_paise
+    );
+
+    await this.d1.batch([orderStmt, ...itemStmts, ...reserveStmts, ...invAuditStmts, custStmt]);
 
     const createdItems: DbOrderItem[] = items.map((it, idx) => ({
       ...it,
@@ -1461,6 +1513,11 @@ export class D1DatabaseAdapter {
     const reserved = beforeRes?.reserved_stock ?? 0;
     const threshold = beforeRes?.low_stock_threshold ?? 10;
     const safeStock = Math.max(0, Math.floor(newStock));
+    if (safeStock < reserved) {
+      throw new Error(
+        `Cannot reduce stock to ${safeStock} below active reservation of ${reserved} units.`
+      );
+    }
 
     await this.d1.prepare(
       'UPDATE product_variants SET current_stock = ? WHERE id = ?'

@@ -88,6 +88,60 @@ describe('Operations Hub: Inventory, QR, Support Issues, and Sales Reporting', (
       const res = await handleApiRequest(badReq, restrictedEnv);
       expect(res.status).toBe(400);
     });
+
+    it('rejects stock adjustment when audit reason is omitted or empty with 400', async () => {
+      const noReasonReq = new Request('http://localhost/api/v1/admin/inventory/adjust', {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({
+          variantId: 'var_bijli_60',
+          newStock: 50,
+          reason: '',
+        }),
+      });
+
+      const res = await handleApiRequest(noReasonReq, restrictedEnv);
+      expect(res.status).toBe(400);
+      const json = await res.json();
+      expect(json.error.code).toBe('REASON_REQUIRED');
+    });
+
+    it('rejects reducing stock below actively reserved units', async () => {
+      // 1. Place order reserving 10 units
+      await handleApiRequest(
+        new Request('http://localhost/api/v1/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customer: {
+              fullName: 'Reservation Test Customer',
+              mobileNumber: '9911223344',
+              fulfilmentPreference: 'COUNTER_PICKUP',
+              ageConfirmed: true,
+            },
+            items: [{ variantId: 'var_bijli_60', quantity: 10 }],
+          }),
+        }),
+        restrictedEnv
+      );
+
+      // 2. Attempt to reduce stock to 5 (< 10 reserved)
+      const underReserveReq = new Request('http://localhost/api/v1/admin/inventory/adjust', {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({
+          variantId: 'var_bijli_60',
+          newStock: 5,
+          reason: 'Physical recount shrinkage',
+        }),
+      });
+
+      const res = await handleApiRequest(underReserveReq, restrictedEnv);
+      expect(res.status).toBe(400);
+      const json = await res.json();
+      expect(json.error.code).toBe('STOCK_ADJUSTMENT_FAILED');
+      expect(json.error.message).toContain('below active reservation');
+    });
   });
 
   describe('QR Rotation and Management', () => {
@@ -239,6 +293,26 @@ describe('Operations Hub: Inventory, QR, Support Issues, and Sales Reporting', (
       expect(json.data.staff_notes).toBe(
         'Assisted customer with cash payment at counter'
       );
+    });
+
+    it('rejects payment issue submissions containing sensitive payment credentials (PIN, OTP, CVV) with 400', async () => {
+      const sensitiveReq = new Request('http://localhost/api/v1/payment-issues', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderReference: 'NT-9988',
+          customerName: 'Naive User',
+          customerMobile: '9848099887',
+          issueType: 'PAYMENT_APP_ERROR',
+          description: 'My UPI PIN is 1234 and OTP is 987654 please check',
+        }),
+      });
+
+      const res = await handleApiRequest(sensitiveReq, restrictedEnv);
+      expect(res.status).toBe(400);
+      const json = await res.json();
+      expect(json.error.code).toBe('SENSITIVE_CREDENTIALS_REJECTED');
+      expect(json.error.message).toContain('Never share UPI PINs');
     });
   });
 

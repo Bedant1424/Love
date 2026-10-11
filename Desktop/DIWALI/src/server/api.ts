@@ -351,6 +351,22 @@ export async function handleApiRequest(
           400
         );
       }
+      const descLower = (body.description || '').toLowerCase();
+      if (
+        /\b(mpin|upi pin|atm pin|cvv|cvc|otp|password|passcode)\b/i.test(descLower)
+      ) {
+        return jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'SENSITIVE_CREDENTIALS_REJECTED',
+              message:
+                'Never share UPI PINs, ATM PINs, OTPs, CVVs, or bank passwords. Nagarjuna Traders staff will never ask for payment secrets.',
+            },
+          },
+          400
+        );
+      }
 
       const issue = await db.createPaymentIssue({
         orderReference: body.orderReference?.trim() || undefined,
@@ -1232,13 +1248,41 @@ export async function handleApiRequest(
           );
         }
 
-        const updated = await db.adjustStock(
-          body.variantId,
-          body.newStock,
-          body.operatorId || auth.operatorId,
-          body.reason
-        );
-        return jsonResponse({ success: true, data: updated }, 200, true);
+        if (!body.reason || !body.reason.trim()) {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'REASON_REQUIRED',
+                message: 'An audit reason is required for manual stock adjustments.',
+              },
+            },
+            400,
+            true
+          );
+        }
+
+        try {
+          const updated = await db.adjustStock(
+            body.variantId,
+            body.newStock,
+            body.operatorId || auth.operatorId,
+            body.reason.trim()
+          );
+          return jsonResponse({ success: true, data: updated }, 200, true);
+        } catch (err: any) {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'STOCK_ADJUSTMENT_FAILED',
+                message: err.message || 'Failed to adjust stock',
+              },
+            },
+            400,
+            true
+          );
+        }
       }
 
       // GET /api/v1/admin/inventory/audit-logs
