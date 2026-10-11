@@ -164,7 +164,7 @@ export const CartView: React.FC<CartViewProps> = ({
           </div>
 
           <div className="flex justify-between items-center">
-            <span className="text-stone-600">Balance Due upon Collection</span>
+            <span className="text-stone-600">Balance Due upon Pickup</span>
             <span className="font-mono font-bold text-stone-900">
               {formatPaise(totals.remainingBalancePaise)}
             </span>
@@ -187,7 +187,7 @@ export const CartView: React.FC<CartViewProps> = ({
               Order Subtotal
             </span>
             <p className="text-[11px] text-stone-500">
-              Advance token online + remaining balance upon collection
+              Advance token online + remaining balance upon pickup
             </p>
           </div>
           <span className="text-2xl font-bold font-mono text-festive-marigold">

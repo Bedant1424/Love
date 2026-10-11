@@ -71,9 +71,12 @@ export function isRestrictedEnvironment(request: Request, env?: any): boolean {
     if (!isTestRunner) {
       if (
         url.hostname === 'nagarjuna-traders.pages.dev' ||
+        url.hostname.endsWith('.nagarjuna-traders.pages.dev') ||
         url.hostname === 'nagarjuna-traders-owner.pages.dev' ||
+        url.hostname.endsWith('.nagarjuna-traders-owner.pages.dev') ||
+        url.hostname.includes('nagarjuna-traders') ||
         url.hostname === 'nagarjunatraders.in' ||
-        url.hostname === 'www.nagarjunatraders.in'
+        url.hostname.endsWith('.nagarjunatraders.in')
       ) {
         return false;
       }
@@ -334,7 +337,14 @@ export async function handleApiRequest(
       const accountName =
         activeQr?.account_name || 'NAGARJUNA TRADERS (TEST FIXTURE)';
 
-      if (!PAYMENT_COLLECTION_ENABLED && !isRestricted) {
+      // Gating: When payment collection is disabled in production / public environments,
+      // never expose test fixtures, test VPAs, or test accounts.
+      const isExplicitTestMode =
+        isRestricted &&
+        (env?.ENVIRONMENT === 'test' || env?.ENVIRONMENT === 'preview') &&
+        (env?.RESTRICTED_TEST_MODE === 'true' || env?.RESTRICTED_TEST_MODE === true);
+
+      if (!PAYMENT_COLLECTION_ENABLED && !isExplicitTestMode) {
         return jsonResponse<PaymentConfig>({
           success: true,
           data: {
@@ -470,7 +480,7 @@ export async function handleApiRequest(
           data: {
             issueReference: issue.issue_reference,
             message:
-              'Your payment support ticket has been recorded. Store staff will assist during order verification or collection.',
+              'Your payment support ticket has been recorded. Store staff will assist during order verification or pickup.',
             status: issue.status,
           },
         },
@@ -486,7 +496,7 @@ export async function handleApiRequest(
         data: {
           store: {
             name: 'Nagarjuna Traders',
-            location: env?.STORE_LOCATION || 'Collection at the campus',
+            location: env?.STORE_LOCATION || 'Campus Pickup / Hostel Pickup',
             checkoutEnabled: true,
             paymentCollectionEnabled: PAYMENT_COLLECTION_ENABLED,
             tokenTiers: DEFAULT_TOKEN_TIERS,
@@ -640,7 +650,9 @@ export async function handleApiRequest(
         customer_name: body.customer.fullName.trim(),
         customer_mobile: mobileClean,
         fulfilment_preference:
-          body.customer.fulfilmentPreference || 'COUNTER_PICKUP',
+          body.customer.fulfilmentPreference === 'HOSTEL_PICKUP'
+            ? 'HOSTEL_PICKUP'
+            : 'CAMPUS_PICKUP',
         operational_status: 'SUBMITTED',
         payment_status: 'UNPAID',
         subtotal_paise: subtotalPaise,

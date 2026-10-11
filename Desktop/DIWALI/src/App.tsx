@@ -21,7 +21,7 @@ export const App: React.FC = () => {
   const [customerDetails, setCustomerDetails] = useState<CustomerDetails>({
     fullName: '',
     mobileNumber: '',
-    fulfilmentPreference: 'COUNTER_PICKUP',
+    fulfilmentPreference: 'CAMPUS_PICKUP',
     ageConfirmed: true,
     notes: '',
   });

@@ -57,13 +57,13 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
         <div className="mb-6">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 border border-amber-200 text-amber-800 mb-2">
             <span>👤</span>
-            <span>Collection at the Campus</span>
+            <span>Campus & Hostel Pickup</span>
           </div>
           <h2 className="text-2xl font-bold font-display text-stone-900">
             Customer Information
           </h2>
           <p className="text-xs sm:text-sm text-stone-500 mt-1 leading-relaxed">
-            Please enter your contact details. Your order will be ready for collection at the campus.
+            Please enter your contact details. Choose Campus Pickup or Hostel Pickup for order fulfilment.
           </p>
         </div>
 
@@ -146,7 +146,7 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
           {/* Fulfilment Preference */}
           <div>
             <label className="block text-sm font-semibold text-stone-800 mb-1.5">
-              Collection Preference
+              Pickup Preference
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button
@@ -154,18 +154,19 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                 onClick={() =>
                   setDetails((prev) => ({
                     ...prev,
-                    fulfilmentPreference: 'COUNTER_PICKUP',
+                    fulfilmentPreference: 'CAMPUS_PICKUP',
                   }))
                 }
                 className={`min-h-[48px] p-3 rounded-xl border text-left text-xs transition-colors ${
+                  details.fulfilmentPreference === 'CAMPUS_PICKUP' ||
                   details.fulfilmentPreference === 'COUNTER_PICKUP'
                     ? 'bg-amber-50 border-festive-marigold text-stone-900 font-semibold shadow-sm'
                     : 'bg-stone-50 border-stone-200 text-stone-600 hover:border-stone-300'
                 }`}
               >
-                <div className="font-bold text-sm text-stone-900">Collection at the campus</div>
+                <div className="font-bold text-sm text-stone-900">Campus Pickup</div>
                 <div className="text-stone-500 mt-0.5">
-                  Collection details will be shared when your order is confirmed.
+                  Collect directly from the designated central campus collection point.
                 </div>
               </button>
 
@@ -174,18 +175,18 @@ export const CustomerForm: React.FC<CustomerFormProps> = ({
                 onClick={() =>
                   setDetails((prev) => ({
                     ...prev,
-                    fulfilmentPreference: 'SPECIAL_ENQUIRY',
+                    fulfilmentPreference: 'HOSTEL_PICKUP',
                   }))
                 }
                 className={`min-h-[48px] p-3 rounded-xl border text-left text-xs transition-colors ${
-                  details.fulfilmentPreference === 'SPECIAL_ENQUIRY'
+                  details.fulfilmentPreference === 'HOSTEL_PICKUP'
                     ? 'bg-amber-50 border-festive-marigold text-stone-900 font-semibold shadow-sm'
                     : 'bg-stone-50 border-stone-200 text-stone-600 hover:border-stone-300'
                 }`}
               >
-                <div className="font-bold text-sm text-stone-900">Wholesale Enquiry</div>
+                <div className="font-bold text-sm text-stone-900">Hostel Pickup</div>
                 <div className="text-stone-500 mt-0.5">
-                  Order reservation for festival groups
+                  Handover directly at the student / campus hostel gate.
                 </div>
               </button>
             </div>

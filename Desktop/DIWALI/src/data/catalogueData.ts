@@ -839,4 +839,4 @@ export const PRODUCTS: Product[] = [
  * Note preserved from the poster: Exact source wording preserved.
  */
 export const POSTER_CATALOGUE_NOTE =
-  'All authentic festival items are sourced directly from licensed Sivakasi manufacturers.';
+  'All authentic festival items are sourced directly from licensed manufacturers.';

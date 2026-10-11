@@ -884,7 +884,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
               <p className="text-2xl font-bold font-mono text-festive-marigold mt-1">
                 {kpis.ordersReadyForPickupCount}
               </p>
-              <p className="text-[11px] text-content-muted mt-1">Counter collection</p>
+              <p className="text-[11px] text-content-muted mt-1">Campus & Hostel Pickup</p>
             </div>
           </div>
 
@@ -908,11 +908,11 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
             </div>
 
             <div className="bg-bg-surface border border-white/10 rounded-2xl p-5 space-y-3">
-              <h3 className="text-sm font-semibold text-content-primary">Counter Operations Checklist</h3>
+              <h3 className="text-sm font-semibold text-content-primary">Campus & Hostel Operations Checklist</h3>
               <ul className="text-xs space-y-2 text-content-secondary">
                 <li className="flex items-start gap-2">
                   <span className="text-festive-marigold">•</span>
-                  <span>Inspect order reference and customer mobile number at counter.</span>
+                  <span>Inspect order reference and customer mobile number upon pickup.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-festive-marigold">•</span>
@@ -920,7 +920,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-festive-marigold">•</span>
-                  <span>Collect any remaining balance payable at physical counter handover.</span>
+                  <span>Collect any remaining balance payable upon pickup handover.</span>
                 </li>
               </ul>
             </div>
@@ -1241,7 +1241,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                 UPI QR Code Management &amp; Version Rotation
               </p>
               <p className="text-content-muted mt-0.5">
-                Manage counter QR fixtures. Version history is tracked with activation notes and timestamps.
+                Manage payment QR fixtures. Version history is tracked with activation notes and timestamps.
               </p>
             </div>
             <button
@@ -1928,7 +1928,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                 Customer: <span className="font-normal">{selectedOrder.customer_name}</span>
               </p>
               <p className="text-content-muted">
-                Mobile: <span className="font-mono text-content-secondary">{selectedOrder.customer_mobile}</span> • Fulfilment: {selectedOrder.fulfilment_preference}
+                Mobile: <span className="font-mono text-content-secondary">{selectedOrder.customer_mobile}</span> • Fulfilment: {selectedOrder.fulfilment_preference === 'HOSTEL_PICKUP' ? 'Hostel Pickup' : 'Campus Pickup'}
               </p>
               {selectedOrder.customer_notes && (
                 <p className="text-content-muted italic">Notes: "{selectedOrder.customer_notes}"</p>
@@ -1973,7 +1973,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                 <span className="font-mono">{formatPaiseToRupees(selectedOrder.token_amount_paise)}</span>
               </div>
               <div className="flex justify-between pt-1 border-t border-white/5">
-                <span className="text-content-muted">Remaining Balance Due at Counter:</span>
+                <span className="text-content-muted">Remaining Balance Due upon Pickup:</span>
                 <span className="font-mono font-bold text-festive-marigold">
                   {formatPaiseToRupees(selectedOrder.remaining_balance_paise)}
                 </span>
@@ -2257,7 +2257,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                   type="text"
                   value={uploadQrLabel}
                   onChange={(e) => setUploadQrLabel(e.target.value)}
-                  placeholder="e.g. Counter Terminal 2, Diwali Special QR"
+                  placeholder="e.g. Campus Terminal 2, Diwali Special QR"
                   className="w-full bg-bg-elevated border border-white/10 rounded-xl px-4 py-2 text-xs text-content-primary focus:outline-none focus:ring-2 focus:ring-festive-marigold"
                   required
                 />
@@ -2401,7 +2401,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                   rows={3}
                   value={issueStaffNotes}
                   onChange={(e) => setIssueStaffNotes(e.target.value)}
-                  placeholder="Record customer contact notes, cash collected at counter, etc."
+                  placeholder="Record customer contact notes, cash collected upon pickup, etc."
                   className="w-full bg-bg-elevated border border-white/10 rounded-xl p-2.5 text-xs text-content-primary focus:outline-none focus:ring-2 focus:ring-festive-marigold"
                 />
               </div>
@@ -2456,7 +2456,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
               <div>
                 <span className="text-content-muted block font-sans">Customer Notes:</span>
                 <span className="text-content-secondary">
-                  {selectedCustomerDetail.customer.notes || 'Counter Customer'}
+                  {selectedCustomerDetail.customer.notes || 'Campus Customer'}
                 </span>
               </div>
               <div>

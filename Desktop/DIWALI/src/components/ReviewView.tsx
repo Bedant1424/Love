@@ -525,16 +525,16 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
           )}
         </div>
 
-        {/* Collection Information */}
+        {/* Pickup Information */}
         <div className="p-5 rounded-2xl bg-white border border-stone-200 shadow-warm-sm space-y-2 text-xs text-stone-600">
           <h3 className="text-sm font-bold text-stone-900 font-display">
-            Order Collection Information
+            Order Pickup Information
           </h3>
           <p>
-            • Present your order reference <strong className="text-stone-900 font-mono">{orderState.orderReference}</strong> and registered mobile number at collection.
+            • Present your order reference <strong className="text-stone-900 font-mono">{orderState.orderReference}</strong> and registered mobile number upon pickup.
           </p>
           <p>
-            • Remaining balance of <strong className="text-stone-900 font-mono">{formatPaise(orderState.balanceDuePaise)}</strong> is due upon collection.
+            • Remaining balance of <strong className="text-stone-900 font-mono">{formatPaise(orderState.balanceDuePaise)}</strong> is due upon pickup.
           </p>
         </div>
 
@@ -616,7 +616,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
               </span>
             </div>
             <div className="flex justify-between items-center pt-1 text-sm">
-              <span className="font-bold text-stone-900">Balance Due at Collection:</span>
+              <span className="font-bold text-stone-900">Balance Due upon Pickup:</span>
               <span className="font-mono font-bold text-stone-900 text-base">
                 {formatPaise(orderState.balanceDuePaise)}
               </span>
@@ -818,7 +818,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
             <div className="flex justify-between items-center text-stone-600">
               <span>Remaining Balance:</span>
               <span className="font-mono font-bold text-stone-900">
-                {formatPaise(orderState.balanceDuePaise)} (Payable at collection)
+                {formatPaise(orderState.balanceDuePaise)} (Payable upon pickup)
               </span>
             </div>
             {isRestricted && (
@@ -915,11 +915,11 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
             </span>
           </div>
           <div>
-            <span className="text-stone-500 block">Collection Preference:</span>
+            <span className="text-stone-500 block">Pickup Preference:</span>
             <span className="text-stone-900 font-medium">
-              {customer.fulfilmentPreference === 'SPECIAL_ENQUIRY'
-                ? 'Special Enquiry'
-                : 'Collection at the campus'}
+              {customer.fulfilmentPreference === 'HOSTEL_PICKUP'
+                ? 'Hostel Pickup'
+                : 'Campus Pickup'}
             </span>
           </div>
         </div>
@@ -991,7 +991,7 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
           </div>
 
           <div className="flex justify-between items-center">
-            <span className="text-stone-500">Balance Due at Collection:</span>
+            <span className="text-stone-500">Balance Due upon Pickup:</span>
             <span className="font-mono font-bold text-stone-900">
               {formatPaise(totals.remainingBalancePaise)}
             </span>

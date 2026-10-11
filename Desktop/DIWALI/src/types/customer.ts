@@ -1,4 +1,8 @@
-export type FulfilmentPreference = 'COUNTER_PICKUP' | 'SPECIAL_ENQUIRY';
+export type FulfilmentPreference =
+  | 'CAMPUS_PICKUP'
+  | 'HOSTEL_PICKUP'
+  | 'COUNTER_PICKUP'
+  | 'SPECIAL_ENQUIRY';
 
 export interface CustomerDetails {
   fullName: string;

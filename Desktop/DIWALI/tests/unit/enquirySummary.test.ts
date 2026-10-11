@@ -7,9 +7,9 @@ describe('Enquiry Summary Utility', () => {
   const sampleCustomer: CustomerDetails = {
     fullName: 'Ravi Kumar',
     mobileNumber: '9876543210',
-    fulfilmentPreference: 'COUNTER_PICKUP',
+    fulfilmentPreference: 'CAMPUS_PICKUP',
     ageConfirmed: true,
-    notes: 'Visiting counter at 4 PM',
+    notes: 'Visiting campus at 4 PM',
   };
 
   const sampleItems: CartItem[] = [
@@ -82,10 +82,10 @@ describe('Enquiry Summary Utility', () => {
     expect(text).toContain('Skyshot - Bigboss');
     expect(text).toContain('₹700.00');
     expect(text).toContain('Pandav');
-    expect(text).toContain('Confirmation upon collection (Printed: ₹200 to ₹250)');
+    expect(text).toContain('Confirmation upon pickup (Printed: ₹200 to ₹250)');
     expect(text).toContain('Subtotal: ₹700.00');
     expect(text).toContain('Advance Booking Token: ₹100.00');
-    expect(text).toContain('Remaining Balance upon Collection: ₹600.00');
+    expect(text).toContain('Remaining Balance upon Pickup: ₹600.00');
     expect(text).toContain('Items Needing Price Confirmation: 1 item(s)');
     expect(text).toContain('Make every celebration a little brighter.');
   });
@@ -103,7 +103,7 @@ describe('Enquiry Summary Utility', () => {
     expect(text).toContain('STATUS: SUBMITTED');
     expect(text).toContain('Subtotal: ₹700.00');
     expect(text).toContain('Advance Booking Token: ₹100.00');
-    expect(text).toContain('Remaining Balance upon Collection: ₹600.00');
+    expect(text).toContain('Remaining Balance upon Pickup: ₹600.00');
     expect(text).toContain('Total Items: 2 unit(s)');
     expect(text).toContain('Make every celebration a little brighter.');
   });

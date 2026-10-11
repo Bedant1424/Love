@@ -7,7 +7,7 @@ describe('CustomerForm Component', () => {
   const initialValues: CustomerDetails = {
     fullName: '',
     mobileNumber: '',
-    fulfilmentPreference: 'COUNTER_PICKUP',
+    fulfilmentPreference: 'CAMPUS_PICKUP',
     ageConfirmed: true,
     notes: '',
   };
@@ -25,10 +25,10 @@ describe('CustomerForm Component', () => {
     expect(screen.getByLabelText(/Full Name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/10-Digit Mobile Number/i)).toBeInTheDocument();
     expect(
-      screen.getAllByText(/Collection at the campus/i).length
-    ).toBeGreaterThan(0);
+      screen.getByRole('button', { name: /Campus Pickup/i })
+    ).toBeInTheDocument();
     expect(
-      screen.getByText(/Wholesale Enquiry/i)
+      screen.getByRole('button', { name: /Hostel Pickup/i })
     ).toBeInTheDocument();
     expect(
       screen.getByLabelText(/Special Instructions \/ Notes/i)
@@ -93,13 +93,13 @@ describe('CustomerForm Component', () => {
     expect(handleSubmit).toHaveBeenCalledWith({
       fullName: 'Ravi Kumar',
       mobileNumber: '9876543210',
-      fulfilmentPreference: 'COUNTER_PICKUP',
+      fulfilmentPreference: 'CAMPUS_PICKUP',
       ageConfirmed: true,
       notes: '',
     });
   });
 
-  it('allows selecting wholesale fulfilment preference and entering notes', () => {
+  it('allows selecting hostel fulfilment preference and entering notes', () => {
     const handleSubmit = vi.fn();
     render(
       <CustomerForm initialValues={initialValues} onSubmit={handleSubmit} />
@@ -112,10 +112,10 @@ describe('CustomerForm Component', () => {
       target: { value: '7890123456' },
     });
 
-    // Select Wholesale Enquiry button
-    const wholesaleBtn = screen.getByText(/Wholesale Enquiry/i).closest('button');
-    expect(wholesaleBtn).toBeInTheDocument();
-    fireEvent.click(wholesaleBtn!);
+    // Select Hostel Pickup button
+    const hostelBtn = screen.getByRole('button', { name: /Hostel Pickup/i });
+    expect(hostelBtn).toBeInTheDocument();
+    fireEvent.click(hostelBtn);
 
     // Fill notes
     fireEvent.change(screen.getByLabelText(/Special Instructions/i), {
@@ -129,7 +129,7 @@ describe('CustomerForm Component', () => {
     expect(handleSubmit).toHaveBeenCalledWith({
       fullName: 'Sita Devi',
       mobileNumber: '7890123456',
-      fulfilmentPreference: 'SPECIAL_ENQUIRY',
+      fulfilmentPreference: 'HOSTEL_PICKUP',
       ageConfirmed: true,
       notes: 'Please pack in moisture-proof cartons',
     });

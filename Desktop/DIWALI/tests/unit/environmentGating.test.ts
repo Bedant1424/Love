@@ -198,9 +198,9 @@ describe('Server-Side Environment Security & Gating Suite', () => {
       },
       body: JSON.stringify({
         customer: {
-          fullName: 'Sivakasi Customer',
+          fullName: 'Campus Customer',
           mobileNumber: '9876543210',
-          fulfilmentPreference: 'COUNTER_PICKUP',
+          fulfilmentPreference: 'CAMPUS_PICKUP',
         },
         items: [
           {
