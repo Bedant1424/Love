@@ -11,13 +11,17 @@ import { getDb } from './db';
 import {
   ApiResponse,
   CreateOrderRequest,
+  CreatePaymentIssueRequest,
   DbOrder,
   DbOrderItem,
   OperationalStatus,
   PaymentConfig,
+  PaymentIssueStatus,
+  PaymentIssueType,
   SubmitUtrRequest,
   UpdateDemoPriceRequest,
   UpdateOrderStatusRequest,
+  UploadQrRequest,
 } from './types';
 
 export const PAYMENT_COLLECTION_ENABLED = false;
@@ -253,6 +257,11 @@ export async function handleApiRequest(
 
     // GET /api/v1/payment-config
     if (path === '/api/v1/payment-config' && method === 'GET') {
+      const activeQr = await db.getActiveQrVersion();
+      const vpa = activeQr?.vpa || 'test-fixture@nagarjunatraders';
+      const accountName =
+        activeQr?.account_name || 'NAGARJUNA TRADERS (TEST FIXTURE)';
+
       if (!PAYMENT_COLLECTION_ENABLED && !isRestricted) {
         return jsonResponse<PaymentConfig>({
           success: true,
@@ -271,13 +280,16 @@ export async function handleApiRequest(
         data: {
           paymentCollectionEnabled: false,
           isRestrictedEnv: true,
+          vpa,
+          accountName,
           message:
             'Payment collection is currently disabled. Test fixture provided for restricted workflow testing only.',
           testFixture: {
-            qrPayload:
-              'upi://pay?pa=test-fixture@nagarjunatraders&pn=NAGARJUNA%20TRADERS&am=0&tn=TEST%20FIXTURE%20ONLY',
-            vpa: 'test-fixture@nagarjunatraders',
-            accountName: 'NAGARJUNA TRADERS (TEST FIXTURE)',
+            qrPayload: `upi://pay?pa=${vpa}&pn=${encodeURIComponent(
+              accountName
+            )}&am=0&tn=TEST%20FIXTURE%20ONLY`,
+            vpa,
+            accountName,
             isRestrictedEnv: true,
             notice:
               'Payment collection is currently disabled. Test fixture provided for restricted workflow testing only.',
@@ -285,6 +297,81 @@ export async function handleApiRequest(
           tokenTiers: DEFAULT_TOKEN_TIERS,
         },
       });
+    }
+
+    // POST /api/v1/payment-issues
+    if (path === '/api/v1/payment-issues' && method === 'POST') {
+      const body = (await request.json()) as CreatePaymentIssueRequest;
+
+      const validIssueTypes: PaymentIssueType[] = [
+        'QR_LIMIT_REACHED',
+        'QR_NOT_SCANNING',
+        'APP_CANNOT_OPEN',
+        'PAYMENT_APP_ERROR',
+        'UTR_SUBMISSION_FAILED',
+        'OTHER',
+      ];
+
+      if (!body.issueType || !validIssueTypes.includes(body.issueType)) {
+        return jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'INVALID_ISSUE_TYPE',
+              message: 'Valid issue category type is required.',
+            },
+          },
+          400
+        );
+      }
+
+      if (!body.customerName || body.customerName.trim().length < 2) {
+        return jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'INVALID_CUSTOMER_NAME',
+              message: 'Customer name is required (minimum 2 characters).',
+            },
+          },
+          400
+        );
+      }
+
+      const mobileClean = (body.customerMobile || '').replace(/\D/g, '');
+      if (!/^[6-9]\d{9}$/.test(mobileClean)) {
+        return jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'INVALID_MOBILE_NUMBER',
+              message: 'Valid 10-digit Indian mobile number is required.',
+            },
+          },
+          400
+        );
+      }
+
+      const issue = await db.createPaymentIssue({
+        orderReference: body.orderReference?.trim() || undefined,
+        customerName: body.customerName.trim(),
+        customerMobile: mobileClean,
+        issueType: body.issueType,
+        description: body.description?.trim().slice(0, 200),
+      });
+
+      return jsonResponse(
+        {
+          success: true,
+          data: {
+            issueReference: issue.issue_reference,
+            message:
+              'Your payment support ticket has been recorded. Store counter staff will assist during order verification or pickup.',
+            status: issue.status,
+          },
+        },
+        201
+      );
     }
 
     // GET /api/v1/catalogue
@@ -1083,6 +1170,227 @@ export async function handleApiRequest(
           200,
           true
         );
+      }
+
+      // ── PAYMENT SUPPORT ISSUES ──────────────────────────────────────
+      // GET /api/v1/admin/payment-issues
+      if (path === '/api/v1/admin/payment-issues' && method === 'GET') {
+        const status = url.searchParams.get('status') as PaymentIssueStatus | undefined;
+        const issues = await db.getPaymentIssues(status || undefined);
+        return jsonResponse({ success: true, data: issues }, 200, true);
+      }
+
+      // PATCH /api/v1/admin/payment-issues/:id
+      const issuePatchMatch = path.match(/^\/api\/v1\/admin\/payment-issues\/([^/]+)$/);
+      if (issuePatchMatch && method === 'PATCH') {
+        const issueId = issuePatchMatch[1];
+        const body = (await request.json()) as {
+          status: PaymentIssueStatus;
+          staffNotes?: string;
+        };
+        const updated = await db.updatePaymentIssue(
+          issueId,
+          body.status,
+          body.staffNotes
+        );
+        return jsonResponse({ success: true, data: updated }, 200, true);
+      }
+
+      // ── INVENTORY MANAGEMENT ────────────────────────────────────────
+      // GET /api/v1/admin/inventory
+      if (path === '/api/v1/admin/inventory' && method === 'GET') {
+        const items = await db.getInventory();
+        return jsonResponse({ success: true, data: items }, 200, true);
+      }
+
+      // POST /api/v1/admin/inventory/adjust
+      if (path === '/api/v1/admin/inventory/adjust' && method === 'POST') {
+        const body = (await request.json()) as {
+          variantId: string;
+          newStock: number;
+          operatorId?: string;
+          reason?: string;
+        };
+
+        if (
+          !body.variantId ||
+          typeof body.newStock !== 'number' ||
+          body.newStock < 0 ||
+          body.newStock > 100000
+        ) {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'INVALID_STOCK',
+                message:
+                  'Valid variantId and newStock (integer between 0 and 100,000) required.',
+              },
+            },
+            400,
+            true
+          );
+        }
+
+        const updated = await db.adjustStock(
+          body.variantId,
+          body.newStock,
+          body.operatorId || auth.operatorId,
+          body.reason
+        );
+        return jsonResponse({ success: true, data: updated }, 200, true);
+      }
+
+      // GET /api/v1/admin/inventory/audit-logs
+      if (path === '/api/v1/admin/inventory/audit-logs' && method === 'GET') {
+        const logs = await db.getInventoryAuditLogs();
+        return jsonResponse({ success: true, data: logs }, 200, true);
+      }
+
+      // ── QR VERSIONS & ROTATION ──────────────────────────────────────
+      // GET /api/v1/admin/qr
+      if (path === '/api/v1/admin/qr' && method === 'GET') {
+        const versions = await db.getQrVersions();
+        return jsonResponse({ success: true, data: versions }, 200, true);
+      }
+
+      // POST /api/v1/admin/qr/upload
+      if (path === '/api/v1/admin/qr/upload' && method === 'POST') {
+        const body = (await request.json()) as UploadQrRequest;
+        if (
+          !body.label?.trim() ||
+          !body.vpa?.includes('@') ||
+          !body.accountName?.trim() ||
+          !body.imageDataUri
+        ) {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'INVALID_QR_PAYLOAD',
+                message:
+                  'Label, valid UPI VPA (containing @), account name, and image data are required.',
+              },
+            },
+            400,
+            true
+          );
+        }
+
+        const uri = body.imageDataUri.trim();
+        const isValidRasterImage =
+          uri.startsWith('data:image/png;base64,') ||
+          uri.startsWith('data:image/jpeg;base64,') ||
+          uri.startsWith('data:image/webp;base64,') ||
+          uri.startsWith('/images/') ||
+          uri.startsWith('https://');
+
+        if (!isValidRasterImage) {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'INVALID_IMAGE_TYPE',
+                message:
+                  'Only raster PNG, JPEG, and WebP images are allowed. SVG and scripts are strictly rejected.',
+              },
+            },
+            400,
+            true
+          );
+        }
+
+        if (uri.length > 1_500_000) {
+          return jsonResponse(
+            {
+              success: false,
+              error: {
+                code: 'FILE_TOO_LARGE',
+                message: 'Image size exceeds maximum 1MB payload limit.',
+              },
+            },
+            400,
+            true
+          );
+        }
+
+        const created = await db.uploadQrVersion(
+          body.label.trim(),
+          body.vpa.trim(),
+          body.accountName.trim(),
+          uri,
+          body.operatorId || auth.operatorId
+        );
+        return jsonResponse({ success: true, data: created }, 201, true);
+      }
+
+      // POST /api/v1/admin/qr/:id/activate
+      const qrActivateMatch = path.match(/^\/api\/v1\/admin\/qr\/([^/]+)\/activate$/);
+      if (qrActivateMatch && method === 'POST') {
+        const qrId = qrActivateMatch[1];
+        const body = (await request.json().catch(() => ({}))) as { notes?: string };
+        const activated = await db.activateQrVersion(
+          qrId,
+          auth.operatorId,
+          body.notes
+        );
+        return jsonResponse({ success: true, data: activated }, 200, true);
+      }
+
+      // POST /api/v1/admin/qr/:id/deactivate
+      const qrDeactivateMatch = path.match(
+        /^\/api\/v1\/admin\/qr\/([^/]+)\/deactivate$/
+      );
+      if (qrDeactivateMatch && method === 'POST') {
+        const qrId = qrDeactivateMatch[1];
+        const deactivated = await db.deactivateQrVersion(qrId, auth.operatorId);
+        return jsonResponse({ success: true, data: deactivated }, 200, true);
+      }
+
+      // ── CUSTOMER DIRECTORY ──────────────────────────────────────────
+      // GET /api/v1/admin/customers
+      if (path === '/api/v1/admin/customers' && method === 'GET') {
+        const search = url.searchParams.get('search') || undefined;
+        const customers = await db.getCustomers(search);
+        return jsonResponse({ success: true, data: customers }, 200, true);
+      }
+
+      // GET /api/v1/admin/customers/:id
+      const custDetailMatch = path.match(
+        /^\/api\/v1\/admin\/customers\/([^/]+)$/
+      );
+      if (custDetailMatch && method === 'GET') {
+        const custId = custDetailMatch[1];
+        const details = await db.getCustomerDetails(custId);
+        return jsonResponse({ success: true, data: details }, 200, true);
+      }
+
+      // ── SALES REPORTS & ANALYTICS ───────────────────────────────────
+      // GET /api/v1/admin/reports/sales
+      if (path === '/api/v1/admin/reports/sales' && method === 'GET') {
+        const range =
+          (url.searchParams.get('range') as 'today' | '7d' | '30d' | 'all') ||
+          'today';
+        const report = await db.getSalesReport(range);
+        return jsonResponse({ success: true, data: report }, 200, true);
+      }
+
+      // GET /api/v1/admin/reports/export
+      if (path === '/api/v1/admin/reports/export' && method === 'GET') {
+        const range =
+          (url.searchParams.get('range') as 'today' | '7d' | '30d' | 'all') ||
+          'today';
+        const csv = await db.exportSalesReportCsv(range);
+        return new Response(csv, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/csv; charset=utf-8',
+            'Content-Disposition': `attachment; filename="nagarjuna-sales-${range}-${new Date()
+              .toISOString()
+              .slice(0, 10)}.csv"`,
+            'Cache-Control': 'no-store',
+          },
+        });
       }
     }
 
