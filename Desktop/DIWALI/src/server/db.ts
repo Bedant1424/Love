@@ -60,7 +60,7 @@ class InMemoryDemoDatabase {
     this.seed();
   }
 
-  public seed() {
+  public seed(initialStock: number = 0) {
     this.variants.clear();
     this.inventory.clear();
     this.orders.clear();
@@ -75,7 +75,7 @@ class InMemoryDemoDatabase {
       for (const v of prod.variants) {
         this.variants.set(v.id, { ...v, productId: prod.id });
         this.inventory.set(v.id, {
-          currentStock: 100,
+          currentStock: initialStock,
           reservedStock: 0,
           lowStockThreshold: 10,
         });
@@ -99,6 +99,16 @@ class InMemoryDemoDatabase {
         created_at: now,
       },
     ];
+  }
+
+  /**
+   * Explicitly populates synthetic stock for test execution fixtures.
+   * Separates synthetic testing from real zero-initialized production inventory.
+   */
+  public seedSyntheticTestStock(stock: number = 100) {
+    for (const inv of this.inventory.values()) {
+      inv.currentStock = stock;
+    }
   }
 
   public async getCategories() {
@@ -487,7 +497,7 @@ class InMemoryDemoDatabase {
     for (const prod of this.products) {
       for (const v of prod.variants) {
         const inv = this.inventory.get(v.id) || {
-          currentStock: 100,
+          currentStock: 0,
           reservedStock: 0,
           lowStockThreshold: 10,
         };
@@ -517,7 +527,7 @@ class InMemoryDemoDatabase {
     const variant = this.variants.get(variantId);
     if (!variant) throw new Error(`Variant ${variantId} not found`);
     const inv = this.inventory.get(variantId) || {
-      currentStock: 100,
+      currentStock: 0,
       reservedStock: 0,
       lowStockThreshold: 10,
     };
@@ -1476,7 +1486,7 @@ export class D1DatabaseAdapter {
         v.product_id,
         p.name as product_name,
         v.variant_name,
-        COALESCE(v.current_stock, 100) as current_stock,
+        COALESCE(v.current_stock, 0) as current_stock,
         COALESCE(v.reserved_stock, 0) as reserved_stock,
         COALESCE(v.low_stock_threshold, 10) as low_stock_threshold
       FROM product_variants v
@@ -1509,7 +1519,7 @@ export class D1DatabaseAdapter {
     const beforeRes = await this.d1.prepare(
       'SELECT current_stock, reserved_stock, low_stock_threshold FROM product_variants WHERE id = ?'
     ).bind(variantId).first<any>();
-    const stockBefore = beforeRes?.current_stock ?? 100;
+    const stockBefore = beforeRes?.current_stock ?? 0;
     const reserved = beforeRes?.reserved_stock ?? 0;
     const threshold = beforeRes?.low_stock_threshold ?? 10;
     const safeStock = Math.max(0, Math.floor(newStock));

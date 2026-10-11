@@ -19,7 +19,7 @@ describe('Operations Hub: Inventory, QR, Support Issues, and Sales Reporting', (
   };
 
   describe('Inventory Management', () => {
-    it('returns initialized inventory items with stock levels and thresholds', async () => {
+    it('returns zero uninitialized stock for real inventory, and allows seeding synthetic test stock', async () => {
       const req = new Request('http://localhost/api/v1/admin/inventory', {
         method: 'GET',
         headers: adminHeaders,
@@ -34,10 +34,19 @@ describe('Operations Hub: Inventory, QR, Support Issues, and Sales Reporting', (
       expect(json.data.length).toBeGreaterThan(0);
 
       const firstItem = json.data[0];
-      expect(firstItem.current_stock).toBe(100);
+      expect(firstItem.current_stock).toBe(0);
       expect(firstItem.reserved_stock).toBe(0);
-      expect(firstItem.available_stock).toBe(100);
-      expect(firstItem.is_low_stock).toBe(false);
+      expect(firstItem.available_stock).toBe(0);
+      expect(firstItem.is_low_stock).toBe(true);
+
+      // Synthetic test fixture stock can be populated for simulated workflows
+      globalMemoryDb.seedSyntheticTestStock(100);
+      const resWithSynthetic = await handleApiRequest(req, restrictedEnv);
+      const jsonWithSynthetic = await resWithSynthetic.json();
+      const syntheticItem = jsonWithSynthetic.data[0];
+      expect(syntheticItem.current_stock).toBe(100);
+      expect(syntheticItem.available_stock).toBe(100);
+      expect(syntheticItem.is_low_stock).toBe(false);
     });
 
     it('allows adjusting stock level and produces an audit log entry', async () => {
@@ -181,6 +190,25 @@ describe('Operations Hub: Inventory, QR, Support Issues, and Sales Reporting', (
       expect(json.error.code).toBe('INVALID_IMAGE_TYPE');
     });
 
+    it('rejects QR upload payloads containing embedded script or SVG tags with 400', async () => {
+      const scriptUpload = new Request('http://localhost/api/v1/admin/qr/upload', {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({
+          label: 'XSS Attempt QR',
+          vpa: 'admin@bank',
+          accountName: 'Malicious',
+          imageDataUri: 'data:image/png;base64,<script>alert(1)</script>',
+        }),
+      });
+
+      const res = await handleApiRequest(scriptUpload, restrictedEnv);
+      expect(res.status).toBe(400);
+      const json = await res.json();
+      expect(json.error.code).toBe('INVALID_IMAGE_TYPE');
+      expect(json.error.message).toContain('SVG, XML, and scripts are strictly rejected');
+    });
+
     it('allows uploading a new draft version and activating it with rotation', async () => {
       const uploadReq = new Request('http://localhost/api/v1/admin/qr/upload', {
         method: 'POST',
@@ -313,6 +341,31 @@ describe('Operations Hub: Inventory, QR, Support Issues, and Sales Reporting', (
       const json = await res.json();
       expect(json.error.code).toBe('SENSITIVE_CREDENTIALS_REJECTED');
       expect(json.error.message).toContain('Never share UPI PINs');
+    });
+
+    it('rejects payment support issues from arbitrary public visitors when public payment collection is disabled with 403', async () => {
+      const publicReq = new Request('http://localhost/api/v1/payment-issues', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderReference: 'NT-1234',
+          customerName: 'Public Visitor',
+          customerMobile: '9848011223',
+          issueType: 'QR_LIMIT_REACHED',
+          description: 'Payment issue attempt on public site',
+        }),
+      });
+
+      const publicEnv = {
+        ENVIRONMENT: 'production',
+        PAYMENT_COLLECTION_ENABLED: 'false',
+      };
+
+      const res = await handleApiRequest(publicReq, publicEnv);
+      expect(res.status).toBe(403);
+      const json = await res.json();
+      expect(json.error.code).toBe('PAYMENT_COLLECTION_DISABLED');
+      expect(json.error.message).toContain('Payment support ticket submission is unavailable');
     });
   });
 

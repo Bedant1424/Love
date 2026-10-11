@@ -301,6 +301,22 @@ export async function handleApiRequest(
 
     // POST /api/v1/payment-issues
     if (path === '/api/v1/payment-issues' && method === 'POST') {
+      // Reject complaints from arbitrary public visitors when public payment collection is disabled
+      if (!PAYMENT_COLLECTION_ENABLED && !isRestricted) {
+        return jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'PAYMENT_COLLECTION_DISABLED',
+              message:
+                'Public payment collection is currently disabled. Payment support ticket submission is unavailable.',
+            },
+          },
+          403,
+          true
+        );
+      }
+
       const body = (await request.json()) as CreatePaymentIssueRequest;
 
       const validIssueTypes: PaymentIssueType[] = [
@@ -1322,12 +1338,21 @@ export async function handleApiRequest(
         }
 
         const uri = body.imageDataUri.trim();
+        const uriLower = uri.toLowerCase();
+        const containsScriptOrSvg =
+          uriLower.includes('<svg') ||
+          uriLower.includes('<script') ||
+          uriLower.includes('<html') ||
+          uriLower.includes('<?xml') ||
+          uriLower.includes('javascript:');
+
         const isValidRasterImage =
-          uri.startsWith('data:image/png;base64,') ||
-          uri.startsWith('data:image/jpeg;base64,') ||
-          uri.startsWith('data:image/webp;base64,') ||
-          uri.startsWith('/images/') ||
-          uri.startsWith('https://');
+          !containsScriptOrSvg &&
+          (uri.startsWith('data:image/png;base64,') ||
+            uri.startsWith('data:image/jpeg;base64,') ||
+            uri.startsWith('data:image/webp;base64,') ||
+            uri.startsWith('/images/') ||
+            uri.startsWith('https://'));
 
         if (!isValidRasterImage) {
           return jsonResponse(
@@ -1336,7 +1361,7 @@ export async function handleApiRequest(
               error: {
                 code: 'INVALID_IMAGE_TYPE',
                 message:
-                  'Only raster PNG, JPEG, and WebP images are allowed. SVG and scripts are strictly rejected.',
+                  'Only raster PNG, JPEG, and WebP images are allowed. SVG, XML, and scripts are strictly rejected.',
               },
             },
             400,
@@ -1344,13 +1369,13 @@ export async function handleApiRequest(
           );
         }
 
-        if (uri.length > 1_500_000) {
+        if (uri.length > 2_000_000) {
           return jsonResponse(
             {
               success: false,
               error: {
                 code: 'FILE_TOO_LARGE',
-                message: 'Image size exceeds maximum 1MB payload limit.',
+                message: 'Image size exceeds maximum 2MB payload limit.',
               },
             },
             400,
