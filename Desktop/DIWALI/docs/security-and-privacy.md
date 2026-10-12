@@ -1,4 +1,4 @@
-# NAGARJUNA TRADERS — SECURITY AND PRIVACY SPECIFICATION
+# NAGARJUNA TRADERS: SECURITY AND PRIVACY SPECIFICATION
 
 **Document Reference:** `docs/security-and-privacy.md`  
 **Threat Modeling Standard:** STRIDE & OWASP Top 10 (2025/2026 Edition)  

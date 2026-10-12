@@ -1,4 +1,4 @@
-# NAGARJUNA TRADERS — DESIGN SYSTEM SPECIFICATION
+# NAGARJUNA TRADERS: DESIGN SYSTEM SPECIFICATION
 
 **Document Reference:** `docs/design-system.md`  
 **Version:** 1.0.0  

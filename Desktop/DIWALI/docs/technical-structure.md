@@ -1,4 +1,4 @@
-# NAGARJUNA TRADERS — TECHNICAL ARCHITECTURE SPECIFICATION
+# NAGARJUNA TRADERS: TECHNICAL ARCHITECTURE SPECIFICATION
 
 **Document Reference:** `docs/technical-structure.md`  
 **Platform Target:** Cloudflare Free Ecosystem + GitHub  
@@ -33,7 +33,7 @@
 |                                                                                   |
 |                                                                                   |
 |  [ Cloudflare D1 SQLite Database ]                                                |
-|  Serverless Edge SQLite — Foreign Keys, Transactions, Paise Integer Math          |
+|  Serverless Edge SQLite: Foreign Keys, Transactions, Paise Integer Math          |
 +───────────────────────────────────────────────────────────────────────────────────+
 ```
 

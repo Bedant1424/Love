@@ -1135,7 +1135,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                           {formatPaiseToRupees(ord.remaining_balance_paise)}
                         </td>
                         <td className="p-3.5 font-mono text-festive-amber">
-                          {ord.payment_reference || '—'}
+                          {ord.payment_reference || '-'}
                         </td>
                         <td className="p-3.5">
                           <span
@@ -1348,7 +1348,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                         </td>
                         <td className="p-3 text-content-primary font-semibold">{log.operator_id}</td>
                         <td className="p-3 font-sans text-content-secondary max-w-xs truncate">
-                          {log.reason || '—'}
+                          {log.reason || '-'}
                         </td>
                       </tr>
                     ))}
@@ -1425,7 +1425,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                       Activated:{' '}
                       {active.activated_at
                         ? new Date(active.activated_at).toLocaleString('en-IN')
-                        : '—'}
+                        : '-'}
                     </p>
                     <p className="text-content-muted">
                       Notes: {active.activation_notes || 'Initial active fixture'}
@@ -1472,7 +1472,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                         )}
                       </td>
                       <td className="p-3.5 text-content-muted font-mono text-[11px]">
-                        {v.activated_at ? new Date(v.activated_at).toLocaleString('en-IN') : '—'}
+                        {v.activated_at ? new Date(v.activated_at).toLocaleString('en-IN') : '-'}
                       </td>
                       <td className="p-3.5 text-right space-x-2">
                         {v.is_active === 0 && (
@@ -1573,7 +1573,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                           </span>
                         </td>
                         <td className="p-3.5 font-mono text-festive-marigold font-semibold">
-                          {iss.order_reference || '—'}
+                          {iss.order_reference || '-'}
                         </td>
                         <td className="p-3.5 text-content-secondary max-w-xs truncate">
                           {iss.description}
@@ -1594,7 +1594,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                           </span>
                         </td>
                         <td className="p-3.5 text-content-muted text-[11px] max-w-xs truncate">
-                          {iss.staff_notes || '—'}
+                          {iss.staff_notes || '-'}
                         </td>
                         <td className="p-3.5 text-right">
                           <button
@@ -1674,10 +1674,10 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                           {formatPaiseToRupees(c.lifetime_spent_paise)}
                         </td>
                         <td className="p-3.5 text-content-muted font-mono text-[11px]">
-                          {c.created_at ? new Date(c.created_at).toLocaleDateString('en-IN') : '—'}
+                          {c.created_at ? new Date(c.created_at).toLocaleDateString('en-IN') : '-'}
                         </td>
                         <td className="p-3.5 text-content-muted font-mono text-[11px]">
-                          {c.last_order_date ? new Date(c.last_order_date).toLocaleDateString('en-IN') : '—'}
+                          {c.last_order_date ? new Date(c.last_order_date).toLocaleDateString('en-IN') : '-'}
                         </td>
                         <td className="p-3.5 text-right">
                           <button
@@ -2143,7 +2143,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
                 <span className="font-mono text-content-secondary">
                   {selectedOrder.payment_submitted_at
                     ? new Date(selectedOrder.payment_submitted_at).toLocaleString('en-IN')
-                    : '—'}
+                    : '-'}
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs">

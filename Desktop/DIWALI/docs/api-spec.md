@@ -1,4 +1,4 @@
-# NAGARJUNA TRADERS — API SPECIFICATION
+# NAGARJUNA TRADERS: API SPECIFICATION
 
 **Document Reference:** `docs/api-spec.md`  
 **Base Path:** `/api/v1`  

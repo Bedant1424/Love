@@ -1,4 +1,4 @@
-# NAGARJUNA TRADERS — CLOUDFLARE DEPLOYMENT SPECIFICATION
+# NAGARJUNA TRADERS: CLOUDFLARE DEPLOYMENT SPECIFICATION
 
 **Document Reference:** `docs/cloudflare-deployment.md`  
 **Target Infrastructure:** Cloudflare Free Ecosystem (Pages + Workers + D1 + Turnstile + Access)  

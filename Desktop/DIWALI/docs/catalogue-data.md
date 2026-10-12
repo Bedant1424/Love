@@ -1,9 +1,9 @@
-# NAGARJUNA TRADERS — CATALOGUE DATA SPECIFICATION
+# NAGARJUNA TRADERS: CATALOGUE DATA SPECIFICATION
 
 **Document Reference:** `docs/catalogue-data.md`  
 **Source of Truth:** Physical Diwali Poster Artwork (`docs/reference/nagarjuna-traders-catalog.jpg`)  
-**Currency:** Indian Rupee (INR) — Internal Minor Units: Paise (₹1.00 = 100 paise)  
-**System Mode:** Portfolio Demo Mode — Authentic Poster Extraction & Simulated Ordering
+**Currency:** Indian Rupee (INR), Internal Minor Units: Paise (₹1.00 = 100 paise)  
+**System Mode:** Portfolio Demo Mode: Authentic Poster Extraction & Simulated Ordering
 
 ---
 

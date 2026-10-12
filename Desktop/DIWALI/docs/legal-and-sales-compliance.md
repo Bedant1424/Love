@@ -1,4 +1,4 @@
-# NAGARJUNA TRADERS — LEGAL AND SALES COMPLIANCE ASSESSMENT
+# NAGARJUNA TRADERS: LEGAL AND SALES COMPLIANCE ASSESSMENT
 
 **Document Reference:** `docs/legal-and-sales-compliance.md`  
 **Applicable Jurisdiction:** India (Union Statutes, State Regulations, and District Licensing)  
@@ -29,7 +29,7 @@ This repository contains a **portfolio demonstration** of a fireworks catalogue 
 - **Enforcement Authority:** Petroleum and Explosives Safety Organisation (PESO), Ministry of Commerce and Industry, Government of India.
 - **Rule 74 & Rule 84 (Licensing for Possession and Sale):** A physical premises must possess an LE-5 license (issued by the District Magistrate or Commissioner of Police) or a valid PESO license for possessing and selling fireworks. Licenses mandate strict fire safety, clearance distances, and maximum explosive quantity thresholds.
 - **Rules on Transportation (Part VI):** Fireworks are classified as Class 7 (Fireworks) hazardous explosives. They cannot be transported via public passenger transport, postal services, or standard commercial parcel couriers (e.g. Bluedart, Delhivery, India Post). Transportation requires licensed hazardous goods carriers with approved safety manifests and PESO transit permits.
-- **Source Link:** [PESO Official Portal — Explosives Rules 2008](https://peso.gov.in/)
+- **Source Link:** [PESO Official Portal: Explosives Rules 2008](https://peso.gov.in/)
 
 ### 2.2 Supreme Court of India Orders (*Arjun Gopal & Others v. Union of India*)
 - **Citation:** (2018) 13 SCC 523, reaffirmed in subsequent orders (2020, 2021, 2023).

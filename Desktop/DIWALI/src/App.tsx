@@ -64,6 +64,31 @@ export const App: React.FC = () => {
     notes: '',
   });
 
+  useEffect(() => {
+    switch (activeTab) {
+      case 'home':
+        document.title = 'Nagarjuna Traders | Diwali Firecrackers Catalogue';
+        break;
+      case 'catalogue':
+        document.title = 'Firecrackers Catalogue | Nagarjuna Traders';
+        break;
+      case 'cart':
+        document.title = 'Your Order Cart | Nagarjuna Traders';
+        break;
+      case 'customer':
+        document.title = 'Customer Details | Nagarjuna Traders';
+        break;
+      case 'review':
+        document.title = 'Review Order & Advance Token | Nagarjuna Traders';
+        break;
+      case 'track':
+        document.title = 'Track Order Status | Nagarjuna Traders';
+        break;
+      default:
+        document.title = 'Nagarjuna Traders | Diwali Firecrackers Catalogue';
+    }
+  }, [activeTab]);
+
   const cart = useCart(products);
   if (typeof window !== 'undefined' && (window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/'))) {
     return <OwnerApp />;

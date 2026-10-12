@@ -1,4 +1,4 @@
-# NAGARJUNA TRADERS — UI COPY AND MESSAGING SPECIFICATION
+# NAGARJUNA TRADERS: UI COPY AND MESSAGING SPECIFICATION
 
 **Document Reference:** `docs/copy.md`  
 **Language:** English (Clear, respectful, Indian retail context) with localized terms (Diwali, Sivakasi, Laddis, Chakri, Kumpi, Skyshot)  
@@ -47,8 +47,8 @@
 | **Category 4 Pack Note**| `All sparkler packs contain 10 packets of 10 pieces (100 pieces total per box).` |
 | **Category 5 Title** | `Kumpi & Chakri (Flower Pots & Spinners)` |
 | **Category 6 Title** | `Others & Special Novelties` |
-| **Variant Label Format**| `{variantName} — ₹{price}` (e.g. `Medium — ₹150.00`) |
-| **Unpriced Variant Label**| `{variantName} — Rate on Enquiry` |
+| **Variant Label Format**| `{variantName}: ₹{price}` (e.g. `Medium: ₹150.00`) |
+| **Unpriced Variant Label**| `{variantName}: Rate on Enquiry` |
 | **Out of Stock Badge** | `Currently Sold Out` |
 | **Add to Cart Button** | `Add to Box` |
 | **Quantity Stepper Label**| `Quantity` (with `Decrease quantity` and `Increase quantity` screen-reader aria labels) |
@@ -112,11 +112,11 @@
 
 | Status | Headline | Subtext / Customer Guidance |
 |---|---|---|
-| **Submitted / Unpaid** | `Booking Submitted — Awaiting Token Payment` | `Please complete your UPI advance token payment to reserve your stock.` |
-| **Pending Verification** | `Payment Reference Received — Verification Pending` | `Thank you! Our billing counter team is verifying your UTR with our bank credit alerts. Your booking will be confirmed shortly.` |
+| **Submitted / Unpaid** | `Booking Submitted: Awaiting Token Payment` | `Please complete your UPI advance token payment to reserve your stock.` |
+| **Pending Verification** | `Payment Reference Received: Verification Pending` | `Thank you! Our billing counter team is verifying your UTR with our bank credit alerts. Your booking will be confirmed shortly.` |
 | **Confirmed & Preparing**| `Booking Confirmed! Packing Your Cracker Box` | `Your advance payment has been verified. Our staff is currently assembling your festive cracker box.` |
 | **Ready for Pickup** | `Ready for Counter Collection! 🎉` | `Your cracker package is packed and sealed. Please visit our store counter with your Order Reference ({reference}) and valid government ID to collect your items.` |
-| **Completed** | `Order Collected — Happy & Safe Diwali!` | `This order has been picked up. Thank you for celebrating with Nagarjuna Traders.` |
+| **Completed** | `Order Collected: Happy & Safe Diwali!` | `This order has been picked up. Thank you for celebrating with Nagarjuna Traders.` |
 | **Cancelled** | `Booking Cancelled` | `This booking was cancelled. If you made an advance payment, please contact our support desk for refund reconciliation.` |
 
 ---
@@ -125,7 +125,7 @@
 
 | Screen / Element | Proposed Copy |
 |---|---|
-| **Admin Login Title** | `Nagarjuna Traders — Management Console` |
+| **Admin Login Title** | `Nagarjuna Traders: Management Console` |
 | **Admin Login Subtitle**| `Restricted authorized personnel access only.` |
 | **Dashboard Metric 1** | `Pending UTR Verifications` |
 | **Dashboard Metric 2** | `Orders Ready for Handover` |

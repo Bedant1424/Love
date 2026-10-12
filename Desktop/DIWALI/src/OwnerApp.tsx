@@ -1,7 +1,33 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AdminView } from './components/AdminView';
 
 export const OwnerApp: React.FC = () => {
+  useEffect(() => {
+    document.title = 'Owner Portal | Nagarjuna Traders';
+    let robotsMeta = document.querySelector('meta[name="robots"]');
+    let created = false;
+    if (!robotsMeta) {
+      robotsMeta = document.createElement('meta');
+      robotsMeta.setAttribute('name', 'robots');
+      document.head.appendChild(robotsMeta);
+      created = true;
+    }
+    const previousContent = robotsMeta.getAttribute('content');
+    robotsMeta.setAttribute('content', 'noindex, nofollow');
+
+    return () => {
+      if (created && robotsMeta?.parentNode) {
+        robotsMeta.parentNode.removeChild(robotsMeta);
+      } else if (robotsMeta) {
+        if (previousContent) {
+          robotsMeta.setAttribute('content', previousContent);
+        } else {
+          robotsMeta.removeAttribute('content');
+        }
+      }
+    };
+  }, []);
+
   const handleBackToCustomerSite = () => {
     if (typeof window !== 'undefined' && window.location.hostname.includes('owner')) {
       window.location.href = 'https://nagarjuna-traders.pages.dev';

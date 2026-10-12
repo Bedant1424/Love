@@ -1,4 +1,4 @@
-# NAGARJUNA TRADERS — DESIGN REVIEW & SKILL SYNTHESIS
+# NAGARJUNA TRADERS: DESIGN REVIEW & SKILL SYNTHESIS
 
 **Document Reference:** `docs/design-review.md`  
 **Review Date:** October 2026  

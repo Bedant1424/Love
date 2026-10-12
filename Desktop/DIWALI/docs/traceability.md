@@ -1,4 +1,4 @@
-# NAGARJUNA TRADERS — REQUIREMENTS TRACEABILITY MATRIX (RTM)
+# NAGARJUNA TRADERS: REQUIREMENTS TRACEABILITY MATRIX (RTM)
 
 **Document Reference:** `docs/traceability.md`  
 **Purpose:** End-to-End Bidirectional Mapping of Requirements, Design, Code Tasks & Test Cases  

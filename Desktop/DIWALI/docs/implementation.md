@@ -1,4 +1,4 @@
-# NAGARJUNA TRADERS — IMPLEMENTATION PLAN & MILESTONE ROADMAP
+# NAGARJUNA TRADERS: IMPLEMENTATION PLAN & MILESTONE ROADMAP
 
 **Document Reference:** `docs/implementation.md`  
 **Development Methodology:** Small Conventional Commits, Feature Branching, Zero Unreviewed Merges  

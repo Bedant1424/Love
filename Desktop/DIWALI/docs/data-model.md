@@ -1,4 +1,4 @@
-# NAGARJUNA TRADERS — DATA MODEL SPECIFICATION
+# NAGARJUNA TRADERS: DATA MODEL SPECIFICATION
 
 **Document Reference:** `docs/data-model.md`  
 **Database Engine:** Cloudflare D1 (Serverless Distributed SQLite)  

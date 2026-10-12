@@ -1,4 +1,4 @@
-# NAGARJUNA TRADERS — TESTING AND ACCEPTANCE SPECIFICATION
+# NAGARJUNA TRADERS: TESTING AND ACCEPTANCE SPECIFICATION
 
 **Document Reference:** `docs/testing-and-acceptance.md`  
 **Test Frameworks:** Vitest (Unit & Integration) + React Testing Library  

@@ -1,4 +1,4 @@
-# NAGARJUNA TRADERS — UI/UX SCREEN SPECIFICATIONS (DESIGN.MD)
+# NAGARJUNA TRADERS: UI/UX SCREEN SPECIFICATIONS (DESIGN.MD)
 
 **Document Reference:** `docs/Design.md`  
 **Approach:** Mobile-First Layouts, Secondary Desktop Adaptation  
@@ -336,7 +336,7 @@ Manage physical on-hand stock, view active reservations, and log stock adjustmen
 
 ### 18.4 Sales Reports & RFC 4180 CSV Export
 - Range selectors: Today, 7 Days, 30 Days, All Time.
-- Summary Cards: Total Orders, Gross Order Value, Verified Bank Funds (₹0.00 — Zero Hallucinated Revenue), Average Order Value.
+- Summary Cards: Total Orders, Gross Order Value, Verified Bank Funds (₹0.00, Zero Hallucinated Revenue), Average Order Value.
 - Daily Trend Table: Date, orders count, gross booked value, verified funds.
 - Product Sales Breakdown Table: Top items ordered and revenue generated.
 - CSV Export: Download RFC 4180 formatted CSV spreadsheet.
@@ -349,7 +349,7 @@ Manage physical on-hand stock, view active reservations, and log stock adjustmen
 Graceful error handling and offline survivability.
 
 ### 19.2 Layouts
-- **404 Not Found:** "Cracker Rocket Flew Off Course — Page Not Found" + Return to Catalogue CTA.
-- **500 Server Error:** "Temporary Sparkler Glitch — Our servers are catching up" + Retry CTA + WhatsApp support link.
+- **404 Not Found:** "Cracker Rocket Flew Off Course: Page Not Found" + Return to Catalogue CTA.
+- **500 Server Error:** "Temporary Sparkler Glitch: Our servers are catching up" + Retry CTA + WhatsApp support link.
 - **Network Offline:** Banner "You are offline. Showing cached catalogue."
 - **Season Maintenance:** "Nagarjuna Traders is preparing for Diwali 2026. Ordering opens shortly."

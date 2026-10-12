@@ -1,4 +1,4 @@
-# NAGARJUNA TRADERS — ZERO-COST BUDGET & QUOTA ASSESSMENT
+# NAGARJUNA TRADERS: ZERO-COST BUDGET & QUOTA ASSESSMENT
 
 **Document Reference:** `docs/zero-cost-budget.md`  
 **Research Date:** October 2026  

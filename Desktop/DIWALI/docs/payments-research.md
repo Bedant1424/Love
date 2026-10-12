@@ -1,9 +1,9 @@
-# NAGARJUNA TRADERS — UPI PAYMENTS RESEARCH & ARCHITECTURE
+# NAGARJUNA TRADERS: UPI PAYMENTS RESEARCH & ARCHITECTURE
 
 **Document Reference:** `docs/payments-research.md`  
 **Status:** Evaluation & Security Specification  
 **External Repository Dependency:** Outstanding (Owner has not yet supplied the open-source UPI GitHub URL)  
-**Currency:** Indian Rupee (INR) — Internal Computation in Paise  
+**Currency:** Indian Rupee (INR), Internal Computation in Paise  
 **Operating Mode:** Default Enquiry / Manual Verification Fallback
 
 ---

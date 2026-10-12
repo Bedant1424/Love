@@ -8,9 +8,9 @@ This document grounds the festive redesign of **Nagarjuna Traders** in the offic
    - **Brief Inference Declaration**:
      > *"Reading this as: Festive Indian Diwali E-Commerce shopping website & complete Operations Hub for Nagarjuna Traders, targeting festive retail shoppers and families, with a warm, celebratory, culturally authentic Indian festive visual language (midnight indigo/plum night-sky hero, warm ivory/cream shopping surfaces, marigold orange & royal gold action accents, rangoli & diya glow accents, and generous illustration), leaning toward clean responsive React components, CSS animations, and tactile interaction design."*
    - **The Three Dials**:
-     - `DESIGN_VARIANCE: 8` — High visual interest, asymmetric festive hero with illustration, distinct category visual cards, and diverse product presentations.
-     - `MOTION_INTENSITY: 6` — Celebratory yet performant motion: glowing diya flickers, gentle floating sparkles, responsive micro-interactions on cart add, and smooth step transitions while strictly respecting `prefers-reduced-motion`.
-     - `VISUAL_DENSITY: 4` — Generous breathing room, clear spacing (16px to 32px), readable product cards with large imagery, uncluttered checkout screens, and structured, legible operational tables.
+     - `DESIGN_VARIANCE: 8` - High visual interest, asymmetric festive hero with illustration, distinct category visual cards, and diverse product presentations.
+     - `MOTION_INTENSITY: 6` - Celebratory yet performant motion: glowing diya flickers, gentle floating sparkles, responsive micro-interactions on cart add, and smooth step transitions while strictly respecting `prefers-reduced-motion`.
+     - `VISUAL_DENSITY: 4` - Generous breathing room, clear spacing (16px to 32px), readable product cards with large imagery, uncluttered checkout screens, and structured, legible operational tables.
    - **Anti-Default Discipline**:
      - Eliminating the prior generic "black dashboard with orange buttons" look.
      - Eliminating AI-purple gradients, raw emojis as buttons, and floating unanchored cards.

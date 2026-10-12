@@ -1,4 +1,4 @@
-# NAGARJUNA TRADERS — OPEN QUESTIONS, ASSUMPTIONS & BLOCKER REGISTER
+# NAGARJUNA TRADERS: OPEN QUESTIONS, ASSUMPTIONS & BLOCKER REGISTER
 
 **Document Reference:** `docs/open-questions.md`  
 **Status:** Active Action Items Pending Owner Decision  

@@ -1,4 +1,4 @@
-# NAGARJUNA TRADERS — PRODUCT REQUIREMENTS DOCUMENT (PRD)
+# NAGARJUNA TRADERS: PRODUCT REQUIREMENTS DOCUMENT (PRD)
 
 **Document Reference:** `docs/PRD.md`  
 **Version:** 4.0.0 (Festive Indian Diwali Experience & Complete Operations Hub)  

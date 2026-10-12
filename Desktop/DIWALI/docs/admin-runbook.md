@@ -1,4 +1,4 @@
-# NAGARJUNA TRADERS — ADMINISTRATIVE RUNBOOK & OPERATIONAL GUIDE
+# NAGARJUNA TRADERS: ADMINISTRATIVE RUNBOOK & OPERATIONAL GUIDE
 
 **Document Reference:** `docs/admin-runbook.md`  
 **Target Audience:** Store Owner, Billing Counter Staff, Inventory Managers  
