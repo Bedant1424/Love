@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header, ActiveTab } from './components/Header';
 import { Footer } from './components/Footer';
 import { HomeView } from './components/HomeView';
@@ -9,7 +9,9 @@ import { ReviewView } from './components/ReviewView';
 import { StickyCartBar } from './components/StickyCartBar';
 import { useCart } from './hooks/useCart';
 import { CustomerDetails } from './types/customer';
-import { CategoryId } from './types/catalogue';
+import { Category, CategoryId, Product } from './types/catalogue';
+import { CATEGORIES, PRODUCTS } from './data/catalogueData';
+import { apiClient } from './services/apiClient';
 import OwnerApp from './OwnerApp';
 
 export const App: React.FC = () => {
@@ -17,6 +19,33 @@ export const App: React.FC = () => {
   const [selectedCatalogueCategory, setSelectedCatalogueCategory] = useState<
     CategoryId | 'all'
   >('all');
+
+  const [categories, setCategories] = useState<Category[]>(CATEGORIES);
+  const [products, setProducts] = useState<Product[]>(PRODUCTS);
+
+  useEffect(() => {
+    let isMounted = true;
+    apiClient
+      .getCatalogue()
+      .then((data) => {
+        if (!isMounted || !data?.categories) return;
+        setCategories(data.categories);
+        const allProds: Product[] = [];
+        data.categories.forEach((c: any) => {
+          if (c.products) allProds.push(...c.products);
+        });
+        if (allProds.length > 0) {
+          setProducts(allProds);
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to fetch dynamic catalogue, using static fallback:', err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Customer details are held in TRANSIENT application memory only (never in LocalStorage)
   const [customerDetails, setCustomerDetails] = useState<CustomerDetails>({
@@ -27,7 +56,7 @@ export const App: React.FC = () => {
     notes: '',
   });
 
-  const cart = useCart();
+  const cart = useCart(products);
   if (typeof window !== 'undefined' && (window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/'))) {
     return <OwnerApp />;
   }
@@ -78,6 +107,8 @@ export const App: React.FC = () => {
           <CatalogueView
             key={selectedCatalogueCategory}
             initialCategory={selectedCatalogueCategory}
+            categories={categories}
+            products={products}
             getItemQuantity={cart.getItemQuantity}
             onAddItem={cart.addItem}
             onIncrement={cart.incrementQuantity}

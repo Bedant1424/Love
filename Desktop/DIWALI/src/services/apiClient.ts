@@ -18,7 +18,7 @@ import {
   SalesReportResponse,
   UploadQrRequest,
 } from '../server/types';
-import { ProductVariant } from '../types/catalogue';
+import { Category, Product, ProductVariant } from '../types/catalogue';
 
 const API_BASE = '/api/v1';
 
@@ -138,6 +138,15 @@ export const apiClient = {
   getAdminAuthToken,
 
   // Public Customer Operations
+  async getCatalogue() {
+    return executeApi<{
+      store: any;
+      categories: (Category & { products: Product[] })[];
+    }>('/catalogue', {
+      method: 'GET',
+    });
+  },
+
   async getPaymentConfig(): Promise<PaymentConfig> {
     return executeApi<PaymentConfig>('/payment-config', {
       method: 'GET',

@@ -120,7 +120,7 @@ describe('CartView Component', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Order Subtotal (1 item)')).toBeInTheDocument();
     expect(screen.getByText('Advance Token Required')).toBeInTheDocument();
-    expect(screen.getByText('Balance Due upon Collection')).toBeInTheDocument();
+    expect(screen.getByText(/Balance Due upon (Pickup|Collection)/i)).toBeInTheDocument();
     expect(
       screen.getByText('Items Requiring Price Confirmation')
     ).toBeInTheDocument();

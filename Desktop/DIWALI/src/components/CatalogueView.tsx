@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { CATEGORIES, PRODUCTS } from '../data/catalogueData';
-import { CategoryId, Product } from '../types/catalogue';
+import { Category, CategoryId, Product } from '../types/catalogue';
 import { ProductCard } from './ProductCard';
 import { CategoryNav } from './CategoryNav';
 
 interface CatalogueViewProps {
   initialCategory?: CategoryId | 'all';
+  categories?: Category[];
+  products?: Product[];
   getItemQuantity: (productId: string, variantId: string) => number;
   onAddItem: (productId: string, variantId: string, quantity?: number) => void;
   onIncrement: (productId: string, variantId: string) => void;
@@ -14,6 +16,8 @@ interface CatalogueViewProps {
 
 export const CatalogueView: React.FC<CatalogueViewProps> = ({
   initialCategory = 'all',
+  categories = CATEGORIES,
+  products = PRODUCTS,
   getItemQuantity,
   onAddItem,
   onIncrement,
@@ -25,7 +29,7 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredProducts: Product[] = useMemo(() => {
-    return PRODUCTS.filter((product) => {
+    return products.filter((product) => {
       const matchesCategory =
         selectedCategory === 'all' || product.categoryId === selectedCategory;
 
@@ -41,14 +45,15 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
 
       return matchesCategory && matchesSearch;
     });
-  }, [selectedCategory, searchQuery]);
+  }, [products, selectedCategory, searchQuery]);
 
-  const activeCategoryInfo = CATEGORIES.find((c) => c.id === selectedCategory);
+  const activeCategoryInfo = categories.find((c) => c.id === selectedCategory);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
       {/* Category Navigation Bar with Visual Chips */}
       <CategoryNav
+        categories={categories}
         selectedCategory={selectedCategory}
         onSelectCategory={(cat) => setSelectedCategory(cat)}
       />
@@ -63,7 +68,7 @@ export const CatalogueView: React.FC<CatalogueViewProps> = ({
           </h2>
           <p className="text-xs sm:text-sm text-stone-600 mt-1">
             {selectedCategory === 'all'
-              ? `Showing all ${PRODUCTS.length} extracted products across 6 authentic categories`
+              ? `Showing all ${products.length} extracted products across ${categories.length} authentic categories`
               : activeCategoryInfo?.description}
           </p>
         </div>

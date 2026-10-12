@@ -1,13 +1,15 @@
 import React from 'react';
 import { CATEGORIES } from '../data/catalogueData';
-import { CategoryId } from '../types/catalogue';
+import { Category, CategoryId } from '../types/catalogue';
 
 interface CategoryNavProps {
+  categories?: Category[];
   selectedCategory: CategoryId | 'all';
   onSelectCategory: (categoryId: CategoryId | 'all') => void;
 }
 
 export const CategoryNav: React.FC<CategoryNavProps> = ({
+  categories = CATEGORIES,
   selectedCategory,
   onSelectCategory,
 }) => {
@@ -29,10 +31,10 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({
               : 'bg-white text-stone-700 border-stone-200 hover:border-stone-300 hover:bg-stone-50'
           }`}
         >
-          All Categories (6)
+          All Categories ({categories.length})
         </button>
 
-        {CATEGORIES.map((cat) => {
+        {categories.map((cat) => {
           const isSelected = selectedCategory === cat.id;
           return (
             <button

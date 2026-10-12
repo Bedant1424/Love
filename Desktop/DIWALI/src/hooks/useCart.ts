@@ -8,12 +8,16 @@ import {
   MIN_ORDER_SUBTOTAL_PAISE,
 } from '../types/cart';
 import { PRODUCTS } from '../data/catalogueData';
+import { Product } from '../types/catalogue';
 import { loadCartFromStorage, saveCartToStorage } from '../utils/storage';
 
 export const MIN_QUANTITY = 1;
 export const MAX_QUANTITY = 50;
 
-export function useCart() {
+export function useCart(customProducts?: Product[]) {
+  const products =
+    customProducts && customProducts.length > 0 ? customProducts : PRODUCTS;
+
   const [storedItems, setStoredItems] = useState<StoredCartItem[]>(() => {
     return loadCartFromStorage();
   });
@@ -28,15 +32,19 @@ export function useCart() {
     const items: CartItem[] = [];
 
     for (const stored of storedItems) {
-      const product = PRODUCTS.find((p) => p.id === stored.productId);
+      const product = products.find((p) => p.id === stored.productId);
       if (!product) continue;
 
       const variant = product.variants.find((v) => v.id === stored.variantId);
       if (!variant || !variant.isAvailable) continue;
 
+      const price =
+        variant.pricePaise !== undefined
+          ? variant.pricePaise
+          : (variant.demoPricePaise ?? null);
       const lineSubtotalPaise =
-        variant.pricePaise !== null
-          ? variant.pricePaise * stored.quantity
+        price !== null
+          ? price * stored.quantity
           : null;
 
       items.push({
@@ -46,7 +54,7 @@ export function useCart() {
         variantName: variant.name,
         packInfo: variant.packInfo,
         isPackInfoVerified: variant.isPackInfoVerified,
-        pricePaise: variant.pricePaise,
+        pricePaise: price,
         printedPriceText: variant.printedPriceText,
         priceStatus: variant.priceStatus,
         pricingOrigin: variant.pricingOrigin,
@@ -56,7 +64,7 @@ export function useCart() {
     }
 
     return items;
-  }, [storedItems]);
+  }, [storedItems, products]);
 
   // Compute financial totals and unpriced counts with tiered token rules (₹50 below ₹200, ₹100 at or above ₹200)
   const totals: CartTotals = useMemo(() => {
@@ -115,7 +123,7 @@ export function useCart() {
 
   const addItem = useCallback(
     (productId: string, variantId: string, quantity = 1) => {
-      const product = PRODUCTS.find((p) => p.id === productId);
+      const product = products.find((p) => p.id === productId);
       if (!product) return;
       const variant = product.variants.find((v) => v.id === variantId);
       if (!variant || !variant.isAvailable) return;
@@ -146,7 +154,7 @@ export function useCart() {
         return [...prev, { productId, variantId, quantity: safeQuantity }];
       });
     },
-    []
+    [products]
   );
 
   const updateQuantity = useCallback(

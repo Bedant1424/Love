@@ -206,7 +206,37 @@ export async function verifyAdminRequest(
     };
   }
 
-  // 1. D1-backed session validation (Primary authentication mechanism)
+  // On any hosted environment, fixed dev bearer tokens are strictly forbidden
+  if (isHosted && (bearerToken === 'dev-admin-token' || bearerToken === 'local-test-token')) {
+    return {
+      authorized: false,
+      operatorId: '',
+      error:
+        'Cloudflare Access JWT Assertion is required on protected administrative routes in hosted environments.',
+      status: 401,
+    };
+  }
+
+  // 1. Automated test runner legacy compatibility (vitest / local test mode only, NOT production)
+  const isDevOrTest =
+    (env?.ENVIRONMENT === 'test' ||
+      (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test')) &&
+    env?.ENVIRONMENT !== 'production' &&
+    !isHosted;
+
+  if (isDevOrTest) {
+    if (
+      bearerToken === 'dev-admin-token' ||
+      bearerToken === 'local-test-token'
+    ) {
+      return {
+        authorized: true,
+        operatorId: 'DEV-ADMIN',
+      };
+    }
+  }
+
+  // 2. D1-backed session validation (Primary authentication mechanism)
   const sessionToken =
     cookieSession ||
     (bearerToken && !bearerToken.includes('.') ? bearerToken : null);
@@ -272,32 +302,16 @@ export async function verifyAdminRequest(
     };
   }
 
-  // 2. Automated test runner legacy compatibility (vitest / local test mode only, NOT production)
-  const isDevOrTest =
-    (env?.ENVIRONMENT === 'test' ||
-      (typeof process !== 'undefined' && process.env?.NODE_ENV === 'test')) &&
-    env?.ENVIRONMENT !== 'production' &&
-    !isHosted;
-
-  if (isDevOrTest) {
-    if (
-      bearerToken === 'dev-admin-token' ||
-      bearerToken === 'local-test-token'
-    ) {
-      return {
-        authorized: true,
-        operatorId: 'DEV-ADMIN',
-      };
-    }
-  }
-
   // 3. Cloudflare Access assertion legacy support if JWT provided (for accessJwt unit tests)
+  const cfCookieMatch = cookieHeader.match(/CF_Authorization=([^;]+)/);
+  const cfCookie = cfCookieMatch ? decodeURIComponent(cfCookieMatch[1].trim()) : null;
   const cfAssertion = request.headers.get('Cf-Access-Jwt-Assertion');
   const jwtToken =
     cfAssertion ||
+    cfCookie ||
     (bearerToken && bearerToken.includes('.') ? bearerToken : null);
 
-  if (jwtToken && (env?.CF_ACCESS_AUD || isDevOrTest)) {
+  if (jwtToken && (env?.CF_ACCESS_AUD || isDevOrTest || isHosted)) {
     const teamDomain = env?.CF_ACCESS_TEAM_DOMAIN || 'bedant';
     const audience = env?.CF_ACCESS_AUD;
     const allowedAdminsRaw = env?.CF_ACCESS_ALLOWED_ADMINS;
@@ -322,6 +336,13 @@ export async function verifyAdminRequest(
       return {
         authorized: true,
         operatorId: result.operatorId || 'CF-ACCESS-OPERATOR',
+      };
+    } else {
+      return {
+        authorized: false,
+        operatorId: '',
+        error: result.error || 'Invalid Cloudflare Access JWT.',
+        status: result.status || 401,
       };
     }
   }
@@ -702,11 +723,15 @@ export async function handleApiRequest(
         const lineSubtotalPaise = pricePaise * item.quantity;
         subtotalPaise += lineSubtotalPaise;
 
+        const product = variant.productId
+          ? await db.getProductById(variant.productId)
+          : null;
+
         orderItemsToCreate.push({
           product_id: variant.productId || '',
           variant_id: variant.id,
-          product_name_snapshot: variant.name,
-          variant_name_snapshot: variant.packInfo,
+          product_name_snapshot: product?.name || variant.name,
+          variant_name_snapshot: product ? variant.name : (variant.packInfo || ''),
           unit_price_paise: pricePaise,
           quantity: item.quantity,
           line_subtotal_paise: lineSubtotalPaise,

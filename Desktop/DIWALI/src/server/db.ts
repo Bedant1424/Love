@@ -142,6 +142,10 @@ class InMemoryDemoDatabase {
     return this.variants.get(id) || null;
   }
 
+  public async getProductById(id: string) {
+    return this.products.find((p) => p.id === id) || null;
+  }
+
   public async updateVariantDemoPrice(
     variantId: string,
     newPricePaise: number,
@@ -1167,6 +1171,28 @@ export class D1DatabaseAdapter {
       sortOrder: c.sort_order,
       products: prodsByCat.get(c.id) || [],
     }));
+  }
+
+  public async getProductById(productId: string) {
+    const stmt = this.d1
+      .prepare(
+        'SELECT id, category_id, name, slug, printed_price_text, pack_info, is_pack_verified, pricing_origin, compliance_notice, notes, is_active FROM products WHERE id = ?'
+      )
+      .bind(productId);
+    const row = await stmt.first<any>();
+    if (!row) return null;
+    return {
+      id: row.id,
+      categoryId: row.category_id,
+      name: row.name,
+      printedPriceText: row.printed_price_text,
+      packInfo: row.pack_info,
+      isPackInfoVerified: Boolean(row.is_pack_verified),
+      pricingOrigin: row.pricing_origin,
+      complianceNotice: row.compliance_notice,
+      notes: row.notes,
+      variants: [],
+    };
   }
 
   public async getVariantById(variantId: string): Promise<ProductVariant | null> {
