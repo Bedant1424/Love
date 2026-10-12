@@ -151,6 +151,20 @@ export interface SubmitUtrRequest {
   utr: string;
 }
 
+export interface TrackOrderRequest {
+  orderReference: string;
+  mobileNumber: string;
+}
+
+export interface RequestTrackingOtpRequest {
+  mobileNumber: string;
+}
+
+export interface VerifyTrackingOtpRequest {
+  mobileNumber: string;
+  otp: string;
+}
+
 export interface UpdateDemoPriceRequest {
   newPricePaise: number;
   operatorId: string;

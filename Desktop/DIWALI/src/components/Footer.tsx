@@ -36,7 +36,7 @@ export const Footer: React.FC<FooterProps> = ({ onSelectTab }) => {
               <span className="text-stone-700">|</span>
               <button
                 type="button"
-                onClick={() => onSelectTab('review')}
+                onClick={() => onSelectTab('track')}
                 className="text-stone-400 hover:text-amber-300 transition-colors focus:outline-none focus:underline"
               >
                 Track Order

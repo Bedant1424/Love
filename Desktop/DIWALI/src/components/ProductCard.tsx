@@ -41,6 +41,24 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     activePrice !== undefined &&
     activePrice > 0;
 
+  // Determine variant minimum price across all priced variants
+  const validVariantPrices = product.variants
+    .map((v) => v.pricePaise ?? v.demoPricePaise)
+    .filter((p): p is number => p !== null && p !== undefined && p > 0);
+
+  const minVariantPrice =
+    validVariantPrices.length > 0 ? Math.min(...validVariantPrices) : null;
+
+  const cardBadgeText = (() => {
+    if (product.variants.length > 1 && minVariantPrice !== null) {
+      return `From ${formatPaise(minVariantPrice)}`;
+    }
+    if (isPriced && activePrice !== null) {
+      return formatPaise(activePrice);
+    }
+    return product.printedPriceText;
+  })();
+
   const productImage = getProductImage(product);
 
   return (
@@ -60,7 +78,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             height="300"
           />
           <span className="absolute top-2 left-2 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-white/95 text-stone-800 shadow-sm backdrop-blur-sm">
-            {product.printedPriceText}
+            {cardBadgeText}
           </span>
           {activeVariant?.isAvailable === false && (
             <span className="absolute top-2 right-2 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-rose-600 text-white shadow-sm">
@@ -130,7 +148,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
         <div>
           <span className="text-[11px] text-stone-500 block">
-            {activeVariant && activeVariant.printedMinPaise && activeVariant.printedMaxPaise && activeVariant.printedMinPaise !== activeVariant.printedMaxPaise
+            {activeVariant &&
+            activeVariant.printedMinPaise !== null &&
+            activeVariant.printedMinPaise !== undefined &&
+            activeVariant.printedMaxPaise !== null &&
+            activeVariant.printedMaxPaise !== undefined &&
+            activeVariant.printedMinPaise !== activeVariant.printedMaxPaise &&
+            typeof activePrice === 'number' &&
+            activePrice >= activeVariant.printedMinPaise &&
+            activePrice <= activeVariant.printedMaxPaise
               ? `Range: ${activeVariant.printedPriceText}`
               : 'Catalogue Price'}
           </span>

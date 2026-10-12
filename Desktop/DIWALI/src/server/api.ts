@@ -21,6 +21,9 @@ import {
   PaymentIssueStatus,
   PaymentIssueType,
   SubmitUtrRequest,
+  TrackOrderRequest,
+  RequestTrackingOtpRequest,
+  VerifyTrackingOtpRequest,
   UpdateDemoPriceRequest,
   UpdateOrderStatusRequest,
   UploadQrRequest,
@@ -832,6 +835,160 @@ export async function handleApiRequest(
         },
         201,
         true // no-store on sensitive customer order creation
+      );
+    }
+
+    // POST /api/v1/orders/track - Direct lookup via Order Reference + Mobile Number
+    if (path === '/api/v1/orders/track' && method === 'POST') {
+      const body = (await request.json()) as TrackOrderRequest;
+      const ref = (body.orderReference || '').trim();
+      const mobileClean = (body.mobileNumber || '').replace(/\D/g, '').slice(-10);
+
+      if (!ref) {
+        return jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'INVALID_ORDER_REFERENCE',
+              message: 'Valid order reference (e.g. NT-XXXX) is required.',
+            },
+          },
+          400,
+          true
+        );
+      }
+
+      if (!/^[6-9]\d{9}$/.test(mobileClean)) {
+        return jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'INVALID_MOBILE_NUMBER',
+              message: 'Valid 10-digit Indian mobile number is required.',
+            },
+          },
+          400,
+          true
+        );
+      }
+
+      const order = await db.getOrderByReferenceAndMobile(ref, mobileClean);
+      if (!order) {
+        return jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'ORDER_NOT_FOUND',
+              message: 'No matching order found for this reference and mobile number.',
+            },
+          },
+          404,
+          true
+        );
+      }
+
+      return jsonResponse(
+        {
+          success: true,
+          data: order,
+        },
+        200,
+        true
+      );
+    }
+
+    // POST /api/v1/orders/track/request-otp - Generate verification OTP for lost reference
+    if (path === '/api/v1/orders/track/request-otp' && method === 'POST') {
+      const body = (await request.json()) as RequestTrackingOtpRequest;
+      const mobileClean = (body.mobileNumber || '').replace(/\D/g, '').slice(-10);
+
+      if (!/^[6-9]\d{9}$/.test(mobileClean)) {
+        return jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'INVALID_MOBILE_NUMBER',
+              message: 'Valid 10-digit Indian mobile number is required.',
+            },
+          },
+          400,
+          true
+        );
+      }
+
+      const otp = await db.generateTrackingOtp(mobileClean);
+      return jsonResponse(
+        {
+          success: true,
+          data: {
+            message: 'A 6-digit verification code has been generated.',
+            devOtp: isRestricted ? otp : undefined,
+          },
+        },
+        200,
+        true
+      );
+    }
+
+    // POST /api/v1/orders/track/verify-otp - Verify OTP and retrieve orders for customer
+    if (path === '/api/v1/orders/track/verify-otp' && method === 'POST') {
+      const body = (await request.json()) as VerifyTrackingOtpRequest;
+      const mobileClean = (body.mobileNumber || '').replace(/\D/g, '').slice(-10);
+      const otp = (body.otp || '').trim();
+
+      if (!/^[6-9]\d{9}$/.test(mobileClean)) {
+        return jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'INVALID_MOBILE_NUMBER',
+              message: 'Valid 10-digit Indian mobile number is required.',
+            },
+          },
+          400,
+          true
+        );
+      }
+
+      if (!/^\d{6}$/.test(otp)) {
+        return jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'INVALID_OTP_FORMAT',
+              message: 'Verification code must be exactly 6 digits.',
+            },
+          },
+          400,
+          true
+        );
+      }
+
+      const verified = await db.verifyTrackingOtp(mobileClean, otp);
+      if (!verified) {
+        return jsonResponse(
+          {
+            success: false,
+            error: {
+              code: 'INVALID_OTP',
+              message: 'Verification code is invalid or has expired.',
+            },
+          },
+          400,
+          true
+        );
+      }
+
+      const orders = await db.getOrdersByMobile(mobileClean);
+      return jsonResponse(
+        {
+          success: true,
+          data: {
+            orders,
+          },
+        },
+        200,
+        true
       );
     }
 

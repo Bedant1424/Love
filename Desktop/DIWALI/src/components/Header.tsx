@@ -5,7 +5,8 @@ export type ActiveTab =
   | 'catalogue'
   | 'customer'
   | 'cart'
-  | 'review';
+  | 'review'
+  | 'track';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -75,9 +76,9 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Track Order Button */}
           <button
-            onClick={() => onSelectTab('review')}
+            onClick={() => onSelectTab('track')}
             className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs md:text-sm font-medium transition-all hidden sm:flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-festive-marigold ${
-              activeTab === 'review'
+              activeTab === 'track'
                 ? 'bg-amber-100/80 text-festive-marigold font-bold'
                 : 'text-stone-700 hover:text-stone-900 hover:bg-stone-100'
             }`}

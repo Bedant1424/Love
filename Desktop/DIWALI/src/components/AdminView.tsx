@@ -795,142 +795,155 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
         </div>
       </div>
 
-      {/* Admin Nav Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-3 border-b border-white/10 text-xs font-semibold">
-        <button
-          onClick={() => setActiveTab('dashboard')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors ${
-            activeTab === 'dashboard'
-              ? 'bg-festive-marigold text-black font-bold'
-              : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
-          }`}
-        >
-          Overview &amp; KPIs
-        </button>
+      {/* Admin Nav Tabs: 5 Primary Operational Tabs + Compact More Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 py-3 border-b border-white/10 text-xs font-semibold">
+        {/* 5 Primary Operational Tabs */}
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 sm:pb-0">
+          <button
+            onClick={() => setActiveTab('dashboard')}
+            className={`px-3.5 py-2 rounded-xl whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+              activeTab === 'dashboard'
+                ? 'bg-festive-marigold text-black font-bold shadow-sm'
+                : 'text-content-secondary hover:text-content-primary bg-bg-surface hover:bg-white/5 border border-white/10'
+            }`}
+          >
+            <span>Overview &amp; KPIs</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('orders')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-            activeTab === 'orders'
-              ? 'bg-festive-marigold text-black font-bold'
-              : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
-          }`}
-        >
-          <span>Orders</span>
-          <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-black/40 text-current">
-            {orders.length}
+          <button
+            onClick={() => setActiveTab('orders')}
+            className={`px-3.5 py-2 rounded-xl whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+              activeTab === 'orders'
+                ? 'bg-festive-marigold text-black font-bold shadow-sm'
+                : 'text-content-secondary hover:text-content-primary bg-bg-surface hover:bg-white/5 border border-white/10'
+            }`}
+          >
+            <span>Orders</span>
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-black/40 text-current">
+              {orders.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('catalogue')}
+            className={`px-3.5 py-2 rounded-xl whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+              activeTab === 'catalogue'
+                ? 'bg-festive-marigold text-black font-bold shadow-sm'
+                : 'text-content-secondary hover:text-content-primary bg-bg-surface hover:bg-white/5 border border-white/10'
+            }`}
+          >
+            <span>Catalogue &amp; Pricing</span>
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-black/40 text-current">
+              {variants.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('inventory')}
+            className={`px-3.5 py-2 rounded-xl whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+              activeTab === 'inventory'
+                ? 'bg-festive-marigold text-black font-bold shadow-sm'
+                : 'text-content-secondary hover:text-content-primary bg-bg-surface hover:bg-white/5 border border-white/10'
+            }`}
+          >
+            <span>Inventory &amp; Stock</span>
+            {lowStockCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-rose-900/80 text-rose-200 border border-rose-700/60">
+                {lowStockCount} LOW
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('qr')}
+            className={`px-3.5 py-2 rounded-xl whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+              activeTab === 'qr'
+                ? 'bg-festive-marigold text-black font-bold shadow-sm'
+                : 'text-content-secondary hover:text-content-primary bg-bg-surface hover:bg-white/5 border border-white/10'
+            }`}
+          >
+            <span>QR Versions</span>
+            {(() => {
+              const activeVer = qrVersions.find((q) => q.is_active === 1);
+              return activeVer ? (
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-emerald-950/60 text-emerald-300 border border-emerald-800/40">
+                  v{activeVer.version_number}
+                </span>
+              ) : (
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-rose-950/60 text-rose-300 border border-rose-800/40">
+                  None
+                </span>
+              );
+            })()}
+          </button>
+        </div>
+
+        {/* Compact More Operations Tools */}
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pt-1 sm:pt-0 border-t sm:border-t-0 border-white/5">
+          <span className="text-[10px] font-mono text-content-muted uppercase tracking-wider hidden lg:inline mr-1">
+            More:
           </span>
-        </button>
 
-        <button
-          onClick={() => setActiveTab('inventory')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-            activeTab === 'inventory'
-              ? 'bg-festive-marigold text-black font-bold'
-              : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
-          }`}
-        >
-          <span>Inventory &amp; Stock</span>
-          {lowStockCount > 0 && (
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-rose-900/80 text-rose-200 border border-rose-700/60">
-              {lowStockCount} LOW
-            </span>
-          )}
-        </button>
-
-        <button
-          onClick={() => setActiveTab('qr')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-            activeTab === 'qr'
-              ? 'bg-festive-marigold text-black font-bold'
-              : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
-          }`}
-        >
-          <span>QR Versions</span>
-          {(() => {
-            const activeVer = qrVersions.find((q) => q.is_active === 1);
-            return activeVer ? (
-              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-emerald-950/60 text-emerald-300 border border-emerald-800/40">
-                Active v{activeVer.version_number}
+          <button
+            onClick={() => setActiveTab('support')}
+            className={`px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-colors text-[11px] flex items-center gap-1 ${
+              activeTab === 'support'
+                ? 'bg-festive-marigold text-black font-bold'
+                : 'text-content-muted hover:text-content-primary bg-bg-surface/50 border border-white/5'
+            }`}
+          >
+            <span>Payment Issues</span>
+            {openIssuesCount > 0 && (
+              <span className="px-1 rounded-full text-[9px] font-mono bg-amber-900/80 text-amber-200">
+                {openIssuesCount}
               </span>
-            ) : (
-              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-rose-950/60 text-rose-300 border border-rose-800/40">
-                No Active QR
-              </span>
-            );
-          })()}
-        </button>
+            )}
+          </button>
 
-        <button
-          onClick={() => setActiveTab('support')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-            activeTab === 'support'
-              ? 'bg-festive-marigold text-black font-bold'
-              : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
-          }`}
-        >
-          <span>Payment Issues</span>
-          {openIssuesCount > 0 && (
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-amber-900/80 text-amber-200">
-              {openIssuesCount} OPEN
-            </span>
-          )}
-        </button>
+          <button
+            onClick={() => setActiveTab('customers')}
+            className={`px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-colors text-[11px] ${
+              activeTab === 'customers'
+                ? 'bg-festive-marigold text-black font-bold'
+                : 'text-content-muted hover:text-content-primary bg-bg-surface/50 border border-white/5'
+            }`}
+          >
+            <span>Customers</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('customers')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-            activeTab === 'customers'
-              ? 'bg-festive-marigold text-black font-bold'
-              : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
-          }`}
-        >
-          <span>Customers ({customers.length})</span>
-        </button>
+          <button
+            onClick={() => setActiveTab('reports')}
+            className={`px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-colors text-[11px] ${
+              activeTab === 'reports'
+                ? 'bg-festive-marigold text-black font-bold'
+                : 'text-content-muted hover:text-content-primary bg-bg-surface/50 border border-white/5'
+            }`}
+          >
+            <span>Sales Reports</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('reports')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors ${
-            activeTab === 'reports'
-              ? 'bg-festive-marigold text-black font-bold'
-              : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
-          }`}
-        >
-          Sales Reports
-        </button>
+          <button
+            onClick={() => setActiveTab('audit')}
+            className={`px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-colors text-[11px] ${
+              activeTab === 'audit'
+                ? 'bg-festive-marigold text-black font-bold'
+                : 'text-content-muted hover:text-content-primary bg-bg-surface/50 border border-white/5'
+            }`}
+          >
+            <span>Audit Logs</span>
+          </button>
 
-        <button
-          onClick={() => setActiveTab('catalogue')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors ${
-            activeTab === 'catalogue'
-              ? 'bg-festive-marigold text-black font-bold'
-              : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
-          }`}
-        >
-          Catalogue &amp; Pricing ({variants.length})
-        </button>
-
-        <button
-          onClick={() => setActiveTab('audit')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors ${
-            activeTab === 'audit'
-              ? 'bg-festive-marigold text-black font-bold'
-              : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
-          }`}
-        >
-          Audit Logs ({auditLogs.length})
-        </button>
-
-        <button
-          onClick={() => setActiveTab('settings')}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors ${
-            activeTab === 'settings'
-              ? 'bg-festive-marigold text-black font-bold'
-              : 'text-content-muted hover:text-content-primary bg-bg-surface border border-white/5'
-          }`}
-        >
-          System Settings
-        </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-colors text-[11px] ${
+              activeTab === 'settings'
+                ? 'bg-festive-marigold text-black font-bold'
+                : 'text-content-muted hover:text-content-primary bg-bg-surface/50 border border-white/5'
+            }`}
+          >
+            <span>Settings</span>
+          </button>
+        </div>
       </div>
 
       {/* ── TAB 1: OVERVIEW & KPIS ─────────────────────────────────── */}
@@ -2061,28 +2074,37 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
               )}
             </div>
 
-            {/* Itemized Snapshot */}
+            {/* Itemized Snapshot with Safe Fallbacks */}
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-content-muted mb-2">
                 Order Items Snapshot ({selectedOrder.items.length})
               </p>
               <div className="divide-y divide-white/5 bg-bg-elevated rounded-xl border border-white/5 overflow-hidden text-xs">
-                {selectedOrder.items.map((it) => (
-                  <div key={it.id} className="p-3 flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold text-content-primary">{it.product_name_snapshot}</p>
-                      <p className="text-content-muted text-[11px]">{it.variant_name_snapshot}</p>
+                {selectedOrder.items.map((it) => {
+                  const fallbackProduct =
+                    variants.find((v) => v.id === it.variant_id)?.name || 'Firework Item';
+                  const fallbackVariant =
+                    variants.find((v) => v.id === it.variant_id)?.packInfo || 'Standard';
+                  const prodName = it.product_name_snapshot || fallbackProduct;
+                  const varName = it.variant_name_snapshot || fallbackVariant;
+
+                  return (
+                    <div key={it.id} className="p-3.5 flex items-center justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-content-primary">{prodName}</p>
+                        <p className="text-content-muted text-[11px] mt-0.5">{varName}</p>
+                      </div>
+                      <div className="text-right font-mono">
+                        <p className="text-content-secondary text-[11px]">
+                          {it.quantity} × {formatPaiseToRupees(it.unit_price_paise)}
+                        </p>
+                        <p className="text-festive-marigold font-bold text-xs mt-0.5">
+                          {formatPaiseToRupees(it.line_subtotal_paise)}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right font-mono">
-                      <p className="text-content-primary font-medium">
-                        {it.quantity} × {formatPaiseToRupees(it.unit_price_paise)}
-                      </p>
-                      <p className="text-festive-marigold font-bold">
-                        {formatPaiseToRupees(it.line_subtotal_paise)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

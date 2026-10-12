@@ -6,6 +6,7 @@ import { CatalogueView } from './components/CatalogueView';
 import { CustomerForm } from './components/CustomerForm';
 import { CartView } from './components/CartView';
 import { ReviewView } from './components/ReviewView';
+import { TrackOrderView } from './components/TrackOrderView';
 import { StickyCartBar } from './components/StickyCartBar';
 import { useCart } from './hooks/useCart';
 import { CustomerDetails } from './types/customer';
@@ -15,7 +16,14 @@ import { apiClient } from './services/apiClient';
 import OwnerApp from './OwnerApp';
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('home');
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('track')) return 'track';
+      if (window.location.hash === '#track') return 'track';
+    }
+    return 'home';
+  });
   const [selectedCatalogueCategory, setSelectedCatalogueCategory] = useState<
     CategoryId | 'all'
   >('all');
@@ -157,6 +165,12 @@ export const App: React.FC = () => {
               cart.clearCart();
               handleNavigateToTab('catalogue');
             }}
+          />
+        )}
+
+        {activeTab === 'track' && (
+          <TrackOrderView
+            onNavigateToCatalogue={() => handleNavigateToTab('catalogue')}
           />
         )}
       </main>

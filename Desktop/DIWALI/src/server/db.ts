@@ -59,6 +59,7 @@ class InMemoryDemoDatabase {
   private customers: Map<string, DbCustomerDirectoryItem> = new Map();
   private adminUsers: Map<string, DbAdminUser> = new Map();
   private adminSessions: Map<string, DbAdminSession> = new Map();
+  private trackingOtps: Map<string, { otp: string; expiresAt: number }> = new Map();
 
   constructor() {
     this.seed();
@@ -76,6 +77,7 @@ class InMemoryDemoDatabase {
     this.customers.clear();
     this.adminUsers.clear();
     this.adminSessions.clear();
+    this.trackingOtps.clear();
 
     for (const prod of this.products) {
       for (const v of prod.variants) {
@@ -301,26 +303,111 @@ class InMemoryDemoDatabase {
    * Retrieves order by reference.
    * If accessToken is provided, enforces cryptographic token equivalence to prevent IDOR.
    */
-  public async getOrderByReference(
+   public async getOrderByReference(
     reference: string,
     accessToken?: string
   ): Promise<DemoOrderRecordWithItems | null> {
     const order = Array.from(this.orders.values()).find(
-      (o) => o.order_reference === reference
+      (o) => o.order_reference.toUpperCase() === reference.trim().toUpperCase()
     );
     if (!order) return null;
     if (accessToken !== undefined && order.access_token !== accessToken) {
       throw new Error('INVALID_ACCESS_TOKEN');
     }
-    const items = this.orderItems.get(order.id) || [];
+    const rawItems = this.orderItems.get(order.id) || [];
+    const items = rawItems.map((it) => {
+      const v = this.variants.get(it.variant_id);
+      return {
+        ...it,
+        product_name_snapshot: it.product_name_snapshot || v?.name || 'Firework Item',
+        variant_name_snapshot: it.variant_name_snapshot || v?.packInfo || 'Standard',
+      };
+    });
     return { ...order, items };
   }
 
   public async getOrderById(id: string): Promise<DemoOrderRecordWithItems | null> {
     const order = this.orders.get(id);
     if (!order) return null;
-    const items = this.orderItems.get(order.id) || [];
+    const rawItems = this.orderItems.get(order.id) || [];
+    const items = rawItems.map((it) => {
+      const v = this.variants.get(it.variant_id);
+      return {
+        ...it,
+        product_name_snapshot: it.product_name_snapshot || v?.name || 'Firework Item',
+        variant_name_snapshot: it.variant_name_snapshot || v?.packInfo || 'Standard',
+      };
+    });
     return { ...order, items };
+  }
+
+  public async getOrderByReferenceAndMobile(
+    reference: string,
+    mobile: string
+  ): Promise<DemoOrderRecordWithItems | null> {
+    const cleanRef = reference.trim().toUpperCase();
+    const cleanMob = mobile.replace(/\D/g, '').slice(-10);
+    const order = Array.from(this.orders.values()).find(
+      (o) =>
+        o.order_reference.toUpperCase() === cleanRef &&
+        o.customer_mobile.replace(/\D/g, '').slice(-10) === cleanMob
+    );
+    if (!order) return null;
+    const rawItems = this.orderItems.get(order.id) || [];
+    const items = rawItems.map((it) => {
+      const v = this.variants.get(it.variant_id);
+      return {
+        ...it,
+        product_name_snapshot: it.product_name_snapshot || v?.name || 'Firework Item',
+        variant_name_snapshot: it.variant_name_snapshot || v?.packInfo || 'Standard',
+      };
+    });
+    return { ...order, items };
+  }
+
+  public async getOrdersByMobile(mobile: string): Promise<DemoOrderRecordWithItems[]> {
+    const cleanMob = mobile.replace(/\D/g, '').slice(-10);
+    const list = Array.from(this.orders.values()).filter(
+      (o) => o.customer_mobile.replace(/\D/g, '').slice(-10) === cleanMob
+    );
+    list.sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+    return list.map((order) => {
+      const rawItems = this.orderItems.get(order.id) || [];
+      const items = rawItems.map((it) => {
+        const v = this.variants.get(it.variant_id);
+        return {
+          ...it,
+          product_name_snapshot: it.product_name_snapshot || v?.name || 'Firework Item',
+          variant_name_snapshot: it.variant_name_snapshot || v?.packInfo || 'Standard',
+        };
+      });
+      return { ...order, items };
+    });
+  }
+
+  public async generateTrackingOtp(mobile: string): Promise<string> {
+    const cleanMob = mobile.replace(/\D/g, '').slice(-10);
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 10 * 60 * 1000;
+    this.trackingOtps.set(cleanMob, { otp, expiresAt });
+    return otp;
+  }
+
+  public async verifyTrackingOtp(mobile: string, otp: string): Promise<boolean> {
+    const cleanMob = mobile.replace(/\D/g, '').slice(-10);
+    const record = this.trackingOtps.get(cleanMob);
+    if (!record) return false;
+    if (Date.now() > record.expiresAt) {
+      this.trackingOtps.delete(cleanMob);
+      return false;
+    }
+    const match = record.otp.trim() === otp.trim();
+    if (match) {
+      this.trackingOtps.delete(cleanMob);
+    }
+    return match;
   }
 
   public async getOrders(filters?: {
@@ -1259,10 +1346,16 @@ export class D1DatabaseAdapter {
 
     const itemsStmt = this.d1.prepare('SELECT * FROM order_items WHERE order_id = ?').bind(orderId);
     const itemsRes = await itemsStmt.all<any>();
+    const rawItems = itemsRes.results || [];
+    const items = rawItems.map((it: any) => ({
+      ...it,
+      product_name_snapshot: it.product_name_snapshot || 'Firework Item',
+      variant_name_snapshot: it.variant_name_snapshot || 'Standard',
+    }));
 
     return {
       ...orderRow,
-      items: itemsRes.results || [],
+      items,
     };
   }
 
@@ -1450,11 +1543,11 @@ export class D1DatabaseAdapter {
     if (accessToken) {
       stmt = this.d1.prepare(
         'SELECT * FROM orders WHERE order_reference = ? AND access_token = ?'
-      ).bind(reference, accessToken);
+      ).bind(reference.trim(), accessToken);
     } else {
       stmt = this.d1.prepare(
         'SELECT * FROM orders WHERE order_reference = ?'
-      ).bind(reference);
+      ).bind(reference.trim());
     }
 
     const orderRow = await stmt.first<any>();
@@ -1464,11 +1557,115 @@ export class D1DatabaseAdapter {
       'SELECT * FROM order_items WHERE order_id = ?'
     ).bind(orderRow.id);
     const itemsRes = await itemsStmt.all<any>();
+    const rawItems = itemsRes.results || [];
+    const items = rawItems.map((it: any) => ({
+      ...it,
+      product_name_snapshot: it.product_name_snapshot || 'Firework Item',
+      variant_name_snapshot: it.variant_name_snapshot || 'Standard',
+    }));
 
     return {
       ...orderRow,
-      items: itemsRes.results || [],
+      items,
     };
+  }
+
+  public async getOrderByReferenceAndMobile(
+    reference: string,
+    mobile: string
+  ): Promise<DemoOrderRecordWithItems | null> {
+    const cleanRef = reference.trim().toUpperCase();
+    const cleanMob = mobile.replace(/\D/g, '').slice(-10);
+
+    const stmt = this.d1
+      .prepare('SELECT * FROM orders WHERE UPPER(order_reference) = ?')
+      .bind(cleanRef);
+    const orderRow = await stmt.first<any>();
+    if (!orderRow) return null;
+
+    const rowMob = (orderRow.customer_mobile || '').replace(/\D/g, '').slice(-10);
+    if (rowMob !== cleanMob) return null;
+
+    const itemsStmt = this.d1
+      .prepare('SELECT * FROM order_items WHERE order_id = ?')
+      .bind(orderRow.id);
+    const itemsRes = await itemsStmt.all<any>();
+    const rawItems = itemsRes.results || [];
+    const items = rawItems.map((it: any) => ({
+      ...it,
+      product_name_snapshot: it.product_name_snapshot || 'Firework Item',
+      variant_name_snapshot: it.variant_name_snapshot || 'Standard',
+    }));
+
+    return {
+      ...orderRow,
+      items,
+    };
+  }
+
+  public async getOrdersByMobile(mobile: string): Promise<DemoOrderRecordWithItems[]> {
+    const cleanMob = mobile.replace(/\D/g, '').slice(-10);
+    const stmt = this.d1
+      .prepare('SELECT * FROM orders WHERE customer_mobile LIKE ? ORDER BY created_at DESC')
+      .bind(`%${cleanMob}`);
+    const res = await stmt.all<any>();
+    const orders: any[] = res.results || [];
+
+    const ordersWithItems: DemoOrderRecordWithItems[] = [];
+    for (const ord of orders) {
+      const itemsStmt = this.d1
+        .prepare('SELECT * FROM order_items WHERE order_id = ?')
+        .bind(ord.id);
+      const itemsRes = await itemsStmt.all<any>();
+      const rawItems = itemsRes.results || [];
+      const items = rawItems.map((it: any) => ({
+        ...it,
+        product_name_snapshot: it.product_name_snapshot || 'Firework Item',
+        variant_name_snapshot: it.variant_name_snapshot || 'Standard',
+      }));
+      ordersWithItems.push({
+        ...ord,
+        items,
+      });
+    }
+
+    return ordersWithItems;
+  }
+
+  public async generateTrackingOtp(mobile: string): Promise<string> {
+    const cleanMob = mobile.replace(/\D/g, '').slice(-10);
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const id = `otp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+
+    const delStmt = this.d1
+      .prepare('DELETE FROM tracking_otps WHERE mobile_number = ?')
+      .bind(cleanMob);
+
+    const insStmt = this.d1
+      .prepare(
+        "INSERT INTO tracking_otps (id, mobile_number, otp_code, expires_at, created_at) VALUES (?, ?, ?, datetime('now', '+10 minutes'), datetime('now'))"
+      )
+      .bind(id, cleanMob, otp);
+
+    await this.d1.batch([delStmt, insStmt]);
+    return otp;
+  }
+
+  public async verifyTrackingOtp(mobile: string, otp: string): Promise<boolean> {
+    const cleanMob = mobile.replace(/\D/g, '').slice(-10);
+    const stmt = this.d1
+      .prepare(
+        "SELECT * FROM tracking_otps WHERE mobile_number = ? AND otp_code = ? AND expires_at > datetime('now')"
+      )
+      .bind(cleanMob, otp.trim());
+    const row = await stmt.first<any>();
+    if (!row) return false;
+
+    await this.d1
+      .prepare('DELETE FROM tracking_otps WHERE id = ?')
+      .bind(row.id)
+      .run();
+    return true;
   }
 
   public async getOrders(filters?: {

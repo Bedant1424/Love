@@ -239,6 +239,36 @@ export const apiClient = {
     );
   },
 
+  /**
+   * Directly look up an order using Order Reference and customer registered Mobile Number.
+   */
+  async trackOrder(orderReference: string, mobileNumber: string) {
+    return executeApi<DemoOrderRecordWithItems>('/orders/track', {
+      method: 'POST',
+      body: JSON.stringify({ orderReference, mobileNumber }),
+    });
+  },
+
+  /**
+   * Request a 6-digit OTP to retrieve lost order references.
+   */
+  async requestTrackingOtp(mobileNumber: string) {
+    return executeApi<{ message: string; devOtp?: string }>('/orders/track/request-otp', {
+      method: 'POST',
+      body: JSON.stringify({ mobileNumber }),
+    });
+  },
+
+  /**
+   * Verify 6-digit OTP and retrieve order references for customer.
+   */
+  async verifyTrackingOtp(mobileNumber: string, otp: string) {
+    return executeApi<{ orders: DemoOrderRecordWithItems[] }>('/orders/track/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify({ mobileNumber, otp }),
+    });
+  },
+
   // Admin Authentication Operations
   async adminInit(email: string, password: string) {
     return executeApi<{ message: string; email: string }>('/admin/auth/init', {

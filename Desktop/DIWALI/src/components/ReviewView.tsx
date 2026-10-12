@@ -118,6 +118,30 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
     }
   };
 
+  const handleDownloadQr = async () => {
+    const url = paymentConfig?.qrImageUrl || '/images/nagarjuna-payment-qr.jpeg';
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = 'Nagarjuna-Traders-Payment-QR.jpg';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'Nagarjuna-Traders-Payment-QR.jpg';
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   // Step 6 -> Step 7: Create Order on server and proceed to QR payment instructions
   const handleProceedToQr = async () => {
     if (!canProceedToPayment || isSubmittingOrderRef.current || !isPaymentAvailable) return;
@@ -132,6 +156,17 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
           quantity: it.quantity,
         })),
       });
+
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('nt_tracked_order_ref', response.orderReference);
+          localStorage.setItem('nt_tracked_order_token', response.accessToken);
+          localStorage.setItem('nt_tracked_order_mobile', customer.mobileNumber);
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.set('track', response.orderReference);
+          window.history.replaceState({}, '', newUrl.toString());
+        } catch {}
+      }
 
       setOrderState({
         orderReference: response.orderReference,
@@ -816,13 +851,26 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
             </div>
           ) : (
             <div className="flex flex-col items-center p-6 rounded-3xl bg-white text-stone-900 border border-stone-200 shadow-warm-sm max-w-sm mx-auto space-y-4">
-              <div className="text-center">
-                <div className="text-xs font-bold text-amber-700 uppercase tracking-wider font-mono">
-                  Official UPI Payment QR
+              <div className="w-full flex items-center justify-between pb-2 border-b border-stone-100">
+                <div className="text-left">
+                  <div className="text-xs font-bold text-amber-700 uppercase tracking-wider font-mono">
+                    Official UPI Payment QR
+                  </div>
+                  <div className="text-[11px] font-semibold text-stone-600 mt-0.5">
+                    Scan with any UPI app
+                  </div>
                 </div>
-                <div className="text-xs font-semibold text-stone-600 mt-0.5">
-                  Scan with Google Pay, PhonePe, Paytm, or Slice
-                </div>
+                <button
+                  type="button"
+                  onClick={handleDownloadQr}
+                  className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
+                  title="Download payment QR code image"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>Download QR</span>
+                </button>
               </div>
 
               {/* Official Slice QR Image - Exactly as provided, uncropped, generous scan padding */}
