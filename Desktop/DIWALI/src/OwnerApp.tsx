@@ -3,7 +3,11 @@ import { AdminView } from './components/AdminView';
 
 export const OwnerApp: React.FC = () => {
   const handleBackToCustomerSite = () => {
-    window.location.href = 'https://nagarjuna-traders.pages.dev';
+    if (typeof window !== 'undefined' && window.location.hostname.includes('owner')) {
+      window.location.href = 'https://nagarjuna-traders.pages.dev';
+    } else {
+      window.location.href = '/';
+    }
   };
 
   return (

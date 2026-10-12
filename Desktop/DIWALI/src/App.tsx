@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Header, ActiveTab } from './components/Header';
 import { Footer } from './components/Footer';
 import { HomeView } from './components/HomeView';
@@ -10,6 +10,7 @@ import { StickyCartBar } from './components/StickyCartBar';
 import { useCart } from './hooks/useCart';
 import { CustomerDetails } from './types/customer';
 import { CategoryId } from './types/catalogue';
+import OwnerApp from './OwnerApp';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('home');
@@ -27,31 +28,8 @@ export const App: React.FC = () => {
   });
 
   const cart = useCart();
-
-  useEffect(() => {
-    // Redirect any customer visit to /admin to the separate secure owner domain
-    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) {
-      window.location.replace('https://nagarjuna-traders-owner.pages.dev');
-    }
-  }, []);
-
-  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-bg-base text-content-primary p-4 text-center">
-        <div className="max-w-md p-6 bg-bg-surface border border-white/10 rounded-2xl shadow-xl">
-          <p className="text-sm font-semibold mb-2">Redirecting to Owner Portal</p>
-          <p className="text-xs text-content-muted mb-4">
-            Store administration is hosted separately. Redirecting to nagarjuna-traders-owner.pages.dev...
-          </p>
-          <a
-            href="https://nagarjuna-traders-owner.pages.dev"
-            className="inline-block px-4 py-2 bg-festive-marigold text-black font-semibold rounded-xl text-xs"
-          >
-            Go to Owner Portal →
-          </a>
-        </div>
-      </div>
-    );
+  if (typeof window !== 'undefined' && (window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/'))) {
+    return <OwnerApp />;
   }
 
   const handleSelectCategoryFromHome = (catId: CategoryId) => {

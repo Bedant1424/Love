@@ -243,7 +243,10 @@ export async function verifyAdminRequest(
     const isExemptPath =
       pathname === '/api/v1/admin/auth/change-password' ||
       pathname === '/api/v1/admin/auth/logout' ||
-      pathname === '/api/v1/admin/auth/session';
+      pathname === '/api/v1/admin/auth/session' ||
+      pathname === '/api/admin/auth/change-password' ||
+      pathname === '/api/admin/auth/logout' ||
+      pathname === '/api/admin/auth/session';
 
     if (sessionRecord.user.must_change_password === 1 && !isExemptPath) {
       return {
@@ -1075,8 +1078,15 @@ export async function handleApiRequest(
 
     // ── PROTECTED ADMIN ENDPOINTS ────────────────────────────────────
 
-    // Auth gate for all /api/v1/admin/* endpoints
-    if (path.startsWith('/api/v1/admin/')) {
+    // Auth gate for all /api/v1/admin/* and /api/admin/* endpoints
+    const adminPath =
+      path === '/api/admin'
+        ? '/api/v1/admin/dashboard'
+        : path.startsWith('/api/admin/')
+        ? '/api/v1/admin/' + path.slice('/api/admin/'.length)
+        : path;
+
+    if (adminPath.startsWith('/api/v1/admin/')) {
       const isHosted = Boolean(
         (url &&
           (url.hostname.includes('.pages.dev') ||
@@ -1092,7 +1102,7 @@ export async function handleApiRequest(
       const secureFlag = isSecure ? '; Secure' : '';
 
       // 1. One-time Setup Initializer: POST /api/v1/admin/auth/init
-      if (path === '/api/v1/admin/auth/init' && method === 'POST') {
+      if (adminPath === '/api/v1/admin/auth/init' && method === 'POST') {
         const count = await db.getAdminUserCount();
         if (count > 0) {
           return jsonResponse(
@@ -1165,7 +1175,7 @@ export async function handleApiRequest(
       }
 
       // 2. Login Endpoint: POST /api/v1/admin/auth/login
-      if (path === '/api/v1/admin/auth/login' && method === 'POST') {
+      if (adminPath === '/api/v1/admin/auth/login' && method === 'POST') {
         const body = (await request.json().catch(() => ({}))) as any;
         if (body.passphrase && !body.email) {
           return jsonResponse(
@@ -1262,7 +1272,7 @@ export async function handleApiRequest(
       }
 
       // 3. Logout Endpoint: POST /api/v1/admin/auth/logout
-      if (path === '/api/v1/admin/auth/logout' && method === 'POST') {
+      if (adminPath === '/api/v1/admin/auth/logout' && method === 'POST') {
         const cookieHeader = request.headers.get('Cookie') || '';
         const cookieMatch = cookieHeader.match(/admin_session=([^;]+)/);
         const cookieSession = cookieMatch
@@ -1295,8 +1305,8 @@ export async function handleApiRequest(
 
       // 4. Session Validation Endpoint: GET /api/v1/admin/auth/session
       if (
-        (path === '/api/v1/admin/auth/session' ||
-          path === '/api/v1/admin/auth/status') &&
+        (adminPath === '/api/v1/admin/auth/session' ||
+          adminPath === '/api/v1/admin/auth/status') &&
         method === 'GET'
       ) {
         const auth = await verifyAdminRequest(request, env);
@@ -1332,7 +1342,7 @@ export async function handleApiRequest(
       }
 
       // 5. Password Change Endpoint: POST /api/v1/admin/auth/change-password
-      if (path === '/api/v1/admin/auth/change-password' && method === 'POST') {
+      if (adminPath === '/api/v1/admin/auth/change-password' && method === 'POST') {
         const auth = await verifyAdminRequest(request, env);
         if (!auth.authorized && !auth.mustChangePassword) {
           return jsonResponse(
@@ -1467,7 +1477,7 @@ export async function handleApiRequest(
       }
 
       // GET /api/v1/admin/dashboard
-      if (path === '/api/v1/admin/dashboard' && method === 'GET') {
+      if (adminPath === '/api/v1/admin/dashboard' && method === 'GET') {
         const kpis = await db.getDashboardKPIs();
         return jsonResponse(
           {
@@ -1480,7 +1490,7 @@ export async function handleApiRequest(
       }
 
       // GET /api/v1/admin/orders
-      if (path === '/api/v1/admin/orders' && method === 'GET') {
+      if (adminPath === '/api/v1/admin/orders' && method === 'GET') {
         const opStatus = url.searchParams.get(
           'operationalStatus'
         ) as OperationalStatus | undefined;
@@ -1504,7 +1514,7 @@ export async function handleApiRequest(
       }
 
       // GET /api/v1/admin/orders/:id
-      const adminOrderDetailMatch = path.match(
+      const adminOrderDetailMatch = adminPath.match(
         /^\/api\/v1\/admin\/orders\/([^/]+)$/
       );
       if (adminOrderDetailMatch && method === 'GET') {
@@ -1531,7 +1541,7 @@ export async function handleApiRequest(
       }
 
       // POST /api/v1/admin/orders/:id/status
-      const adminStatusMatch = path.match(
+      const adminStatusMatch = adminPath.match(
         /^\/api\/v1\/admin\/orders\/([^/]+)\/status$/
       );
       if (adminStatusMatch && method === 'POST') {
@@ -1570,8 +1580,8 @@ export async function handleApiRequest(
 
       // Disabled reconciliation/verification endpoint
       const adminReconciliationMatch =
-        path.match(/^\/api\/v1\/admin\/orders\/([^/]+)\/reconciliation$/) ||
-        path.match(/^\/api\/v1\/admin\/orders\/([^/]+)\/verify-payment$/);
+        adminPath.match(/^\/api\/v1\/admin\/orders\/([^/]+)\/reconciliation$/) ||
+        adminPath.match(/^\/api\/v1\/admin\/orders\/([^/]+)\/verify-payment$/);
       if (adminReconciliationMatch && method === 'POST') {
         return jsonResponse(
           {
@@ -1588,7 +1598,7 @@ export async function handleApiRequest(
       }
 
       // GET /api/v1/admin/variants
-      if (path === '/api/v1/admin/variants' && method === 'GET') {
+      if (adminPath === '/api/v1/admin/variants' && method === 'GET') {
         const variants = await db.getAllVariants();
         return jsonResponse(
           {
@@ -1601,7 +1611,7 @@ export async function handleApiRequest(
       }
 
       // POST /api/v1/admin/variants/:id/demo-price or /api/v1/admin/variants/:id/price
-      const adminPriceMatch = path.match(
+      const adminPriceMatch = adminPath.match(
         /^\/api\/v1\/admin\/variants\/([^/]+)\/(?:demo-price|price)$/
       );
       if (adminPriceMatch && method === 'POST') {
@@ -1701,7 +1711,7 @@ export async function handleApiRequest(
       }
 
       // GET /api/v1/admin/audit-logs
-      if (path === '/api/v1/admin/audit-logs' && method === 'GET') {
+      if (adminPath === '/api/v1/admin/audit-logs' && method === 'GET') {
         const logs = await db.getAuditLogs();
         return jsonResponse(
           {
@@ -1715,14 +1725,14 @@ export async function handleApiRequest(
 
       // ── PAYMENT SUPPORT ISSUES ──────────────────────────────────────
       // GET /api/v1/admin/payment-issues
-      if (path === '/api/v1/admin/payment-issues' && method === 'GET') {
+      if (adminPath === '/api/v1/admin/payment-issues' && method === 'GET') {
         const status = url.searchParams.get('status') as PaymentIssueStatus | undefined;
         const issues = await db.getPaymentIssues(status || undefined);
         return jsonResponse({ success: true, data: issues }, 200, true);
       }
 
       // PATCH /api/v1/admin/payment-issues/:id
-      const issuePatchMatch = path.match(/^\/api\/v1\/admin\/payment-issues\/([^/]+)$/);
+      const issuePatchMatch = adminPath.match(/^\/api\/v1\/admin\/payment-issues\/([^/]+)$/);
       if (issuePatchMatch && method === 'PATCH') {
         const issueId = issuePatchMatch[1];
         const body = (await request.json()) as {
@@ -1739,13 +1749,13 @@ export async function handleApiRequest(
 
       // ── INVENTORY MANAGEMENT ────────────────────────────────────────
       // GET /api/v1/admin/inventory
-      if (path === '/api/v1/admin/inventory' && method === 'GET') {
+      if (adminPath === '/api/v1/admin/inventory' && method === 'GET') {
         const items = await db.getInventory();
         return jsonResponse({ success: true, data: items }, 200, true);
       }
 
       // POST /api/v1/admin/inventory/adjust
-      if (path === '/api/v1/admin/inventory/adjust' && method === 'POST') {
+      if (adminPath === '/api/v1/admin/inventory/adjust' && method === 'POST') {
         const body = (await request.json()) as {
           variantId: string;
           newStock: number;
@@ -1811,20 +1821,20 @@ export async function handleApiRequest(
       }
 
       // GET /api/v1/admin/inventory/audit-logs
-      if (path === '/api/v1/admin/inventory/audit-logs' && method === 'GET') {
+      if (adminPath === '/api/v1/admin/inventory/audit-logs' && method === 'GET') {
         const logs = await db.getInventoryAuditLogs();
         return jsonResponse({ success: true, data: logs }, 200, true);
       }
 
       // ── QR VERSIONS & ROTATION ──────────────────────────────────────
       // GET /api/v1/admin/qr
-      if (path === '/api/v1/admin/qr' && method === 'GET') {
+      if (adminPath === '/api/v1/admin/qr' && method === 'GET') {
         const versions = await db.getQrVersions();
         return jsonResponse({ success: true, data: versions }, 200, true);
       }
 
       // POST /api/v1/admin/qr/upload
-      if (path === '/api/v1/admin/qr/upload' && method === 'POST') {
+      if (adminPath === '/api/v1/admin/qr/upload' && method === 'POST') {
         const body = (await request.json().catch(() => ({}))) as UploadQrRequest;
         if (
           !body.label?.trim() ||
@@ -1907,7 +1917,7 @@ export async function handleApiRequest(
       }
 
       // POST /api/v1/admin/qr/:id/activate
-      const qrActivateMatch = path.match(/^\/api\/v1\/admin\/qr\/([^/]+)\/activate$/);
+      const qrActivateMatch = adminPath.match(/^\/api\/v1\/admin\/qr\/([^/]+)\/activate$/);
       if (qrActivateMatch && method === 'POST') {
         const qrId = qrActivateMatch[1];
         const body = (await request.json().catch(() => ({}))) as { notes?: string };
@@ -1920,7 +1930,7 @@ export async function handleApiRequest(
       }
 
       // POST /api/v1/admin/qr/:id/deactivate
-      const qrDeactivateMatch = path.match(
+      const qrDeactivateMatch = adminPath.match(
         /^\/api\/v1\/admin\/qr\/([^/]+)\/deactivate$/
       );
       if (qrDeactivateMatch && method === 'POST') {
@@ -1931,14 +1941,14 @@ export async function handleApiRequest(
 
       // ── CUSTOMER DIRECTORY ──────────────────────────────────────────
       // GET /api/v1/admin/customers
-      if (path === '/api/v1/admin/customers' && method === 'GET') {
+      if (adminPath === '/api/v1/admin/customers' && method === 'GET') {
         const search = url.searchParams.get('search') || undefined;
         const customers = await db.getCustomers(search);
         return jsonResponse({ success: true, data: customers }, 200, true);
       }
 
       // GET /api/v1/admin/customers/:id
-      const custDetailMatch = path.match(
+      const custDetailMatch = adminPath.match(
         /^\/api\/v1\/admin\/customers\/([^/]+)$/
       );
       if (custDetailMatch && method === 'GET') {
@@ -1949,7 +1959,7 @@ export async function handleApiRequest(
 
       // ── SALES REPORTS & ANALYTICS ───────────────────────────────────
       // GET /api/v1/admin/reports/sales
-      if (path === '/api/v1/admin/reports/sales' && method === 'GET') {
+      if (adminPath === '/api/v1/admin/reports/sales' && method === 'GET') {
         const range =
           (url.searchParams.get('range') as 'today' | '7d' | '30d' | 'all') ||
           'today';
@@ -1958,7 +1968,7 @@ export async function handleApiRequest(
       }
 
       // GET /api/v1/admin/reports/export
-      if (path === '/api/v1/admin/reports/export' && method === 'GET') {
+      if (adminPath === '/api/v1/admin/reports/export' && method === 'GET') {
         const range =
           (url.searchParams.get('range') as 'today' | '7d' | '30d' | 'all') ||
           'today';
