@@ -39,30 +39,30 @@ export const OwnerApp: React.FC = () => {
   return (
     <div className="min-h-[100dvh] flex flex-col bg-bg-base text-content-primary selection:bg-festive-marigold selection:text-black">
       {/* Top Owner Bar */}
-      <header className="sticky top-0 z-40 bg-bg-surface/95 backdrop-blur-md border-b border-white/10 px-4 py-3 shadow-sm">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-200 px-4 py-3 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-festive-marigold text-black font-black flex items-center justify-center font-display shadow-md">
+            <div className="w-8 h-8 rounded-lg bg-orange-600 text-white font-black flex items-center justify-center font-display shadow-sm">
               NT
             </div>
             <div>
-              <span className="font-display font-bold text-base text-content-primary tracking-wide block leading-none">
+              <span className="font-display font-bold text-base text-stone-900 tracking-wide block leading-none">
                 Nagarjuna Traders
               </span>
-              <span className="text-[10px] font-medium text-amber-400 tracking-wider uppercase block mt-1">
+              <span className="text-[10px] font-semibold text-orange-700 tracking-wider uppercase block mt-1">
                 Owner Administration Hub
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-950/60 text-emerald-300 border border-emerald-800/40">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
               Secure Portal
             </span>
             <button
               onClick={handleBackToCustomerSite}
-              className="text-xs text-content-muted hover:text-content-primary font-medium transition-colors hidden sm:inline-block"
+              className="text-xs text-stone-600 hover:text-stone-900 font-medium transition-colors hidden sm:inline-block"
             >
               Customer Storefront →
             </button>
@@ -71,12 +71,12 @@ export const OwnerApp: React.FC = () => {
       </header>
 
       {/* Main Administrative Surface */}
-      <main className="flex-1">
+      <main className="flex-1 bg-[#FDFBF7]">
         <AdminView onBackToCustomerSite={handleBackToCustomerSite} />
       </main>
 
       {/* Footer */}
-      <footer className="py-4 border-t border-white/5 text-center text-xs text-content-muted bg-bg-surface/50">
+      <footer className="py-4 border-t border-stone-200 text-center text-xs text-stone-600 bg-white">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>Nagarjuna Traders Owner Console - Internal Operations</span>
           <span>Protected by Cloudflare Access Zero Trust</span>
