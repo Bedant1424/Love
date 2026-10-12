@@ -847,9 +847,18 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
           }`}
         >
           <span>QR Versions</span>
-          <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-emerald-950/60 text-emerald-300 border border-emerald-800/40">
-            Active v{qrVersions.find((q) => q.is_active === 1)?.version_number || 1}
-          </span>
+          {(() => {
+            const activeVer = qrVersions.find((q) => q.is_active === 1);
+            return activeVer ? (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-emerald-950/60 text-emerald-300 border border-emerald-800/40">
+                Active v{activeVer.version_number}
+              </span>
+            ) : (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-rose-950/60 text-rose-300 border border-rose-800/40">
+                No Active QR
+              </span>
+            );
+          })()}
         </button>
 
         <button
@@ -1359,6 +1368,17 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBackToCustomerSite }) =>
           </div>
 
           {/* Active QR Spotlight */}
+          {!qrVersions.some((q) => q.is_active === 1) && (
+            <div className="bg-rose-950/20 border border-rose-800/40 rounded-2xl p-4 text-xs text-rose-300 flex items-center gap-3">
+              <span className="text-lg">⚠️</span>
+              <div>
+                <p className="font-semibold text-rose-200">No Active Payment QR</p>
+                <p className="text-stone-400">
+                  Customer checkout advance payments are disabled until an approved QR version is activated below.
+                </p>
+              </div>
+            </div>
+          )}
           {qrVersions.find((q) => q.is_active === 1) && (() => {
             const active = qrVersions.find((q) => q.is_active === 1)!;
             return (

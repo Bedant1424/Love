@@ -444,10 +444,23 @@ export async function handleApiRequest(
         );
       }
 
-      // Live genuine merchant payment configuration
-      const vpa = env?.STORE_UPI_VPA || 'jena2005@slc';
-      const accountName = env?.STORE_ACCOUNT_HOLDER || 'Mr Subham Jena';
-      const qrImageUrl = env?.PAYMENT_QR_IMAGE_URL || '/images/nagarjuna-payment-qr.jpeg';
+      // Dynamic active QR version lookup from D1 database
+      const activeQr = await db.getActiveQrVersion();
+      if (!activeQr) {
+        return jsonResponse<PaymentConfig>(
+          {
+            success: true,
+            data: {
+              paymentCollectionEnabled: false,
+              isRestrictedEnv: false,
+              message: 'Payment instructions are currently unavailable.',
+              tokenTiers: DEFAULT_TOKEN_TIERS,
+            },
+          },
+          200,
+          true
+        );
+      }
 
       return jsonResponse<PaymentConfig>(
         {
@@ -455,9 +468,9 @@ export async function handleApiRequest(
           data: {
             paymentCollectionEnabled: true,
             isRestrictedEnv: false,
-            vpa,
-            accountName,
-            qrImageUrl,
+            vpa: activeQr.vpa,
+            accountName: activeQr.account_name,
+            qrImageUrl: activeQr.image_url,
             message: 'Scan the UPI QR code using any UPI app to pay the advance token amount.',
             tokenTiers: DEFAULT_TOKEN_TIERS,
           },

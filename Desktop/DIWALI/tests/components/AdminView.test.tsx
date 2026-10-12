@@ -144,4 +144,24 @@ describe('AdminView Component Suite', () => {
       expect(screen.getByRole('button', { name: /Save Price/i })).toBeInTheDocument();
     });
   });
+
+  it('displays accurate QR version badge and allows navigating to QR Versions tab', async () => {
+    await loginAndUnlockAdmin();
+
+    // Check QR Versions button in tabs
+    const qrTabBtn = screen.getByRole('button', { name: /QR Versions/i });
+    expect(qrTabBtn).toBeInTheDocument();
+
+    // Switch to QR Versions tab
+    fireEvent.click(qrTabBtn);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('UPI QR Code Management & Version Rotation')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /\+ Upload New QR Version/i })
+      ).toBeInTheDocument();
+    });
+  });
 });
