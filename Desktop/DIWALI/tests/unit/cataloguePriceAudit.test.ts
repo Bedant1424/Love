@@ -57,7 +57,8 @@ describe('Catalogue Price Audit and Variant Selection Suite', () => {
             v.printedMinPaise !== null &&
             v.printedMinPaise !== undefined &&
             v.printedMaxPaise !== null &&
-            v.printedMaxPaise !== undefined
+            v.printedMaxPaise !== undefined &&
+            v.pricingOrigin !== 'OWNER_CONFIRMED'
           ) {
             expect(v.pricePaise).toBeGreaterThanOrEqual(v.printedMinPaise);
             expect(v.pricePaise).toBeLessThanOrEqual(v.printedMaxPaise);
@@ -104,10 +105,6 @@ describe('Catalogue Price Audit and Variant Selection Suite', () => {
         { id: 'var_bigboss_3pcs', min: 40000, max: 45000 },
         { id: 'var_jj_3pcs', min: 45000, max: 50000 },
         { id: 'var_elephant_3pcs', min: 55000, max: 60000 },
-        { id: 'var_tiger_sz3', min: 35000, max: 40000 },
-        { id: 'var_tiger_sz4', min: 35000, max: 40000 },
-        { id: 'var_tiger_sz5', min: 35000, max: 40000 },
-        { id: 'var_tiger_sz6', min: 35000, max: 40000 },
         { id: 'var_kumpi_medium', min: 19000, max: 20000 },
         { id: 'var_kumpi_large', min: 25000, max: 30000 },
         { id: 'var_chakri_large', min: 20000, max: 30000 },
@@ -125,6 +122,29 @@ describe('Catalogue Price Audit and Variant Selection Suite', () => {
             expect(v.printedMaxPaise).toBe(item.max);
             expect(v.pricePaise).toBeGreaterThanOrEqual(item.min);
             expect(v.pricePaise).toBeLessThanOrEqual(item.max);
+          }
+        }
+        expect(found).toBe(true);
+      }
+    });
+
+    it('verifies owner-confirmed Tiger Bomb variants match audit prices', () => {
+      const tigerVariants = [
+        { id: 'var_tiger_sz3', expectedPaise: 25000 },
+        { id: 'var_tiger_sz4', expectedPaise: 27500 },
+        { id: 'var_tiger_sz5', expectedPaise: 30000 },
+        { id: 'var_tiger_sz6', expectedPaise: 35000 },
+      ];
+
+      for (const item of tigerVariants) {
+        let found = false;
+        for (const prod of PRODUCTS) {
+          const v = prod.variants.find((vr) => vr.id === item.id);
+          if (v) {
+            found = true;
+            expect(v.pricePaise).toBe(item.expectedPaise);
+            expect(v.priceStatus).toBe('CONFIRMED');
+            expect(v.pricingOrigin).toBe('OWNER_CONFIRMED');
           }
         }
         expect(found).toBe(true);
@@ -167,13 +187,13 @@ describe('Catalogue Price Audit and Variant Selection Suite', () => {
       expect(item.productName).toBe('Tiger Bomb');
       expect(item.variantName).toBe('Size 4');
       expect(item.quantity).toBe(2);
-      expect(item.pricePaise).toBe(35000); // ₹350
-      expect(item.lineSubtotalPaise).toBe(70000); // ₹700
+      expect(item.pricePaise).toBe(27500); // ₹275
+      expect(item.lineSubtotalPaise).toBe(55000); // ₹550
 
-      // Subtotal >= ₹200 -> token is ₹100 (10000 paise), remaining balance is ₹600 (60000 paise)
-      expect(result.current.totals.subtotalPaise).toBe(70000);
+      // Subtotal >= ₹200 -> token is ₹100 (10000 paise), remaining balance is ₹450 (45000 paise)
+      expect(result.current.totals.subtotalPaise).toBe(55000);
       expect(result.current.totals.tokenAmountPaise).toBe(10000);
-      expect(result.current.totals.remainingBalancePaise).toBe(60000);
+      expect(result.current.totals.remainingBalancePaise).toBe(45000);
     });
 
     it('adds multiple different Tiger Bomb sizes as distinct line items', () => {
@@ -190,10 +210,10 @@ describe('Catalogue Price Audit and Variant Selection Suite', () => {
       expect(result.current.items[1].variantName).toBe('Size 5');
       expect(result.current.items[1].quantity).toBe(2);
 
-      // Subtotal: 1 * 35000 + 2 * 35000 = 105000 (₹1050)
-      expect(result.current.totals.subtotalPaise).toBe(105000);
+      // Subtotal: 1 * 25000 + 2 * 30000 = 85000 (₹850)
+      expect(result.current.totals.subtotalPaise).toBe(85000);
       expect(result.current.totals.tokenAmountPaise).toBe(10000);
-      expect(result.current.totals.remainingBalancePaise).toBe(95000);
+      expect(result.current.totals.remainingBalancePaise).toBe(75000);
     });
   });
 
@@ -265,14 +285,14 @@ describe('Catalogue Price Audit and Variant Selection Suite', () => {
       expect(tigerItem).toBeDefined();
       expect(tigerItem!.product_name_snapshot).toBe('Tiger Bomb');
       expect(tigerItem!.variant_name_snapshot).toBe('Size 4');
-      expect(tigerItem!.unit_price_paise).toBe(35000);
+      expect(tigerItem!.unit_price_paise).toBe(27500);
 
       const sparklerItem = items.find(
         (it) => it.variant_id === 'var_sparklers_9cm_box'
       );
       expect(sparklerItem).toBeDefined();
       expect(sparklerItem!.product_name_snapshot).toBe('9 cm Sparklers');
-      expect(sparklerItem!.variant_name_snapshot).toBe('Per packet');
+      expect(sparklerItem!.variant_name_snapshot).toBe('9 cm Sparklers');
       expect(sparklerItem!.unit_price_paise).toBe(3000);
     });
   });

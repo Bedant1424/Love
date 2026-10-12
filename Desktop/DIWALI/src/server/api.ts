@@ -614,19 +614,23 @@ export async function handleApiRequest(
     // GET /api/v1/catalogue
     if (path === '/api/v1/catalogue' && method === 'GET') {
       const categories = await db.getCategories();
-      return jsonResponse({
-        success: true,
-        data: {
-          store: {
-            name: 'Nagarjuna Traders',
-            location: env?.STORE_LOCATION || 'Campus Pickup / Hostel Pickup',
-            checkoutEnabled: true,
-            paymentCollectionEnabled: isPaymentEnabled && !isRestricted,
-            tokenTiers: DEFAULT_TOKEN_TIERS,
+      return jsonResponse(
+        {
+          success: true,
+          data: {
+            store: {
+              name: 'Nagarjuna Traders',
+              location: env?.STORE_LOCATION || 'Campus Pickup / Hostel Pickup',
+              checkoutEnabled: true,
+              paymentCollectionEnabled: isPaymentEnabled && !isRestricted,
+              tokenTiers: DEFAULT_TOKEN_TIERS,
+            },
+            categories,
           },
-          categories,
         },
-      });
+        200,
+        true
+      );
     }
 
     // POST /api/v1/orders

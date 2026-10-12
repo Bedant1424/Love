@@ -82,9 +82,14 @@ export const CartView: React.FC<CartViewProps> = ({
                 <h3 className="text-base font-bold text-stone-900 font-display truncate">
                   {item.productName}
                 </h3>
-                <span className="shrink-0 px-2 py-0.5 rounded text-[10px] font-mono bg-stone-100 text-stone-600 border border-stone-200">
-                  {item.variantName}
-                </span>
+                {item.variantName &&
+                  item.variantName !== item.productName &&
+                  item.variantName !== 'Standard Unit' &&
+                  item.variantName !== 'Per packet' && (
+                    <span className="shrink-0 px-2 py-0.5 rounded text-[10px] font-mono bg-stone-100 text-stone-600 border border-stone-200">
+                      {item.variantName}
+                    </span>
+                  )}
               </div>
 
               <div className="text-xs text-stone-500 mt-1 flex flex-wrap items-center gap-2">
@@ -118,7 +123,14 @@ export const CartView: React.FC<CartViewProps> = ({
                 quantity={item.quantity}
                 onIncrement={() => onIncrement(item.productId, item.variantId)}
                 onDecrement={() => onDecrement(item.productId, item.variantId)}
-                productName={`${item.productName} (${item.variantName})`}
+                productName={
+                  item.variantName &&
+                  item.variantName !== item.productName &&
+                  item.variantName !== 'Standard Unit' &&
+                  item.variantName !== 'Per packet'
+                    ? `${item.productName} (${item.variantName})`
+                    : item.productName
+                }
               />
 
               <button

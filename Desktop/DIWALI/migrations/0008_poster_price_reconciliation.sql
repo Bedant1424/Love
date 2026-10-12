@@ -180,11 +180,45 @@ UPDATE product_variants
 SET printed_price_text = '₹350 to ₹400 per box',
     printed_min_paise = 35000,
     printed_max_paise = 40000,
-    demo_price_paise = 35000,
-    price_status = 'PRINTED_ESTIMATE',
-    pricing_origin = 'POSTER_RANGE',
+    demo_price_paise = 25000,
+    price_status = 'CONFIRMED',
+    pricing_origin = 'OWNER_CONFIRMED',
+    source_notes = 'Owner confirmed active price ₹250',
     updated_at = datetime('now')
-WHERE id IN ('var_tiger_sz3', 'var_tiger_sz4', 'var_tiger_sz5', 'var_tiger_sz6');
+WHERE id = 'var_tiger_sz3';
+
+UPDATE product_variants 
+SET printed_price_text = '₹350 to ₹400 per box',
+    printed_min_paise = 35000,
+    printed_max_paise = 40000,
+    demo_price_paise = 27500,
+    price_status = 'CONFIRMED',
+    pricing_origin = 'OWNER_CONFIRMED',
+    source_notes = 'Owner confirmed active price ₹275',
+    updated_at = datetime('now')
+WHERE id = 'var_tiger_sz4';
+
+UPDATE product_variants 
+SET printed_price_text = '₹350 to ₹400 per box',
+    printed_min_paise = 35000,
+    printed_max_paise = 40000,
+    demo_price_paise = 30000,
+    price_status = 'CONFIRMED',
+    pricing_origin = 'OWNER_CONFIRMED',
+    source_notes = 'Owner confirmed active price ₹300',
+    updated_at = datetime('now')
+WHERE id = 'var_tiger_sz5';
+
+UPDATE product_variants 
+SET printed_price_text = '₹350 to ₹400 per box',
+    printed_min_paise = 35000,
+    printed_max_paise = 40000,
+    demo_price_paise = 35000,
+    price_status = 'CONFIRMED',
+    pricing_origin = 'OWNER_CONFIRMED',
+    source_notes = 'Owner confirmed active price ₹350',
+    updated_at = datetime('now')
+WHERE id = 'var_tiger_sz6';
 
 UPDATE products SET printed_price_text = '₹550 per box', updated_at = datetime('now') WHERE id = 'prod_tiger_xxxl_bomb';
 UPDATE product_variants 

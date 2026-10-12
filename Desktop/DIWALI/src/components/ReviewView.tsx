@@ -1064,7 +1064,12 @@ export const ReviewView: React.FC<ReviewViewProps> = ({
             >
               <div>
                 <span className="font-semibold text-stone-900">
-                  {item.productName} ({item.variantName})
+                  {item.variantName &&
+                  item.variantName !== item.productName &&
+                  item.variantName !== 'Standard Unit' &&
+                  item.variantName !== 'Per packet'
+                    ? `${item.productName} (${item.variantName})`
+                    : item.productName}
                 </span>
                 <span className="text-stone-500 block text-[11px]">
                   Qty: {item.quantity} × {item.pricePaise !== null ? formatPaise(item.pricePaise) : item.printedPriceText}

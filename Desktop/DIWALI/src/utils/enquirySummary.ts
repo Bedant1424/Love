@@ -37,7 +37,16 @@ export function generateEnquiryText(
 
   items.forEach((item, index) => {
     lines.push(`${index + 1}. ${item.productName}`);
-    lines.push(`   Variant: ${item.variantName} (${item.packInfo})`);
+    const showVariant =
+      item.variantName &&
+      item.variantName !== item.productName &&
+      item.variantName !== 'Standard Unit' &&
+      item.variantName !== 'Per packet';
+    if (showVariant) {
+      lines.push(`   Variant: ${item.variantName}${item.packInfo ? ` (${item.packInfo})` : ''}`);
+    } else if (item.packInfo) {
+      lines.push(`   Pack: ${item.packInfo}`);
+    }
     lines.push(`   Quantity: ${item.quantity}`);
     if (item.lineSubtotalPaise !== null) {
       lines.push(
