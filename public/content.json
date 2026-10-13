@@ -1,6 +1,6 @@
 {
   "recipient": {
-    "name": "Arya",
+    "name": "Ansheeta",
     "nickname": "Rose",
     "birthDate": "2026-10-14"
   },
@@ -67,7 +67,7 @@
     {
       "id": 5,
       "title": "You Feel Like Home 🏡",
-      "description": "No matter how practical the day is, the moment I hear your voice or hold your hand, everything feels peaceful.",
+      "description": "No matter how chaotic the day is, the moment I hear your voice or hold your hand, everything feels peaceful.",
       "iconName": "Home"
     },
     {
@@ -127,7 +127,6 @@
       "rotation": "rotate-1"
     }
   ],
-  "customPages": [],
   "finale": {
     "heroImageUrl": "",
     "fallbackTitle": "You & Me Forever 💖",
@@ -140,12 +139,23 @@
     "replayText": "Replay Our Story 🔄"
   },
   "theme": {
-    "primaryColor": "#C2315D",
-    "secondaryColor": "#7A4AC2",
-    "surfaceBase": "#FAF7F2",
-    "cinematicBase": "#160B1F",
+    "primaryColor": "#9E3D89",
+    "secondaryColor": "#D4A338",
+    "surfaceBase": "#FAF6FD",
+    "cinematicBase": "#12091A",
     "headingFont": "Pacifico",
     "bodyFont": "Quicksand",
-    "handwritingFont": "Caveat"
-  }
+    "handwritingFont": "Great Vibes"
+  },
+  "customPages": [
+    {
+      "id": "custom-page-1791887982563",
+      "title": "Our Special Promise ✨",
+      "subtitle": "A sweet chapter just for us",
+      "badge": "Special Chapter",
+      "content": "Write your custom thoughts, memories, cute promises, or relationship milestones here.\n\nEvery line can be separated into distinct paragraphs to create a beautiful reading experience.",
+      "theme": "light",
+      "ctaText": "Continue Our Story ✨"
+    }
+  ]
 }

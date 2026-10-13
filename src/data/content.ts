@@ -2,7 +2,7 @@ import { BirthdayContent } from '../types/content.types';
 
 export const birthdayContent: BirthdayContent = {
   recipient: {
-    name: 'Arya',
+    name: 'Ansheeta',
     nickname: 'Rose',
     birthDate: '2026-10-14',
   },
@@ -10,7 +10,7 @@ export const birthdayContent: BirthdayContent = {
     name: 'Bedant',
   },
   audio: {
-    soundtrackUrl: '', // Local audio path e.g. '/Love/audio/song.mp3'. If empty, bundled gentle chime or silent mode is used.
+    soundtrackUrl: '',
     title: 'Romantic Melody',
   },
   greeting: {
@@ -47,44 +47,50 @@ export const birthdayContent: BirthdayContent = {
     {
       id: 1,
       title: 'Your Contagious Laugh 🌸',
-      description: 'The way your whole face lights up when you laugh, especially at silly jokes only the two of us understand.',
+      description:
+        'The way your whole face lights up when you laugh, especially at silly jokes only the two of us understand.',
       iconName: 'Smile',
     },
     {
       id: 2,
       title: 'Your Gentle Heart 🕊️',
-      description: 'How deeply you care about the people around you. You have the softest, most genuine kindness.',
+      description:
+        'How deeply you care about the people around you. You have the softest, most genuine kindness.',
       iconName: 'Heart',
     },
     {
       id: 3,
       title: 'Our Late-Night Talks 🌙',
-      description: 'Those quiet hours when the rest of the world is asleep, sharing our dreams, silly thoughts, and everything in between.',
+      description:
+        'Those quiet hours when the rest of the world is asleep, sharing our dreams, silly thoughts, and everything in between.',
       iconName: 'Moon',
     },
     {
       id: 4,
       title: 'The Way You Smile ✨',
-      description: 'That tiny, adorable expression you make when you are truly happy, teasing me, or trying not to giggle.',
+      description:
+        'That tiny, adorable expression you make when you are truly happy, teasing me, or trying not to giggle.',
       iconName: 'Sparkles',
     },
     {
       id: 5,
       title: 'You Feel Like Home 🏡',
-      description: 'No matter how chaotic the day is, the moment I hear your voice or hold your hand, everything feels peaceful.',
+      description:
+        'No matter how chaotic the day is, the moment I hear your voice or hold your hand, everything feels peaceful.',
       iconName: 'Home',
     },
     {
       id: 6,
       title: 'Your Bright Ambition 🌟',
-      description: 'Watching you chase your passions with such grace, intelligence, and determination inspires me every day.',
+      description:
+        'Watching you chase your passions with such grace, intelligence, and determination inspires me every day.',
       iconName: 'Star',
     },
   ],
   gallery: [
     {
       id: 1,
-      imageUrl: '', // Can be replaced with e.g. '/Love/photos/photo1.webp'
+      imageUrl: '',
       fallbackTitle: 'Where It All Began 🌸',
       caption: 'The day that started our favorite story ✨',
       date: 'Special Memory',
@@ -132,7 +138,7 @@ export const birthdayContent: BirthdayContent = {
     },
   ],
   finale: {
-    heroImageUrl: '', // Can be replaced with e.g. '/Love/photos/hero.webp'
+    heroImageUrl: '',
     fallbackTitle: 'You & Me Forever 💖',
     title: 'Happy Birthday, My Whole Universe.',
     paragraphs: [
@@ -142,4 +148,25 @@ export const birthdayContent: BirthdayContent = {
     signOff: 'Forever and always,',
     replayText: 'Replay Our Story 🔄',
   },
+  theme: {
+    primaryColor: '#9E3D89',
+    secondaryColor: '#D4A338',
+    surfaceBase: '#FAF6FD',
+    cinematicBase: '#12091A',
+    headingFont: 'Pacifico',
+    bodyFont: 'Quicksand',
+    handwritingFont: 'Great Vibes',
+  },
+  customPages: [
+    {
+      id: 'custom-page-1791887982563',
+      title: 'Our Special Promise ✨',
+      subtitle: 'A sweet chapter just for us',
+      badge: 'Special Chapter',
+      content:
+        'Write your custom thoughts, memories, cute promises, or relationship milestones here.\n\nEvery line can be separated into distinct paragraphs to create a beautiful reading experience.',
+      theme: 'light',
+      ctaText: 'Continue Our Story ✨',
+    },
+  ],
 };
