@@ -59,7 +59,7 @@ export const Cake3D: React.FC<Cake3DProps> = ({
 
   return (
     <div
-      className={`relative flex flex-col items-center justify-center select-none py-6 ${className}`}
+      className={`relative flex flex-col items-center justify-center select-none py-2 ${className}`}
       aria-label="Interactive 3-tier birthday cake with candle"
     >
       {/* Candle and Flame Assembly */}

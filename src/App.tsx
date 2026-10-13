@@ -98,6 +98,7 @@ export const App: React.FC = () => {
       const path = window.location.pathname.toLowerCase();
 
       if (hash === '#admin' || path.endsWith('/admin')) return 'admin';
+      if (hash === '#scene-1' || hash === '' || hash === '#') return 1;
       if (hash === '#scene-2') return 2;
       if (hash === '#scene-3') return 3;
       if (hash === '#scene-4') return 4;
@@ -223,14 +224,14 @@ export const App: React.FC = () => {
 
   return (
     <div
-      className={`min-h-screen transition-colors duration-700 ease-in-out relative flex flex-col justify-between ${
+      className={`w-full h-screen h-[100dvh] overflow-hidden transition-colors duration-700 ease-in-out relative flex flex-col justify-between ${
         isCinematicCurrent
           ? 'bg-plum-950 text-cream-50'
           : 'bg-cream-50 text-neutral-800'
       }`}
     >
       {/* Top Header / Status Bar */}
-      <header className="relative z-40">
+      <header className="flex-shrink-0 w-full z-40 px-3 sm:px-6 pt-1.5 sm:pt-2.5 pb-1 flex items-center justify-between">
         <ProgressBar
           currentChapter={chapterNumber}
           totalChapters={totalChapters}
@@ -244,7 +245,7 @@ export const App: React.FC = () => {
       </header>
 
       {/* Main Story Scene Viewport */}
-      <main className="flex-1 flex flex-col items-center justify-center pt-20 pb-16 px-4">
+      <main className="flex-1 min-h-0 w-full overflow-hidden flex flex-col items-center justify-center p-2 sm:p-4">
         {currentView === 1 && (
           <Scene1Greeting
             content={content.greeting}
@@ -305,16 +306,16 @@ export const App: React.FC = () => {
       </main>
 
       {/* Footer with Dedication & Admin Entrance Link */}
-      <footer className="py-6 px-4 text-center text-xs opacity-75 font-body flex flex-col items-center gap-2">
-        <p>Made with all my love for {content.recipient.name} 💕</p>
+      <footer className="flex-shrink-0 w-full py-1 px-3 text-center text-[11px] opacity-80 font-body flex items-center justify-center gap-3">
+        <p className="truncate">Made with all my love for {content.recipient.name} 💕</p>
         <button
           type="button"
           onClick={() => goToView('admin')}
-          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 text-neutral-600 dark:text-cream-50 transition-colors cursor-pointer text-[11px] font-semibold"
+          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 text-neutral-600 dark:text-cream-50 transition-colors cursor-pointer text-[11px] font-semibold flex-shrink-0"
           aria-label="Open Admin Story Studio"
         >
-          <Settings className="w-3.5 h-3.5 text-rose-CTA" />
-          <span>Customize Website (Admin Studio)</span>
+          <Settings className="w-3 h-3 text-rose-CTA" />
+          <span>Admin Studio</span>
         </button>
       </footer>
     </div>

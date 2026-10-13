@@ -12,18 +12,18 @@ export const Scene3Letter: React.FC<Scene3LetterProps> = ({ content, onNext }) =
   return (
     <section
       aria-label="Love Letter Chapter"
-      className="relative min-h-[90vh] flex flex-col items-center justify-center px-4 py-12 text-center"
+      className="relative w-full h-full flex flex-col items-center justify-center p-2 sm:p-4 text-center select-none overflow-hidden"
     >
       {/* Chapter Title Badge */}
-      <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-rose-50 border border-rose-200/60 text-rose-CTA font-body text-xs sm:text-sm font-bold tracking-wide mb-4">
-        <HeartHandshake className="w-4 h-4 text-rose-CTA" />
+      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200/80 text-rose-CTA font-body text-xs font-bold tracking-wide mb-2">
+        <HeartHandshake className="w-3.5 h-3.5 text-rose-CTA" />
         <span>Chapter 3: From My Heart</span>
       </div>
 
-      <h2 className="font-heading text-3xl sm:text-4xl text-neutral-800 leading-tight mb-2">
+      <h2 className="font-heading text-2xl sm:text-4xl text-[#2D2635] leading-tight mb-1">
         A Letter Just For You
       </h2>
-      <p className="font-body text-base sm:text-lg text-neutral-600 max-w-md mb-8">
+      <p className="font-body text-xs sm:text-sm text-[#5C4D6B] max-w-sm mb-3">
         Take a breath, tap the wax seal, and read what you mean to me.
       </p>
 

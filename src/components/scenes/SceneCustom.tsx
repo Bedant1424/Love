@@ -27,24 +27,31 @@ export const SceneCustom: React.FC<SceneCustomProps> = ({
   return (
     <section
       aria-label={`Custom Chapter: ${page.title}`}
-      className="relative min-h-[90vh] flex flex-col items-center justify-center px-4 py-12 text-center max-w-2xl mx-auto"
+      className="relative w-full h-full flex flex-col items-center justify-center p-2 sm:p-4 text-center max-w-lg mx-auto select-none"
     >
       <div
-        className={`relative w-full rounded-3xl p-6 sm:p-10 shadow-card border-2 flex flex-col items-center ${
+        className={`relative w-full rounded-2xl p-4 sm:p-6 shadow-[0_8px_24px_-4px_rgba(122,74,194,0.14)] border-2 flex flex-col items-center max-h-full ${
           isCinematic
-            ? 'bg-plum-900/90 text-cream-50 border-lavender-500/30'
-            : 'bg-white/90 text-neutral-800 border-lavender-200 parchment-texture'
+            ? 'bg-plum-900 text-cream-50 border-lavender-500/40'
+            : 'bg-[#FDFAFF] text-[#2D2635] border-[#DFD2F5]'
         }`}
       >
+        {/* Top Washi Tape Strip */}
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-24 h-5 washi-tape rounded-xs z-20 pointer-events-none" />
+
+        {/* Decorative corner stars/hearts */}
+        <span className="absolute top-2 left-3 text-xs text-rose-300 opacity-60 pointer-events-none select-none">✨</span>
+        <span className="absolute top-2 right-3 text-xs text-lavender-300 opacity-60 pointer-events-none select-none">🌸</span>
+
         {/* Chapter Badge */}
         <div
-          className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full font-body text-xs sm:text-sm font-bold tracking-wide mb-4 ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-body text-xs font-bold tracking-wide mb-2 ${
             isCinematic
-              ? 'bg-plum-950/80 border border-amber-300/30 text-amber-300'
-              : 'bg-rose-50 border border-rose-200/60 text-rose-CTA'
+              ? 'bg-plum-950/90 border border-amber-300/40 text-amber-300'
+              : 'bg-rose-50 border border-rose-200/80 text-rose-CTA'
           }`}
         >
-          <Sparkles className="w-4 h-4" />
+          <Sparkles className="w-3.5 h-3.5" />
           <span>
             {page.badge || `Chapter ${chapterNumber} of ${totalChapters}`}
           </span>
@@ -52,16 +59,16 @@ export const SceneCustom: React.FC<SceneCustomProps> = ({
 
         {/* Title & Subtitle */}
         <h2
-          className={`font-heading text-3xl sm:text-4xl leading-tight mb-2 ${
-            isCinematic ? 'text-cream-50' : 'text-neutral-800'
+          className={`font-heading text-2xl sm:text-3xl leading-snug mb-1 ${
+            isCinematic ? 'text-cream-50' : 'text-[#2D2635]'
           }`}
         >
           {page.title}
         </h2>
         {page.subtitle && (
           <p
-            className={`font-body text-base sm:text-lg mb-6 ${
-              isCinematic ? 'text-lavender-200' : 'text-neutral-600'
+            className={`font-body text-xs sm:text-sm mb-2.5 font-medium ${
+              isCinematic ? 'text-lavender-200' : 'text-[#5C4D6B]'
             }`}
           >
             {page.subtitle}
@@ -70,7 +77,7 @@ export const SceneCustom: React.FC<SceneCustomProps> = ({
 
         {/* Image if supplied */}
         {page.imageUrl && (
-          <div className="relative w-64 h-64 rounded-2xl overflow-hidden my-4 border-2 border-stone-200/60 shadow-md flex items-center justify-center">
+          <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-xl overflow-hidden my-2 border-2 border-stone-200/80 shadow-sm flex items-center justify-center flex-shrink-0">
             {!imageError ? (
               <img
                 src={page.imageUrl}
@@ -86,8 +93,8 @@ export const SceneCustom: React.FC<SceneCustomProps> = ({
 
         {/* Content Paragraphs */}
         <div
-          className={`w-full space-y-4 my-6 font-body text-base sm:text-lg leading-relaxed text-left sm:text-center ${
-            isCinematic ? 'text-lavender-200' : 'text-neutral-700'
+          className={`w-full space-y-2 mb-3.5 font-body text-xs sm:text-sm leading-relaxed text-center max-w-md ${
+            isCinematic ? 'text-lavender-200' : 'text-[#2D2635]'
           }`}
         >
           {paragraphs.map((p, idx) => (
@@ -96,14 +103,14 @@ export const SceneCustom: React.FC<SceneCustomProps> = ({
         </div>
 
         {/* Next Chapter CTA Button */}
-        <div className="mt-4">
+        <div>
           <button
             type="button"
             onClick={onNext}
-            className="inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-full bg-rose-CTA hover:bg-rose-CTA-hover text-white font-body font-bold text-lg shadow-floating hover:scale-105 active:scale-95 transition-all duration-200 focus:outline-none focus-visible:ring-4 focus-visible:ring-rose-300"
+            className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-rose-CTA hover:bg-rose-CTA-hover text-white font-body font-bold text-sm sm:text-base shadow-md hover:scale-102 active:scale-98 transition-all duration-150 focus:outline-none focus-visible:ring-3 focus-visible:ring-rose-300 cursor-pointer"
           >
             <span>{page.ctaText || 'Continue Our Story ✨'}</span>
-            <ArrowRight className="w-5 h-5" />
+            <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </div>

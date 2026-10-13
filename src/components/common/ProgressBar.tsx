@@ -18,7 +18,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   return (
     <nav
       aria-label="Story Progress"
-      className={`fixed top-4 left-4 z-40 flex items-center gap-3 bg-white/85 dark:bg-plum-900/85 backdrop-blur-md px-4 py-2.5 rounded-full shadow-card border border-lavender-200/60 dark:border-lavender-500/20 text-neutral-800 dark:text-cream-50 transition-all select-none ${className}`}
+      className={`relative flex items-center gap-2 sm:gap-3 bg-white/90 dark:bg-plum-900/90 backdrop-blur-md px-3 sm:px-4 py-1 sm:py-1.5 rounded-full shadow-sm border border-lavender-200/80 dark:border-lavender-500/20 text-neutral-800 dark:text-cream-50 transition-all select-none ${className}`}
     >
       {/* Chapter Counter Badge */}
       <div className="flex flex-col">

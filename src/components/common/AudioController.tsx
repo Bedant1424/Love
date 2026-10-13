@@ -4,11 +4,13 @@ import { Volume2, VolumeX, Music } from 'lucide-react';
 interface AudioControllerProps {
   soundtrackUrl?: string;
   hasInteracted: boolean;
+  className?: string;
 }
 
 export const AudioController: React.FC<AudioControllerProps> = ({
   soundtrackUrl = '',
   hasInteracted,
+  className = '',
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -141,7 +143,7 @@ export const AudioController: React.FC<AudioControllerProps> = ({
     <button
       onClick={toggleSound}
       type="button"
-      className="fixed top-4 right-4 z-50 flex items-center justify-center w-12 h-12 rounded-full bg-white/80 dark:bg-plum-900/80 backdrop-blur-md shadow-card border border-lavender-200/50 hover:scale-105 active:scale-95 transition-all text-neutral-800 dark:text-cream-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-lavender-CTA"
+      className={`relative flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/90 dark:bg-plum-900/90 backdrop-blur-md shadow-sm border border-lavender-200/80 dark:border-lavender-500/20 hover:scale-105 active:scale-95 transition-all text-neutral-800 dark:text-cream-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-lavender-CTA ${className}`}
       aria-label={isMuted ? 'Enable romantic music' : 'Mute music'}
       title={isMuted ? 'Unmute music 🎵' : 'Mute music 🔇'}
     >

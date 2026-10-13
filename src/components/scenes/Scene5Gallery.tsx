@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { GalleryItem } from '../../types/content.types';
 import { PolaroidCard } from '../interactive/PolaroidCard';
 import { Lightbox } from '../interactive/Lightbox';
-import { Camera, Sparkles, ArrowRight } from 'lucide-react';
+import { Camera, ArrowRight } from 'lucide-react';
 
 interface Scene5GalleryProps {
   gallery: GalleryItem[];
@@ -21,54 +21,90 @@ export const Scene5Gallery: React.FC<Scene5GalleryProps> = ({
     setLightboxOpen(true);
   };
 
+  const handleNextPhoto = () => {
+    setSelectedPhotoIndex((prev) => (prev + 1) % gallery.length);
+  };
+
+  const handlePrevPhoto = () => {
+    setSelectedPhotoIndex((prev) => (prev - 1 + gallery.length) % gallery.length);
+  };
+
+  const currentItem = gallery[selectedPhotoIndex] || gallery[0];
+
   return (
     <section
       aria-label="Memories Scrapbook Gallery"
-      className="relative min-h-[90vh] flex flex-col items-center justify-center px-4 py-12 max-w-5xl mx-auto"
+      className="relative w-full h-full flex flex-col items-center justify-center p-2 sm:p-4 text-center select-none overflow-hidden max-w-2xl mx-auto"
     >
-      {/* Chapter Badge */}
-      <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-rose-50 border border-rose-200/60 text-rose-CTA font-body text-xs sm:text-sm font-bold tracking-wide mb-3">
-        <Camera className="w-4 h-4 text-rose-CTA" />
-        <span>Chapter 5: Our Scrapbook of Memories</span>
-      </div>
+      <div className="flex flex-col short-landscape-row items-center justify-center gap-2 sm:gap-6">
+        {/* Left column in landscape: Polaroid */}
+        <div className="flex flex-col items-center flex-shrink-0">
+          <div className="w-40 sm:w-48 short-compact-polaroid">
+            <PolaroidCard
+              item={currentItem}
+              onClick={() => openLightbox(selectedPhotoIndex)}
+            />
+          </div>
 
-      <h2 className="font-heading text-3xl sm:text-5xl text-neutral-800 leading-tight text-center mb-2">
-        Moments I Cherish
-      </h2>
-      <p className="font-body text-base sm:text-lg text-neutral-600 text-center max-w-lg mb-10">
-        Every smile, every little adventure, every quiet moment together. Tap any Polaroid to view it up close!
-      </p>
-
-      {/* Polaroid Scrapbook Grid */}
-      <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 sm:gap-10 mb-14 px-2">
-        {gallery.map((item, index) => (
-          <PolaroidCard
-            key={item.id}
-            item={item}
-            onClick={() => openLightbox(index)}
-          />
-        ))}
-      </div>
-
-      {/* Prominent Direct P0 Route to Finale (Scene 10) */}
-      <div className="w-full max-w-md bg-white/90 backdrop-blur-sm rounded-3xl p-6 sm:p-8 shadow-card border-2 border-lavender-200 text-center flex flex-col items-center">
-        <div className="inline-flex items-center gap-1.5 text-rose-CTA font-heading text-lg mb-1">
-          <Sparkles className="w-5 h-5" />
-          <span>The Best Part Is Ahead</span>
-          <Sparkles className="w-5 h-5" />
+          {/* Carousel / Navigation Controls */}
+          <div className="flex items-center gap-2.5 mt-1.5 text-xs">
+            <button
+              type="button"
+              onClick={handlePrevPhoto}
+              className="text-xs font-semibold text-[#5C4D6B] hover:text-rose-CTA px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+            >
+              ← Prev
+            </button>
+            <div className="flex items-center gap-1">
+              {gallery.map((g, idx) => (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={() => setSelectedPhotoIndex(idx)}
+                  className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
+                    selectedPhotoIndex === idx
+                      ? 'bg-rose-CTA scale-125 ring-2 ring-rose-200'
+                      : 'bg-lavender-200 hover:bg-rose-300'
+                  }`}
+                  aria-label={`View photo ${idx + 1}`}
+                />
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={handleNextPhoto}
+              className="text-xs font-semibold text-[#5C4D6B] hover:text-rose-CTA px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+            >
+              Next →
+            </button>
+          </div>
         </div>
-        <p className="font-body text-sm text-neutral-600 mb-6">
-          There is one final surprise waiting just for you on your birthday...
-        </p>
-        <button
-          type="button"
-          onClick={onGoToFinale}
-          className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-full bg-rose-CTA hover:bg-rose-CTA-hover text-white font-body font-bold text-lg sm:text-xl shadow-floating hover:scale-105 active:scale-95 transition-all duration-200 focus:outline-none focus-visible:ring-4 focus-visible:ring-rose-300"
-          aria-label="Proceed directly to birthday grand finale"
-        >
-          <span>See Your Birthday Finale ✨</span>
-          <ArrowRight className="w-5 h-5" />
-        </button>
+
+        {/* Right column in landscape: Badges, Heading, Description & Action */}
+        <div className="flex flex-col items-center max-w-xs text-center">
+          {/* Chapter Badge */}
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200/80 text-rose-CTA font-body text-xs font-bold tracking-wide mb-1">
+            <Camera className="w-3.5 h-3.5 text-rose-CTA" />
+            <span>Chapter 5: Our Scrapbook</span>
+          </div>
+
+          <h2 className="font-heading text-xl sm:text-2xl text-[#2D2635] leading-tight mb-0.5">
+            Moments I Cherish
+          </h2>
+          <p className="font-body text-xs sm:text-sm text-[#5C4D6B] mb-2.5">
+            Every smile and sweet memory together. Tap photo to zoom in!
+          </p>
+
+          <button
+            type="button"
+            onClick={onGoToFinale}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-rose-CTA hover:bg-rose-CTA-hover text-white font-body font-bold text-xs sm:text-sm shadow-md hover:scale-102 active:scale-98 transition-all duration-150 focus:outline-none focus-visible:ring-3 focus-visible:ring-rose-300 cursor-pointer"
+            aria-label="Proceed to the next chapter"
+          >
+            <span>Continue Our Story ✨</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Accessible Lightbox Modal */}

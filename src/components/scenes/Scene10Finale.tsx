@@ -54,76 +54,81 @@ export const Scene10Finale: React.FC<Scene10FinaleProps> = ({
   return (
     <section
       aria-label="Grand Birthday Finale"
-      className="relative min-h-[90vh] flex flex-col items-center justify-center px-4 py-12 text-center select-none"
+      className="relative w-full h-full flex flex-col items-center justify-center p-2 sm:p-4 text-center select-none overflow-hidden max-w-md mx-auto"
     >
       {/* Cinematic Starfield Texture */}
       <div className="absolute inset-0 pointer-events-none opacity-30 bg-[radial-gradient(#FCD34D_1px,transparent_1px)] [background-size:24px_24px]" />
 
-      <div className="relative max-w-lg w-full bg-plum-900/90 backdrop-blur-md rounded-3xl p-6 sm:p-10 shadow-2xl border-2 border-lavender-400/30 flex flex-col items-center z-10">
-        {/* Floating Accent Icons */}
-        <div className="flex items-center gap-2 text-amber-300 font-heading text-sm mb-4">
-          <Sparkles className="w-5 h-5 text-amber-300 animate-pulse" />
-          <span>
-            {chapterNumber ? `Chapter ${chapterNumber}: Our Endless Story` : 'Our Endless Story'}
-          </span>
-          <Sparkles className="w-5 h-5 text-amber-300 animate-pulse" />
-        </div>
+      <div className="relative max-w-xl w-full bg-plum-900/90 rounded-2xl p-3 sm:p-5 shadow-xl border-2 border-lavender-400/30 flex flex-col items-center z-10">
+        <div className="flex flex-col short-landscape-row items-center justify-center gap-2 sm:gap-5 w-full">
+          {/* Photo frame on left in landscape */}
+          <div className="flex flex-col items-center flex-shrink-0">
+            {/* Floating Accent Icons */}
+            <div className="flex items-center gap-1.5 text-amber-300 font-heading text-xs mb-1">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+              <span>
+                {chapterNumber ? `Chapter ${chapterNumber}` : 'Endless Story'}
+              </span>
+              <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+            </div>
 
-        {/* Hero Photo or Illustrated Fallback Frame */}
-        <div className="relative w-56 h-56 sm:w-64 sm:h-64 rounded-2xl overflow-hidden border-4 border-amber-300/60 shadow-floating mb-6 bg-plum-950 flex items-center justify-center">
-          {content.heroImageUrl && !imageError ? (
-            <img
-              src={content.heroImageUrl}
-              alt={content.fallbackTitle}
-              onError={() => setImageError(true)}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <PapercraftFallback
-              title={content.fallbackTitle}
-              theme="gold"
-              iconType="heart"
-              className="h-full border-0"
-            />
-          )}
-        </div>
+            <div className="relative w-24 h-24 sm:w-32 sm:h-32 short-compact-photo rounded-xl overflow-hidden border-2 border-amber-300/60 shadow-md bg-plum-950 flex items-center justify-center flex-shrink-0">
+              {content.heroImageUrl && !imageError ? (
+                <img
+                  src={content.heroImageUrl}
+                  alt={content.fallbackTitle}
+                  onError={() => setImageError(true)}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <PapercraftFallback
+                  title={content.fallbackTitle}
+                  theme="gold"
+                  iconType="heart"
+                  className="h-full border-0"
+                />
+              )}
+            </div>
+          </div>
 
-        {/* Climax Romantic Headline */}
-        <h2 className="font-heading text-3xl sm:text-5xl text-cream-50 leading-tight mb-4">
-          {content.title}
-        </h2>
+          {/* Text, signature & button on right in landscape */}
+          <div className="flex flex-col items-center text-center max-w-sm">
+            <h2 className="font-heading text-lg sm:text-2xl text-cream-50 leading-tight mb-1">
+              {content.title}
+            </h2>
 
-        {/* Heartfelt Paragraphs */}
-        <div className="space-y-3 font-body text-base sm:text-lg text-lavender-200 leading-relaxed max-w-md mb-8">
-          {content.paragraphs.map((para, idx) => (
-            <p key={idx}>{para}</p>
-          ))}
-        </div>
+            <div className="space-y-1 font-body text-xs sm:text-sm text-lavender-200 leading-relaxed mb-2">
+              {content.paragraphs.map((para, idx) => (
+                <p key={idx}>{para}</p>
+              ))}
+            </div>
 
-        {/* Sign-off & Signature */}
-        <div className="mb-8 border-t border-lavender-500/20 pt-4 w-full">
-          <p className="font-handwriting text-xl text-neutral-400">
-            {content.signOff}
-          </p>
-          <div className="flex items-center justify-center gap-2 mt-1">
-            <Heart className="w-5 h-5 text-rose-CTA fill-rose-CTA" />
-            <p className="font-handwriting text-3xl font-bold text-amber-300">
-              {sender.name} 💕
-            </p>
-            <Heart className="w-5 h-5 text-rose-CTA fill-rose-CTA" />
+            {/* Sign-off & Signature */}
+            <div className="mb-2 border-t border-lavender-500/20 pt-1 w-full">
+              <p className="font-handwriting text-xs text-neutral-400">
+                {content.signOff}
+              </p>
+              <div className="flex items-center justify-center gap-1.5 mt-0.5">
+                <Heart className="w-3.5 h-3.5 text-rose-CTA fill-rose-CTA" />
+                <p className="font-handwriting text-lg sm:text-xl font-bold text-amber-300">
+                  {sender.name} 💕
+                </p>
+                <Heart className="w-3.5 h-3.5 text-rose-CTA fill-rose-CTA" />
+              </div>
+            </div>
+
+            {/* Replay Control */}
+            <button
+              type="button"
+              onClick={onReplay}
+              className="inline-flex items-center justify-center gap-2 px-5 py-1.5 rounded-full bg-lavender-CTA hover:bg-lavender-CTA-hover text-white font-body font-bold text-xs sm:text-sm shadow-md hover:scale-102 active:scale-98 transition-all duration-150 focus:outline-none focus-visible:ring-3 focus-visible:ring-lavender-400 cursor-pointer"
+              aria-label="Replay the birthday experience from the beginning"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>{content.replayText}</span>
+            </button>
           </div>
         </div>
-
-        {/* Replay Control */}
-        <button
-          type="button"
-          onClick={onReplay}
-          className="inline-flex items-center justify-center gap-2.5 px-8 py-3.5 rounded-full bg-lavender-CTA hover:bg-lavender-CTA-hover text-white font-body font-bold text-base sm:text-lg shadow-floating hover:scale-105 active:scale-95 transition-all duration-200 focus:outline-none focus-visible:ring-4 focus-visible:ring-lavender-400"
-          aria-label="Replay the birthday experience from the beginning"
-        >
-          <RotateCcw className="w-5 h-5" />
-          <span>{content.replayText}</span>
-        </button>
       </div>
     </section>
   );

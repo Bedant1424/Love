@@ -4,20 +4,21 @@
 
 @layer base {
   :root {
-    --font-heading: 'Pacifico', cursive, serif;
+    --font-heading: 'Great Vibes', 'Pacifico', cursive, serif;
     --font-body: 'Quicksand', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-handwriting: 'Caveat', cursive;
 
     --surface-base: #FAF7F2;
-    --surface-card: #FFFFFF;
+    --surface-card: #FDFAFF;
     --surface-paper: #FDFBF7;
     --surface-muted: #EFE9FA;
     --surface-cinematic: #160B1F;
     --text-primary: #2D2635;
-    --text-secondary: #736882;
+    --text-secondary: #5C4D6B;
     --text-accent: #C2315D;
     --cta-primary: #C2315D;
     --cta-secondary: #7A4AC2;
+    --border-card: #DFD2F5;
   }
 
   [data-theme="cinematic"] {
@@ -28,12 +29,22 @@
     --text-primary: #FAF7F2;
     --text-secondary: #DFD2F5;
     --text-accent: #FFD166;
+    --border-card: rgba(159, 122, 234, 0.3);
+  }
+
+  html, body, #root {
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
   }
 
   body {
-    min-height: 100dvh;
     font-family: var(--font-body);
-    overflow-x: hidden;
+    background-color: var(--surface-base);
+    color: var(--text-primary);
   }
 }
 
@@ -85,9 +96,39 @@
   background-size: 24px 24px;
 }
 
-/* Washi tape effect */
+/* Romantic Scrapbook Aesthetic */
+.scrapbook-card {
+  background-color: var(--surface-card);
+  border: 2px solid var(--border-card);
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 24px -4px rgba(122, 74, 194, 0.12), 0 2px 6px -1px rgba(45, 38, 53, 0.05);
+}
+
 .washi-tape {
-  background: rgba(249, 168, 189, 0.7);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  backdrop-filter: blur(1px);
+  background: linear-gradient(135deg, rgba(255, 230, 236, 0.9), rgba(239, 233, 250, 0.9));
+  border-left: 2px dashed rgba(223, 210, 245, 0.85);
+  border-right: 2px dashed rgba(223, 210, 245, 0.85);
+  box-shadow: 0 1px 4px rgba(45, 38, 53, 0.08);
+  backdrop-filter: blur(2px);
+}
+
+/* Compact viewport overrides for landscape phones (e.g. 667x375) */
+@media (max-height: 520px) and (orientation: landscape) {
+  .short-landscape-row {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 1.25rem !important;
+  }
+  .short-compact-polaroid {
+    width: 140px !important;
+  }
+  .short-compact-photo {
+    width: 80px !important;
+    height: 80px !important;
+    margin-bottom: 0 !important;
+  }
+  .short-hide {
+    display: none !important;
+  }
 }

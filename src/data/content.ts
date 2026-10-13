@@ -149,13 +149,13 @@ export const birthdayContent: BirthdayContent = {
     replayText: 'Replay Our Story 🔄',
   },
   theme: {
-    primaryColor: '#9E3D89',
-    secondaryColor: '#D4A338',
-    surfaceBase: '#FAF6FD',
-    cinematicBase: '#12091A',
+    primaryColor: '#C2315D',
+    secondaryColor: '#7A4AC2',
+    surfaceBase: '#FAF7F2',
+    cinematicBase: '#160B1F',
     headingFont: 'Great Vibes',
     bodyFont: 'Quicksand',
-    handwritingFont: 'Great Vibes',
+    handwritingFont: 'Caveat',
   },
   customPages: [
     {
