@@ -32,11 +32,16 @@ export const AdminAudioTab: React.FC<AdminAudioTabProps> = ({
       if (audioRef.current) audioRef.current.pause();
       setIsPlaying(false);
     } else {
+      const resolvedUrl =
+        audio.soundtrackUrl.startsWith('http') || audio.soundtrackUrl.startsWith('data:')
+          ? audio.soundtrackUrl
+          : `${import.meta.env.BASE_URL}${audio.soundtrackUrl.replace(/^\.?\//, '')}`;
+
       if (!audioRef.current) {
-        audioRef.current = new Audio(audio.soundtrackUrl);
+        audioRef.current = new Audio(resolvedUrl);
         audioRef.current.onended = () => setIsPlaying(false);
       } else {
-        audioRef.current.src = audio.soundtrackUrl;
+        audioRef.current.src = resolvedUrl;
       }
       audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
     }

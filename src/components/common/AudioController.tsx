@@ -27,7 +27,11 @@ export const AudioController: React.FC<AudioControllerProps> = ({
     }
 
     if (soundtrackUrl) {
-      const audio = new Audio(soundtrackUrl);
+      const resolvedUrl =
+        soundtrackUrl.startsWith('http') || soundtrackUrl.startsWith('data:')
+          ? soundtrackUrl
+          : `${import.meta.env.BASE_URL}${soundtrackUrl.replace(/^\.?\//, '')}`;
+      const audio = new Audio(resolvedUrl);
       audio.loop = true;
       audio.volume = 0.5;
       audioRef.current = audio;

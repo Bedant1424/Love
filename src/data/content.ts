@@ -10,8 +10,8 @@ export const birthdayContent: BirthdayContent = {
     name: 'Bedant',
   },
   audio: {
-    soundtrackUrl: '',
-    title: 'Romantic Melody',
+    soundtrackUrl: 'audio/hasi-ban-gaye.m4a',
+    title: 'Hasi Ban Gaye',
   },
   greeting: {
     badge: 'For the most wonderful girl in the world 🌸',
