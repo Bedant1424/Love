@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BirthdayContent } from './types/content.types';
 import { getStoredContent } from './utils/storage';
 import { applyThemeConfig } from './utils/themeApplier';
+import { fetchLiveContent } from './utils/githubPublisher';
 import { AudioController } from './components/common/AudioController';
 import { ProgressBar } from './components/common/ProgressBar';
 import { Scene1Greeting } from './components/scenes/Scene1Greeting';
@@ -20,6 +21,28 @@ export const App: React.FC = () => {
   const [content, setContent] = useState<BirthdayContent>(() => getStoredContent());
   const [currentView, setCurrentView] = useState<ViewId>(1);
   const [hasInteracted, setHasInteracted] = useState(false);
+
+  // Fetch live content directly from GitHub Pages CDN on launch
+  // Ensures any visitor (e.g. Arya on her phone) loads the live published content directly!
+  useEffect(() => {
+    let isMounted = true;
+    fetchLiveContent()
+      .then((live) => {
+        if (isMounted && live) {
+          setContent(live);
+          if (live.theme) {
+            applyThemeConfig(live.theme);
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not load live content:', err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Initialize theme and storage listener
   useEffect(() => {

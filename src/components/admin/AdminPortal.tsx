@@ -42,11 +42,27 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     try {
       saveStoredContent(content);
       onContentUpdated(content);
-      showToast('✨ All changes saved & applied successfully!');
+
+      // Also try saving directly to project files via local Vite dev server
+      try {
+        const res = await fetch('/api/save-content', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(content),
+        });
+        if (res.ok) {
+          showToast('✨ Changes saved directly to project files (content.json & content.ts)!');
+          return;
+        }
+      } catch {
+        // Not running in local dev server
+      }
+
+      showToast('✨ Changes saved & applied! Head to Publish tab to push live 🚀');
     } catch {
       showToast('❌ Failed to save. Check storage quota.');
     }

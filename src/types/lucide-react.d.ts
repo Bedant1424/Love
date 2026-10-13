@@ -45,6 +45,8 @@ declare module 'lucide-react' {
   export const Copy: LucideIcon;
   export const Check: LucideIcon;
   export const Eye: LucideIcon;
+  export const EyeOff: LucideIcon;
+  export const AlertCircle: LucideIcon;
   export const RefreshCw: LucideIcon;
   export const UploadCloud: LucideIcon;
 }
