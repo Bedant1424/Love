@@ -153,7 +153,7 @@ export const birthdayContent: BirthdayContent = {
     secondaryColor: '#D4A338',
     surfaceBase: '#FAF6FD',
     cinematicBase: '#12091A',
-    headingFont: 'Pacifico',
+    headingFont: 'Great Vibes',
     bodyFont: 'Quicksand',
     handwritingFont: 'Great Vibes',
   },
