@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { GalleryItem } from '../../types/content.types';
 import { PapercraftFallback } from '../common/PapercraftFallback';
+import { resolveMediaUrl } from '../../data/mediaRegistry';
 import { X, ChevronLeft, ChevronRight, Heart } from 'lucide-react';
 
 interface LightboxProps {
@@ -129,7 +130,7 @@ export const Lightbox: React.FC<LightboxProps> = ({
         <div className="relative w-full aspect-square sm:aspect-4/3 my-4 rounded-xl overflow-hidden bg-cream-50 dark:bg-plum-950 flex items-center justify-center border border-stone-200/60 dark:border-plum-800">
           {activeItem.imageUrl && !imageError ? (
             <img
-              src={activeItem.imageUrl}
+              src={resolveMediaUrl(activeItem.imageUrl)}
               alt={activeItem.caption || activeItem.fallbackTitle}
               onError={() => setImageError(true)}
               className="w-full h-full object-contain"

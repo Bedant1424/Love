@@ -9,13 +9,17 @@ import { Scene1Greeting } from './components/scenes/Scene1Greeting';
 import { Scene2Cake } from './components/scenes/Scene2Cake';
 import { Scene3Letter } from './components/scenes/Scene3Letter';
 import { Scene4Reasons } from './components/scenes/Scene4Reasons';
+import { SceneChaosMuseum } from './components/scenes/SceneChaosMuseum';
 import { Scene5Gallery } from './components/scenes/Scene5Gallery';
+import { SceneBlessings } from './components/scenes/SceneBlessings';
+import { SceneOpenWhen } from './components/scenes/SceneOpenWhen';
+import { SceneFutureDreams } from './components/scenes/SceneFutureDreams';
 import { SceneCustom } from './components/scenes/SceneCustom';
 import { Scene10Finale } from './components/scenes/Scene10Finale';
 import { AdminPortal } from './components/admin/AdminPortal';
 import { Settings } from 'lucide-react';
 
-export type ViewId = 1 | 2 | 3 | 4 | 5 | 10 | 'admin' | string;
+export type ViewId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 'admin' | string;
 
 export const App: React.FC = () => {
   const [content, setContent] = useState<BirthdayContent>(() => getStoredContent());
@@ -26,10 +30,10 @@ export const App: React.FC = () => {
     () => content.customPages || [],
     [content.customPages]
   );
-  const totalChapters = 5 + customPages.length + 1; // 1 to 5 + customs + Finale
+  // 9 core chapters + custom pages + 1 finale
+  const totalChapters = 9 + customPages.length + 1;
 
   // Fetch live content directly from GitHub Pages CDN on launch
-  // Ensures any visitor (e.g. Arya on her phone) loads the live published content directly!
   useEffect(() => {
     let isMounted = true;
     fetchLiveContent()
@@ -103,6 +107,10 @@ export const App: React.FC = () => {
       if (hash === '#scene-3') return 3;
       if (hash === '#scene-4') return 4;
       if (hash === '#scene-5') return 5;
+      if (hash === '#scene-6') return 6;
+      if (hash === '#scene-7') return 7;
+      if (hash === '#scene-8') return 8;
+      if (hash === '#scene-9') return 9;
       if (hash === '#scene-10') return 10;
       if (hash.startsWith('#scene-')) {
         return hash.replace('#scene-', '');
@@ -173,13 +181,17 @@ export const App: React.FC = () => {
     if (currentView === 2) return { chapterNumber: 2, title: 'Make a Wish' };
     if (currentView === 3) return { chapterNumber: 3, title: 'Love Letter' };
     if (currentView === 4) return { chapterNumber: 4, title: 'Reasons Why' };
-    if (currentView === 5) return { chapterNumber: 5, title: 'Memories' };
+    if (currentView === 5) return { chapterNumber: 5, title: 'Cute vs Chaos' };
+    if (currentView === 6) return { chapterNumber: 6, title: 'Memories' };
+    if (currentView === 7) return { chapterNumber: 7, title: 'Blessings' };
+    if (currentView === 8) return { chapterNumber: 8, title: 'Open When' };
+    if (currentView === 9) return { chapterNumber: 9, title: 'Future Dreams' };
 
     const customMatch = findCustomPage(currentView);
     if (customMatch) {
       return {
-        chapterNumber: 6 + customMatch.index,
-        title: customMatch.page.title || `Chapter ${6 + customMatch.index}`,
+        chapterNumber: 10 + customMatch.index,
+        title: customMatch.page.title || `Chapter ${10 + customMatch.index}`,
       };
     }
 
@@ -187,7 +199,7 @@ export const App: React.FC = () => {
   };
 
   // Navigation handlers between chapters
-  const handleAfterGallery = () => {
+  const handleAfterFuture = () => {
     if (customPages.length > 0) {
       goToView(customPages[0].id);
     } else {
@@ -244,7 +256,7 @@ export const App: React.FC = () => {
         />
       </header>
 
-      {/* Main Story Scene Viewport */}
+      {/* Main Story Scene Viewport (Unscrollable shell) */}
       <main className="flex-1 min-h-0 w-full overflow-hidden flex flex-col items-center justify-center p-1 sm:p-2">
         {currentView === 1 && (
           <Scene1Greeting
@@ -276,9 +288,37 @@ export const App: React.FC = () => {
         )}
 
         {currentView === 5 && (
+          <SceneChaosMuseum
+            content={content.chaosMuseum}
+            onNext={() => goToView(6)}
+          />
+        )}
+
+        {currentView === 6 && (
           <Scene5Gallery
             gallery={content.gallery}
-            onGoToFinale={handleAfterGallery}
+            onGoToFinale={() => goToView(7)}
+          />
+        )}
+
+        {currentView === 7 && (
+          <SceneBlessings
+            content={content.blessings}
+            onNext={() => goToView(8)}
+          />
+        )}
+
+        {currentView === 8 && (
+          <SceneOpenWhen
+            content={content.openWhen}
+            onNext={() => goToView(9)}
+          />
+        )}
+
+        {currentView === 9 && (
+          <SceneFutureDreams
+            content={content.futureDreams}
+            onNext={handleAfterFuture}
           />
         )}
 
@@ -288,7 +328,7 @@ export const App: React.FC = () => {
           return (
             <SceneCustom
               page={customMatch.page}
-              chapterNumber={6 + customMatch.index}
+              chapterNumber={10 + customMatch.index}
               totalChapters={totalChapters}
               onNext={() => handleAfterCustom(customMatch.index)}
             />

@@ -44,6 +44,7 @@ export interface ReasonItem {
   title: string;
   description: string;
   iconName: string;
+  photoUrl?: string;
 }
 
 export interface GalleryItem {
@@ -53,6 +54,75 @@ export interface GalleryItem {
   caption: string;
   date?: string;
   rotation: string; // e.g. "-rotate-2", "rotate-3"
+}
+
+export interface ChaosMuseumItem {
+  id: string;
+  title: string;
+  caption: string;
+  imageUrl: string;
+  tag?: string;
+}
+
+export interface ChaosMuseumContent {
+  badge: string;
+  title: string;
+  subtitle: string;
+  cuteItems: ChaosMuseumItem[];
+  chaosItems: ChaosMuseumItem[];
+  ctaText: string;
+}
+
+export interface BlessingItem {
+  id: number;
+  icon: string;
+  title: string;
+  blessing: string;
+  color: string;
+  photoUrl?: string;
+}
+
+export interface BirthdayBlessingsContent {
+  badge: string;
+  title: string;
+  subtitle: string;
+  blessings: BlessingItem[];
+  ctaText: string;
+}
+
+export interface OpenWhenEnvelope {
+  id: number;
+  title: string;
+  preview: string;
+  message: string;
+  photoUrl?: string;
+  icon: string;
+}
+
+export interface OpenWhenContent {
+  badge: string;
+  title: string;
+  subtitle: string;
+  envelopes: OpenWhenEnvelope[];
+  ctaText: string;
+}
+
+export interface FutureDreamItem {
+  id: number;
+  title: string;
+  description: string;
+  tag: string;
+  photoUrl?: string;
+  checked?: boolean;
+}
+
+export interface FutureDreamsContent {
+  badge: string;
+  title: string;
+  subtitle: string;
+  dreams: FutureDreamItem[];
+  note: string;
+  ctaText: string;
 }
 
 export interface FinaleContent {
@@ -93,7 +163,11 @@ export interface BirthdayContent {
   birthdayMoment: BirthdayMomentContent;
   loveLetter: LoveLetterContent;
   reasons: ReasonItem[];
+  chaosMuseum?: ChaosMuseumContent;
   gallery: GalleryItem[];
+  blessings?: BirthdayBlessingsContent;
+  openWhen?: OpenWhenContent;
+  futureDreams?: FutureDreamsContent;
   customPages?: CustomPageItem[];
   finale: FinaleContent;
   theme?: ThemeConfig;

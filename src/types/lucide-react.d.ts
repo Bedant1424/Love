@@ -49,4 +49,17 @@ declare module 'lucide-react' {
   export const AlertCircle: LucideIcon;
   export const RefreshCw: LucideIcon;
   export const UploadCloud: LucideIcon;
+
+  // New additions
+  export const Library: LucideIcon;
+  export const Search: LucideIcon;
+  export const Video: LucideIcon;
+  export const Sun: LucideIcon;
+  export const Shield: LucideIcon;
+  export const Crown: LucideIcon;
+  export const Laugh: LucideIcon;
+  export const Frown: LucideIcon;
+  export const Compass: LucideIcon;
+  export const CheckSquare: LucideIcon;
+  export const Square: LucideIcon;
 }

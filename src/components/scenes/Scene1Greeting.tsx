@@ -1,5 +1,6 @@
 import React from 'react';
 import { GreetingSceneContent, RecipientInfo } from '../../types/content.types';
+import { PhotoSticker } from '../common/PhotoSticker';
 import { Sparkles, Heart } from 'lucide-react';
 
 interface Scene1GreetingProps {
@@ -18,6 +19,29 @@ export const Scene1Greeting: React.FC<Scene1GreetingProps> = ({
       aria-label="Welcome and Birthday Greeting"
       className="relative w-full h-full flex flex-col items-center justify-center p-2 sm:p-4 text-center overflow-hidden select-none"
     >
+      {/* Decorative Scrapbook Photos (Responsive) */}
+      <div className="hidden lg:block absolute left-4 xl:left-10 top-12 z-10 pointer-events-auto">
+        <PhotoSticker
+          src="media/hero-purple-saree.jpeg"
+          alt="My Queen"
+          caption="The Birthday Girl 🌸"
+          type="polaroid"
+          size="sm"
+          rotation="-rotate-6"
+          tape={true}
+        />
+      </div>
+
+      <div className="hidden lg:block absolute right-4 xl:right-10 bottom-12 z-10 pointer-events-auto">
+        <PhotoSticker
+          src="media/couple-arms-linked.jpeg"
+          alt="Us Together"
+          type="circle"
+          size="sm"
+          rotation="rotate-6"
+        />
+      </div>
+
       {/* Ambient Floating Hearts & Stars */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <span className="absolute top-[8%] left-[8%] text-xl animate-float opacity-70">🌸</span>

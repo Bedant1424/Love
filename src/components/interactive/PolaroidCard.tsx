@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { GalleryItem } from '../../types/content.types';
 import { PapercraftFallback } from '../common/PapercraftFallback';
 
+import { resolveMediaUrl } from '../../data/mediaRegistry';
+
 interface PolaroidCardProps {
   item: GalleryItem;
   onClick: () => void;
@@ -67,7 +69,7 @@ export const PolaroidCard: React.FC<PolaroidCardProps> = ({
       <div className="relative w-full aspect-square overflow-hidden rounded-xs bg-stone-100 flex items-center justify-center">
         {item.imageUrl && !imageError ? (
           <img
-            src={item.imageUrl}
+            src={resolveMediaUrl(item.imageUrl)}
             alt={item.caption || item.fallbackTitle}
             onError={() => setImageError(true)}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-103"

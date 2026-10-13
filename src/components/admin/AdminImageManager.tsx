@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { GalleryItem, FinaleContent } from '../../types/content.types';
 import { compressImage } from '../../utils/imageCompressor';
 import { PapercraftFallback } from '../common/PapercraftFallback';
+import { resolveMediaUrl } from '../../data/mediaRegistry';
+import { MediaAssetPickerModal } from './MediaAssetPickerModal';
 import {
   Image as ImageIcon,
   UploadCloud,
   Plus,
   Trash2,
   Sparkles,
+  Library,
 } from 'lucide-react';
 
 interface AdminImageManagerProps {
@@ -26,6 +29,41 @@ export const AdminImageManager: React.FC<AdminImageManagerProps> = ({
   const [activeSlot, setActiveSlot] = useState<'hero' | number | 'new'>('new');
   const [isDragging, setIsDragging] = useState(false);
   const [compressing, setCompressing] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerTarget, setPickerTarget] = useState<'hero' | number | 'new'>('new');
+
+  const openPickerFor = (target: 'hero' | number | 'new') => {
+    setPickerTarget(target);
+    setPickerOpen(true);
+  };
+
+  const handlePickerSelect = (url: string) => {
+    if (pickerTarget === 'hero') {
+      onFinaleChange({
+        ...finale,
+        heroImageUrl: url,
+      });
+    } else if (pickerTarget === 'new') {
+      const nextId = gallery.length > 0 ? Math.max(...gallery.map((g) => g.id)) + 1 : 1;
+      const rotations = ['-rotate-2', 'rotate-2', '-rotate-1', 'rotate-3', '-rotate-3', 'rotate-1'];
+      const rot = rotations[gallery.length % rotations.length];
+      const newItem: GalleryItem = {
+        id: nextId,
+        imageUrl: url,
+        fallbackTitle: `Special Memory #${nextId}`,
+        caption: 'A wonderful moment we shared together.',
+        date: 'Our Story',
+        rotation: rot,
+      };
+      onGalleryChange([...gallery, newItem]);
+    } else {
+      onGalleryChange(
+        gallery.map((item) =>
+          item.id === pickerTarget ? { ...item, imageUrl: url } : item
+        )
+      );
+    }
+  };
 
   const handleProcessFile = async (file: File, target: 'hero' | number | 'new') => {
     if (!file.type.startsWith('image/')) {
@@ -55,7 +93,6 @@ export const AdminImageManager: React.FC<AdminImageManagerProps> = ({
         };
         onGalleryChange([...gallery, newItem]);
       } else {
-        // Update existing item
         onGalleryChange(
           gallery.map((item) =>
             item.id === target ? { ...item, imageUrl: dataUrl } : item
@@ -121,14 +158,14 @@ export const AdminImageManager: React.FC<AdminImageManagerProps> = ({
       <div>
         <h3 className="text-xl font-heading text-neutral-800 flex items-center gap-2">
           <ImageIcon className="w-5 h-5 text-rose-CTA" />
-          Drag & Drop Photo Manager
+          Photo Gallery & Media Manager
         </h3>
         <p className="text-sm text-neutral-600 mt-1">
-          Upload and organize personal photos for your memories gallery and finale hero frame. Photos are automatically optimized and saved to your browser.
+          Pick photos from your 65+ personal photo library, or drag and drop new pictures from your device.
         </p>
       </div>
 
-      {/* Main Drag & Drop Hub */}
+      {/* Main Drag & Drop / Library Hub */}
       <div
         onDragOver={(e) => {
           e.preventDefault();
@@ -149,7 +186,7 @@ export const AdminImageManager: React.FC<AdminImageManagerProps> = ({
 
           <div>
             <p className="text-base font-bold text-neutral-800">
-              Drag & Drop any photo here to upload
+              Drag & Drop photo here, or browse personal library
             </p>
             <p className="text-xs text-neutral-500 mt-0.5">
               Target Slot:{' '}
@@ -164,11 +201,11 @@ export const AdminImageManager: React.FC<AdminImageManagerProps> = ({
           </div>
 
           {/* Quick Target Selector */}
-          <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+          <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
             <button
               type="button"
               onClick={() => setActiveSlot('new')}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                 activeSlot === 'new'
                   ? 'bg-rose-CTA text-white shadow-xs'
                   : 'bg-stone-100 text-neutral-700 hover:bg-stone-200'
@@ -179,7 +216,7 @@ export const AdminImageManager: React.FC<AdminImageManagerProps> = ({
             <button
               type="button"
               onClick={() => setActiveSlot('hero')}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                 activeSlot === 'hero'
                   ? 'bg-rose-CTA text-white shadow-xs'
                   : 'bg-stone-100 text-neutral-700 hover:bg-stone-200'
@@ -192,7 +229,7 @@ export const AdminImageManager: React.FC<AdminImageManagerProps> = ({
                 key={g.id}
                 type="button"
                 onClick={() => setActiveSlot(g.id)}
-                className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
                   activeSlot === g.id
                     ? 'bg-rose-CTA text-white shadow-xs'
                     : 'bg-stone-100 text-neutral-700 hover:bg-stone-200'
@@ -203,15 +240,28 @@ export const AdminImageManager: React.FC<AdminImageManagerProps> = ({
             ))}
           </div>
 
-          <label className="mt-2 px-4 py-1.5 rounded-full bg-stone-100 hover:bg-stone-200 text-neutral-800 text-xs font-bold cursor-pointer transition-colors">
-            {compressing ? 'Processing Image...' : 'Or Select File from Device'}
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => handleFileInput(e, activeSlot)}
-            />
-          </label>
+          {/* Actions: Choose from library OR upload file */}
+          <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
+            <button
+              type="button"
+              onClick={() => openPickerFor(activeSlot)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-rose-CTA hover:bg-rose-CTA-hover text-white text-xs font-bold shadow-xs cursor-pointer transition-colors"
+            >
+              <Library className="w-3.5 h-3.5" />
+              <span>Choose From Personal Library (65+ Photos)</span>
+            </button>
+
+            <label className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-stone-100 hover:bg-stone-200 text-neutral-800 text-xs font-bold cursor-pointer transition-colors">
+              <UploadCloud className="w-3.5 h-3.5" />
+              <span>{compressing ? 'Processing...' : 'Upload From Device'}</span>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleFileInput(e, activeSlot)}
+              />
+            </label>
+          </div>
         </div>
       </div>
 
@@ -220,13 +270,13 @@ export const AdminImageManager: React.FC<AdminImageManagerProps> = ({
         <div className="flex items-center justify-between">
           <h4 className="text-sm font-bold text-neutral-800 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-amber-500" />
-            Chapter 6: Grand Finale Hero Image
+            Chapter 10: Grand Finale Hero Image
           </h4>
           {finale.heroImageUrl && (
             <button
               type="button"
               onClick={() => onFinaleChange({ ...finale, heroImageUrl: '' })}
-              className="text-xs text-rose-CTA hover:underline font-bold flex items-center gap-1"
+              className="text-xs text-rose-CTA hover:underline font-bold flex items-center gap-1 cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
               Reset to Fallback
@@ -238,7 +288,7 @@ export const AdminImageManager: React.FC<AdminImageManagerProps> = ({
           <div className="w-24 h-24 rounded-xl overflow-hidden bg-stone-100 border border-stone-200 flex-shrink-0 flex items-center justify-center">
             {finale.heroImageUrl ? (
               <img
-                src={finale.heroImageUrl}
+                src={resolveMediaUrl(finale.heroImageUrl)}
                 alt="Finale Hero"
                 className="w-full h-full object-cover"
               />
@@ -255,33 +305,53 @@ export const AdminImageManager: React.FC<AdminImageManagerProps> = ({
               placeholder="Photo Fallback Title"
               className="w-full p-2 bg-stone-50 border border-stone-300 rounded-lg text-xs font-bold text-neutral-800"
             />
-            <label className="inline-block px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-CTA text-xs font-bold cursor-pointer transition-colors">
-              Upload New Hero Photo
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => handleFileInput(e, 'hero')}
-              />
-            </label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => openPickerFor('hero')}
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-rose-CTA text-white text-xs font-bold hover:bg-rose-CTA-hover transition-colors cursor-pointer"
+              >
+                <Library className="w-3 h-3" />
+                <span>Select from Library</span>
+              </button>
+              <label className="inline-block px-3 py-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-neutral-800 text-xs font-bold cursor-pointer transition-colors">
+                Upload Custom
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleFileInput(e, 'hero')}
+                />
+              </label>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Section 2: Chapter 5 Polaroid Gallery Cards */}
+      {/* Section 2: Chapter 6 Polaroid Gallery Cards */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h4 className="text-sm font-bold text-neutral-800">
-            Chapter 5: Polaroid Scrapbook Cards ({gallery.length} Photos)
+            Chapter 6: Polaroid Scrapbook Cards ({gallery.length} Photos)
           </h4>
-          <button
-            type="button"
-            onClick={addEmptyGalleryCard}
-            className="px-3.5 py-1.5 rounded-full bg-rose-CTA hover:bg-rose-CTA-hover text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Polaroid Card</span>
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => openPickerFor('new')}
+              className="px-3.5 py-1.5 rounded-full bg-rose-CTA hover:bg-rose-CTA-hover text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+            >
+              <Library className="w-4 h-4" />
+              <span>Add From Library</span>
+            </button>
+            <button
+              type="button"
+              onClick={addEmptyGalleryCard}
+              className="px-3 py-1.5 rounded-full border border-stone-300 text-neutral-700 text-xs font-bold flex items-center gap-1 hover:bg-stone-50 transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Blank Card</span>
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -298,18 +368,18 @@ export const AdminImageManager: React.FC<AdminImageManagerProps> = ({
                 <button
                   type="button"
                   onClick={() => deleteGalleryItem(card.id)}
-                  className="text-stone-400 hover:text-red-500 transition-colors p-1"
+                  className="text-stone-400 hover:text-red-500 transition-colors p-1 cursor-pointer"
                   title="Delete card"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* Photo Thumbnail & Upload Trigger */}
+              {/* Photo Thumbnail & Replace Trigger */}
               <div className="relative aspect-square w-full rounded-lg overflow-hidden bg-stone-100 border border-stone-200 group flex items-center justify-center">
                 {card.imageUrl ? (
                   <img
-                    src={card.imageUrl}
+                    src={resolveMediaUrl(card.imageUrl)}
                     alt={card.fallbackTitle}
                     className="w-full h-full object-cover"
                   />
@@ -318,16 +388,24 @@ export const AdminImageManager: React.FC<AdminImageManagerProps> = ({
                 )}
 
                 {/* Hover Replace Overlay */}
-                <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white cursor-pointer transition-opacity">
-                  <UploadCloud className="w-6 h-6 mb-1" />
-                  <span className="text-xs font-bold">Replace Photo</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleFileInput(e, card.id)}
-                  />
-                </label>
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-2 text-white transition-opacity p-2">
+                  <button
+                    type="button"
+                    onClick={() => openPickerFor(card.id)}
+                    className="px-3 py-1 rounded-full bg-rose-CTA text-white text-xs font-bold hover:scale-105 transition-transform cursor-pointer"
+                  >
+                    Select Photo
+                  </button>
+                  <label className="text-[11px] underline cursor-pointer hover:text-rose-200">
+                    Upload New
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleFileInput(e, card.id)}
+                    />
+                  </label>
+                </div>
               </div>
 
               {/* Editable Fields */}
@@ -348,7 +426,7 @@ export const AdminImageManager: React.FC<AdminImageManagerProps> = ({
 
                 <div>
                   <label className="block text-[11px] font-bold text-neutral-600 mb-0.5">
-                    Caption
+                    Sweet Caption
                   </label>
                   <textarea
                     rows={2}
@@ -356,51 +434,43 @@ export const AdminImageManager: React.FC<AdminImageManagerProps> = ({
                     onChange={(e) =>
                       updateGalleryItem(card.id, { caption: e.target.value })
                     }
-                    className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-700"
+                    className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800 resize-none"
                   />
                 </div>
 
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <label className="block text-[11px] font-bold text-neutral-600 mb-0.5">
-                      Tag / Date
-                    </label>
-                    <input
-                      type="text"
-                      value={card.date || ''}
-                      onChange={(e) =>
-                        updateGalleryItem(card.id, { date: e.target.value })
-                      }
-                      placeholder="e.g. Special Day"
-                      className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
-                    />
-                  </div>
-
-                  <div className="w-24">
-                    <label className="block text-[11px] font-bold text-neutral-600 mb-0.5">
-                      Tilt Angle
-                    </label>
-                    <select
-                      value={card.rotation}
-                      onChange={(e) =>
-                        updateGalleryItem(card.id, { rotation: e.target.value })
-                      }
-                      className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
-                    >
-                      <option value="-rotate-3">-3°</option>
-                      <option value="-rotate-2">-2°</option>
-                      <option value="-rotate-1">-1°</option>
-                      <option value="rotate-1">+1°</option>
-                      <option value="rotate-2">+2°</option>
-                      <option value="rotate-3">+3°</option>
-                    </select>
-                  </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-neutral-600 mb-0.5">
+                    Date / Tag Label
+                  </label>
+                  <input
+                    type="text"
+                    value={card.date || ''}
+                    onChange={(e) =>
+                      updateGalleryItem(card.id, { date: e.target.value })
+                    }
+                    placeholder="e.g. Our First Date"
+                    className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
+                  />
                 </div>
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Visual Media Picker Modal */}
+      <MediaAssetPickerModal
+        isOpen={pickerOpen}
+        onSelect={handlePickerSelect}
+        onClose={() => setPickerOpen(false)}
+        title={
+          pickerTarget === 'hero'
+            ? 'Select Finale Hero Photo'
+            : pickerTarget === 'new'
+            ? 'Add New Photo to Memories Gallery'
+            : `Select Photo for Memory #${pickerTarget}`
+        }
+      />
     </div>
   );
 };

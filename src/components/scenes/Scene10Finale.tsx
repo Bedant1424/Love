@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { FinaleContent, SenderInfo } from '../../types/content.types';
 import { PapercraftFallback } from '../common/PapercraftFallback';
+import { PhotoSticker } from '../common/PhotoSticker';
+import { resolveMediaUrl } from '../../data/mediaRegistry';
 import confetti from 'canvas-confetti';
 import { Heart, Sparkles, RotateCcw } from 'lucide-react';
 
@@ -54,8 +56,31 @@ export const Scene10Finale: React.FC<Scene10FinaleProps> = ({
   return (
     <section
       aria-label="Grand Birthday Finale"
-      className="relative w-full h-full flex flex-col items-center justify-center p-2 sm:p-4 text-center select-none overflow-hidden max-w-md mx-auto"
+      className="relative w-full h-full flex flex-col items-center justify-center p-2 sm:p-4 text-center select-none overflow-hidden max-w-lg mx-auto"
     >
+      {/* Decorative Scrapbook Photos (Responsive) */}
+      <div className="hidden lg:block absolute left-4 bottom-8 z-10 pointer-events-auto">
+        <PhotoSticker
+          src="media/couple-head-rest.jpeg"
+          alt="Us Forever"
+          caption="My Safe Place 💕"
+          type="polaroid"
+          size="sm"
+          rotation="-rotate-6"
+          tape={true}
+        />
+      </div>
+
+      <div className="hidden lg:block absolute right-4 top-8 z-10 pointer-events-auto">
+        <PhotoSticker
+          src="media/hero-purple-saree.jpeg"
+          alt="My Queen"
+          type="circle"
+          size="sm"
+          rotation="rotate-6"
+        />
+      </div>
+
       {/* Cinematic Starfield Texture */}
       <div className="absolute inset-0 pointer-events-none opacity-30 bg-[radial-gradient(#FCD34D_1px,transparent_1px)] [background-size:24px_24px]" />
 
@@ -72,10 +97,10 @@ export const Scene10Finale: React.FC<Scene10FinaleProps> = ({
               <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
             </div>
 
-            <div className="relative w-24 h-24 sm:w-32 sm:h-32 short-compact-photo rounded-xl overflow-hidden border-2 border-amber-300/60 shadow-md bg-plum-950 flex items-center justify-center flex-shrink-0">
+            <div className="relative w-28 h-28 sm:w-36 sm:h-36 short-compact-photo rounded-xl overflow-hidden border-2 border-amber-300/60 shadow-md bg-plum-950 flex items-center justify-center flex-shrink-0">
               {content.heroImageUrl && !imageError ? (
                 <img
-                  src={content.heroImageUrl}
+                  src={resolveMediaUrl(content.heroImageUrl)}
                   alt={content.fallbackTitle}
                   onError={() => setImageError(true)}
                   className="w-full h-full object-cover"

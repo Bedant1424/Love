@@ -3,6 +3,8 @@ import { BirthdayMomentContent } from '../../types/content.types';
 import { Cake3D } from '../interactive/Cake3D';
 import { Sparkles, ArrowRight } from 'lucide-react';
 
+import { PhotoSticker } from '../common/PhotoSticker';
+
 interface Scene2CakeProps {
   content: BirthdayMomentContent;
   onNext: () => void;
@@ -28,6 +30,31 @@ export const Scene2Cake: React.FC<Scene2CakeProps> = ({ content, onNext }) => {
 
       {/* Gentle pink glow centered behind the cake */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 sm:w-96 sm:h-96 rounded-full bg-rose-500/15 blur-3xl pointer-events-none" />
+
+      {/* Floating Birthday Stickers (Desktop & Tablet) */}
+      <div className="hidden md:block absolute left-4 lg:left-8 top-1/3 -translate-y-1/2 z-20 pointer-events-auto">
+        <PhotoSticker
+          src="media/hero-pretty-dress.jpeg"
+          alt="Birthday Girl"
+          caption="The Birthday Girl 🌸"
+          type="polaroid"
+          size="sm"
+          rotation="-rotate-6"
+          tape={true}
+        />
+      </div>
+
+      <div className="hidden md:block absolute right-4 lg:right-8 top-1/3 -translate-y-1/2 z-20 pointer-events-auto">
+        <PhotoSticker
+          src="media/couple-cheek-kiss.jpeg"
+          alt="Birthday Kiss"
+          caption="Make a wish! ✨"
+          type="polaroid"
+          size="sm"
+          rotation="rotate-6"
+          tape={true}
+        />
+      </div>
 
       {/* Subtle floating stars & hearts accent */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-35">

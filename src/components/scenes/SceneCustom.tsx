@@ -1,6 +1,7 @@
 import React from 'react';
 import { CustomPageItem } from '../../types/content.types';
 import { PapercraftFallback } from '../common/PapercraftFallback';
+import { resolveMediaUrl } from '../../data/mediaRegistry';
 import { Sparkles, ArrowRight } from 'lucide-react';
 
 interface SceneCustomProps {
@@ -80,7 +81,7 @@ export const SceneCustom: React.FC<SceneCustomProps> = ({
           <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-xl overflow-hidden my-2 border-2 border-stone-200/80 shadow-sm flex items-center justify-center flex-shrink-0">
             {!imageError ? (
               <img
-                src={page.imageUrl}
+                src={resolveMediaUrl(page.imageUrl)}
                 alt={page.title}
                 onError={() => setImageError(true)}
                 className="w-full h-full object-cover"

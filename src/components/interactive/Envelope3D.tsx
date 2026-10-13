@@ -162,14 +162,14 @@ export const Envelope3D: React.FC<Envelope3DProps> = ({
             className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-neutral-900/60 backdrop-blur-sm animate-fade-in"
           >
             <div
-              className="relative w-full max-w-md max-h-[85vh] bg-[#FDFAFF] text-[#2D2635] rounded-2xl shadow-xl border-2 border-[#DFD2F5] flex flex-col overflow-hidden"
+              className="relative w-full max-w-md max-h-[85dvh] bg-[#FDFAFF] text-[#2D2635] rounded-2xl shadow-xl border-2 border-[#DFD2F5] flex flex-col overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Top Washi Tape Decoration */}
               <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-24 h-4 washi-tape rounded-xs z-10 pointer-events-none" />
 
-              {/* Modal Header & Close Button */}
-              <div className="flex items-center justify-between px-4 pt-5 pb-2 border-b border-rose-100">
+              {/* Modal Header & Close Button (Fixed) */}
+              <div className="flex-shrink-0 flex items-center justify-between px-4 pt-5 pb-2 border-b border-rose-100">
                 <div className="flex items-center gap-1.5 text-rose-CTA">
                   <Mail className="w-4 h-4" />
                   <span id="letter-heading" className="font-heading text-base sm:text-lg">
@@ -191,8 +191,8 @@ export const Envelope3D: React.FC<Envelope3DProps> = ({
                 </div>
               </div>
 
-              {/* Paginated Letter Content */}
-              <div className="px-4 sm:px-5 py-3 space-y-2.5 font-body text-xs sm:text-sm leading-relaxed text-[#2D2635]">
+              {/* Scrollable Letter Content Area */}
+              <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-5 py-3 space-y-2.5 font-body text-xs sm:text-sm leading-relaxed text-[#2D2635] touch-pan-y">
                 {/* Salutation on First Page */}
                 {isFirstPage && (
                   <h3 className="font-handwriting text-xl sm:text-2xl font-bold text-rose-CTA mb-1">
@@ -220,8 +220,8 @@ export const Envelope3D: React.FC<Envelope3DProps> = ({
                 )}
               </div>
 
-              {/* Action Footer */}
-              <div className="p-3 bg-cream-50/80 border-t border-rose-100 flex items-center justify-between gap-2">
+              {/* Action Footer (Fixed) */}
+              <div className="flex-shrink-0 p-3 bg-cream-50/90 border-t border-rose-100 flex items-center justify-between gap-2">
                 <div>
                   {!isFirstPage ? (
                     <button

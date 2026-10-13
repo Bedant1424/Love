@@ -1,6 +1,23 @@
 import React, { useState } from 'react';
-import { BirthdayContent, ReasonItem } from '../../types/content.types';
-import { FileText, Plus, Trash2, Heart, Sparkles, Mail, Smile } from 'lucide-react';
+import {
+  BirthdayContent,
+  ReasonItem,
+  ChaosMuseumItem,
+  BlessingItem,
+  OpenWhenEnvelope,
+  FutureDreamItem,
+} from '../../types/content.types';
+import { resolveMediaUrl } from '../../data/mediaRegistry';
+import { MediaAssetPickerModal } from './MediaAssetPickerModal';
+import {
+  FileText,
+  Plus,
+  Trash2,
+  Sparkles,
+  Mail,
+  Crown,
+  Compass,
+} from 'lucide-react';
 
 interface AdminTextTabProps {
   content: BirthdayContent;
@@ -12,8 +29,27 @@ export const AdminTextTab: React.FC<AdminTextTabProps> = ({
   onChange,
 }) => {
   const [activeSection, setActiveSection] = useState<
-    'recipient' | 'greeting' | 'cake' | 'letter' | 'reasons' | 'finale'
+    | 'recipient'
+    | 'greeting'
+    | 'cake'
+    | 'letter'
+    | 'reasons'
+    | 'museum'
+    | 'blessings'
+    | 'openWhen'
+    | 'future'
+    | 'finale'
   >('recipient');
+
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerCallback, setPickerCallback] = useState<(url: string) => void>(() => () => {});
+  const [pickerTitle, setPickerTitle] = useState('Select Photo');
+
+  const openPhotoPicker = (title: string, onSelect: (url: string) => void) => {
+    setPickerTitle(title);
+    setPickerCallback(() => onSelect);
+    setPickerOpen(true);
+  };
 
   // Letter paragraph handlers
   const handleLetterParagraphChange = (index: number, text: string) => {
@@ -108,102 +144,112 @@ export const AdminTextTab: React.FC<AdminTextTabProps> = ({
     });
   };
 
+  // Museum handlers
+  const updateMuseumField = (field: string, value: string) => {
+    if (!content.chaosMuseum) return;
+    onChange({
+      ...content,
+      chaosMuseum: { ...content.chaosMuseum, [field]: value },
+    });
+  };
+
+  const updateMuseumItem = (type: 'cute' | 'chaos', id: string, updates: Partial<ChaosMuseumItem>) => {
+    if (!content.chaosMuseum) return;
+    const listKey = type === 'cute' ? 'cuteItems' : 'chaosItems';
+    onChange({
+      ...content,
+      chaosMuseum: {
+        ...content.chaosMuseum,
+        [listKey]: content.chaosMuseum[listKey].map((it) => (it.id === id ? { ...it, ...updates } : it)),
+      },
+    });
+  };
+
+  // Blessings handlers
+  const updateBlessing = (id: number, updates: Partial<BlessingItem>) => {
+    if (!content.blessings) return;
+    onChange({
+      ...content,
+      blessings: {
+        ...content.blessings,
+        blessings: content.blessings.blessings.map((b) => (b.id === id ? { ...b, ...updates } : b)),
+      },
+    });
+  };
+
+  // Open When handlers
+  const updateEnvelope = (id: number, updates: Partial<OpenWhenEnvelope>) => {
+    if (!content.openWhen) return;
+    onChange({
+      ...content,
+      openWhen: {
+        ...content.openWhen,
+        envelopes: content.openWhen.envelopes.map((e) => (e.id === id ? { ...e, ...updates } : e)),
+      },
+    });
+  };
+
+  // Future Dreams handlers
+  const updateFutureDream = (id: number, updates: Partial<FutureDreamItem>) => {
+    if (!content.futureDreams) return;
+    onChange({
+      ...content,
+      futureDreams: {
+        ...content.futureDreams,
+        dreams: content.futureDreams.dreams.map((d) => (d.id === id ? { ...d, ...updates } : d)),
+      },
+    });
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div>
         <h3 className="text-xl font-heading text-neutral-800 flex items-center gap-2">
           <FileText className="w-5 h-5 text-rose-CTA" />
-          Story Copy & Text Editor
+          Story Copy & Chapter Content Editor
         </h3>
         <p className="text-sm text-neutral-600 mt-1">
-          Customize every message, name, letter paragraph, and reason why you love her.
+          Customize messages, letters, blessings, museum exhibits, open-when envelopes, and reasons.
         </p>
       </div>
 
       {/* Section Sub-Navigation Tabs */}
       <div className="flex flex-wrap gap-1.5 border-b border-stone-200 pb-2">
-        <button
-          type="button"
-          onClick={() => setActiveSection('recipient')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-            activeSection === 'recipient'
-              ? 'bg-rose-CTA text-white shadow-xs'
-              : 'bg-stone-100 text-neutral-700 hover:bg-stone-200'
-          }`}
-        >
-          Names & Date
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveSection('greeting')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-            activeSection === 'greeting'
-              ? 'bg-rose-CTA text-white shadow-xs'
-              : 'bg-stone-100 text-neutral-700 hover:bg-stone-200'
-          }`}
-        >
-          Ch.1 Greeting
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveSection('cake')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-            activeSection === 'cake'
-              ? 'bg-rose-CTA text-white shadow-xs'
-              : 'bg-stone-100 text-neutral-700 hover:bg-stone-200'
-          }`}
-        >
-          Ch.2 Cake & Wish
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveSection('letter')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-            activeSection === 'letter'
-              ? 'bg-rose-CTA text-white shadow-xs'
-              : 'bg-stone-100 text-neutral-700 hover:bg-stone-200'
-          }`}
-        >
-          Ch.3 Love Letter
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveSection('reasons')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-            activeSection === 'reasons'
-              ? 'bg-rose-CTA text-white shadow-xs'
-              : 'bg-stone-100 text-neutral-700 hover:bg-stone-200'
-          }`}
-        >
-          Ch.4 Reasons Why
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveSection('finale')}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-            activeSection === 'finale'
-              ? 'bg-rose-CTA text-white shadow-xs'
-              : 'bg-stone-100 text-neutral-700 hover:bg-stone-200'
-          }`}
-        >
-          Ch.6 Finale
-        </button>
+        {[
+          { id: 'recipient', label: 'Names & Date' },
+          { id: 'greeting', label: 'Ch.1 Greeting' },
+          { id: 'cake', label: 'Ch.2 Cake' },
+          { id: 'letter', label: 'Ch.3 Letter' },
+          { id: 'reasons', label: 'Ch.4 Reasons' },
+          { id: 'museum', label: 'Ch.5 Museum' },
+          { id: 'blessings', label: 'Ch.7 Blessings' },
+          { id: 'openWhen', label: 'Ch.8 Open When' },
+          { id: 'future', label: 'Ch.9 Future' },
+          { id: 'finale', label: 'Ch.10 Finale' },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveSection(tab.id as any)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              activeSection === tab.id
+                ? 'bg-rose-CTA text-white shadow-xs'
+                : 'bg-stone-100 text-neutral-700 hover:bg-stone-200'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
 
-      {/* Tab 1: Names & Dates */}
+      {/* SECTION 1: Recipient & Sender */}
       {activeSection === 'recipient' && (
-        <div className="bg-stone-50 p-5 rounded-2xl border border-stone-200 space-y-4">
-          <h4 className="text-sm font-bold text-neutral-800 flex items-center gap-2">
-            <Heart className="w-4 h-4 text-rose-CTA" />
-            Couple Information
-          </h4>
-
+        <div className="bg-white p-5 rounded-xl border border-stone-200 space-y-4">
+          <h4 className="font-bold text-sm text-neutral-800">Couple & Birthday Details</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-neutral-700 mb-1">
-                Recipient Name
-              </label>
+              <label className="block text-xs font-bold text-neutral-700 mb-1">Birthday Girl Name</label>
               <input
                 type="text"
                 value={content.recipient.name}
@@ -213,14 +259,11 @@ export const AdminTextTab: React.FC<AdminTextTabProps> = ({
                     recipient: { ...content.recipient, name: e.target.value },
                   })
                 }
-                className="w-full p-2.5 bg-white border border-stone-300 rounded-xl text-sm text-neutral-800"
+                className="w-full p-2 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
               />
             </div>
-
             <div>
-              <label className="block text-xs font-bold text-neutral-700 mb-1">
-                Nickname (Optional)
-              </label>
+              <label className="block text-xs font-bold text-neutral-700 mb-1">Nickname</label>
               <input
                 type="text"
                 value={content.recipient.nickname}
@@ -230,31 +273,11 @@ export const AdminTextTab: React.FC<AdminTextTabProps> = ({
                     recipient: { ...content.recipient, nickname: e.target.value },
                   })
                 }
-                className="w-full p-2.5 bg-white border border-stone-300 rounded-xl text-sm text-neutral-800"
+                className="w-full p-2 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
               />
             </div>
-
             <div>
-              <label className="block text-xs font-bold text-neutral-700 mb-1">
-                Birthday Date
-              </label>
-              <input
-                type="date"
-                value={content.recipient.birthDate}
-                onChange={(e) =>
-                  onChange({
-                    ...content,
-                    recipient: { ...content.recipient, birthDate: e.target.value },
-                  })
-                }
-                className="w-full p-2.5 bg-white border border-stone-300 rounded-xl text-sm text-neutral-800"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-neutral-700 mb-1">
-                Sender Name (Your Name)
-              </label>
+              <label className="block text-xs font-bold text-neutral-700 mb-1">Sender Name (Your Name)</label>
               <input
                 type="text"
                 value={content.sender.name}
@@ -264,26 +287,34 @@ export const AdminTextTab: React.FC<AdminTextTabProps> = ({
                     sender: { ...content.sender, name: e.target.value },
                   })
                 }
-                className="w-full p-2.5 bg-white border border-stone-300 rounded-xl text-sm text-neutral-800"
+                className="w-full p-2 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-neutral-700 mb-1">Birthday Date (YYYY-MM-DD)</label>
+              <input
+                type="date"
+                value={content.recipient.birthDate}
+                onChange={(e) =>
+                  onChange({
+                    ...content,
+                    recipient: { ...content.recipient, birthDate: e.target.value },
+                  })
+                }
+                className="w-full p-2 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
               />
             </div>
           </div>
         </div>
       )}
 
-      {/* Tab 2: Chapter 1 Greeting */}
+      {/* SECTION 2: Greeting */}
       {activeSection === 'greeting' && (
-        <div className="bg-stone-50 p-5 rounded-2xl border border-stone-200 space-y-4">
-          <h4 className="text-sm font-bold text-neutral-800 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-rose-CTA" />
-            Chapter 1: Opening Greeting Card
-          </h4>
-
+        <div className="bg-white p-5 rounded-xl border border-stone-200 space-y-4">
+          <h4 className="font-bold text-sm text-neutral-800">Chapter 1: Welcome Greeting</h4>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-bold text-neutral-700 mb-1">
-                Top Badge Text
-              </label>
+              <label className="block text-xs font-bold text-neutral-700 mb-1">Top Badge</label>
               <input
                 type="text"
                 value={content.greeting.badge}
@@ -293,14 +324,11 @@ export const AdminTextTab: React.FC<AdminTextTabProps> = ({
                     greeting: { ...content.greeting, badge: e.target.value },
                   })
                 }
-                className="w-full p-2.5 bg-white border border-stone-300 rounded-xl text-sm text-neutral-800"
+                className="w-full p-2 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
               />
             </div>
-
             <div>
-              <label className="block text-xs font-bold text-neutral-700 mb-1">
-                Main Hero Headline
-              </label>
+              <label className="block text-xs font-bold text-neutral-700 mb-1">Heading</label>
               <input
                 type="text"
                 value={content.greeting.title}
@@ -310,14 +338,11 @@ export const AdminTextTab: React.FC<AdminTextTabProps> = ({
                     greeting: { ...content.greeting, title: e.target.value },
                   })
                 }
-                className="w-full p-2.5 bg-white border border-stone-300 rounded-xl text-sm text-neutral-800"
+                className="w-full p-2 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
               />
             </div>
-
             <div>
-              <label className="block text-xs font-bold text-neutral-700 mb-1">
-                Invitation Message
-              </label>
+              <label className="block text-xs font-bold text-neutral-700 mb-1">Invitation Text</label>
               <textarea
                 rows={3}
                 value={content.greeting.invitation}
@@ -327,61 +352,34 @@ export const AdminTextTab: React.FC<AdminTextTabProps> = ({
                     greeting: { ...content.greeting, invitation: e.target.value },
                   })
                 }
-                className="w-full p-2.5 bg-white border border-stone-300 rounded-xl text-sm text-neutral-800"
+                className="w-full p-2 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
               />
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 mb-1">
-                  Start Button Text
-                </label>
-                <input
-                  type="text"
-                  value={content.greeting.ctaText}
-                  onChange={(e) =>
-                    onChange({
-                      ...content,
-                      greeting: { ...content.greeting, ctaText: e.target.value },
-                    })
-                  }
-                  className="w-full p-2.5 bg-white border border-stone-300 rounded-xl text-sm text-neutral-800"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 mb-1">
-                  Sound Notice Hint
-                </label>
-                <input
-                  type="text"
-                  value={content.greeting.audioHint}
-                  onChange={(e) =>
-                    onChange({
-                      ...content,
-                      greeting: { ...content.greeting, audioHint: e.target.value },
-                    })
-                  }
-                  className="w-full p-2.5 bg-white border border-stone-300 rounded-xl text-sm text-neutral-800"
-                />
-              </div>
+            <div>
+              <label className="block text-xs font-bold text-neutral-700 mb-1">Button CTA Text</label>
+              <input
+                type="text"
+                value={content.greeting.ctaText}
+                onChange={(e) =>
+                  onChange({
+                    ...content,
+                    greeting: { ...content.greeting, ctaText: e.target.value },
+                  })
+                }
+                className="w-full p-2 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
+              />
             </div>
           </div>
         </div>
       )}
 
-      {/* Tab 3: Chapter 2 Cake & Wish */}
+      {/* SECTION 3: Cake & Wish */}
       {activeSection === 'cake' && (
-        <div className="bg-stone-50 p-5 rounded-2xl border border-stone-200 space-y-4">
-          <h4 className="text-sm font-bold text-neutral-800">
-            Chapter 2: Birthday Cake & Wish
-          </h4>
-
+        <div className="bg-white p-5 rounded-xl border border-stone-200 space-y-4">
+          <h4 className="font-bold text-sm text-neutral-800">Chapter 2: The Birthday Moment & Cake</h4>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-bold text-neutral-700 mb-1">
-                Celebration Headline
-              </label>
+              <label className="block text-xs font-bold text-neutral-700 mb-1">Celebration Heading</label>
               <input
                 type="text"
                 value={content.birthdayMoment.celebrationHeader}
@@ -394,14 +392,11 @@ export const AdminTextTab: React.FC<AdminTextTabProps> = ({
                     },
                   })
                 }
-                className="w-full p-2.5 bg-white border border-stone-300 rounded-xl text-sm text-neutral-800"
+                className="w-full p-2 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
               />
             </div>
-
             <div>
-              <label className="block text-xs font-bold text-neutral-700 mb-1">
-                Pre-Blow Prompt (Instruction before tapping flame)
-              </label>
+              <label className="block text-xs font-bold text-neutral-700 mb-1">Instruction (Before Blow Out)</label>
               <input
                 type="text"
                 value={content.birthdayMoment.instructionPre}
@@ -414,16 +409,13 @@ export const AdminTextTab: React.FC<AdminTextTabProps> = ({
                     },
                   })
                 }
-                className="w-full p-2.5 bg-white border border-stone-300 rounded-xl text-sm text-neutral-800"
+                className="w-full p-2 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
               />
             </div>
-
             <div>
-              <label className="block text-xs font-bold text-neutral-700 mb-1">
-                Post-Blow Message (After flame is extinguished)
-              </label>
-              <textarea
-                rows={2}
+              <label className="block text-xs font-bold text-neutral-700 mb-1">Wish Confirmation (After Blow Out)</label>
+              <input
+                type="text"
                 value={content.birthdayMoment.instructionPost}
                 onChange={(e) =>
                   onChange({
@@ -434,14 +426,11 @@ export const AdminTextTab: React.FC<AdminTextTabProps> = ({
                     },
                   })
                 }
-                className="w-full p-2.5 bg-white border border-stone-300 rounded-xl text-sm text-neutral-800"
+                className="w-full p-2 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
               />
             </div>
-
             <div>
-              <label className="block text-xs font-bold text-neutral-700 mb-1">
-                Button to Love Letter
-              </label>
+              <label className="block text-xs font-bold text-neutral-700 mb-1">Proceed CTA Button</label>
               <input
                 type="text"
                 value={content.birthdayMoment.ctaText}
@@ -454,242 +443,167 @@ export const AdminTextTab: React.FC<AdminTextTabProps> = ({
                     },
                   })
                 }
-                className="w-full p-2.5 bg-white border border-stone-300 rounded-xl text-sm text-neutral-800"
+                className="w-full p-2 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
               />
             </div>
           </div>
         </div>
       )}
 
-      {/* Tab 4: Chapter 3 Love Letter */}
+      {/* SECTION 4: Love Letter */}
       {activeSection === 'letter' && (
-        <div className="bg-stone-50 p-5 rounded-2xl border border-stone-200 space-y-4">
-          <h4 className="text-sm font-bold text-neutral-800 flex items-center gap-2">
-            <Mail className="w-4 h-4 text-rose-CTA" />
-            Chapter 3: Handwritten Love Letter
-          </h4>
+        <div className="bg-white p-5 rounded-xl border border-stone-200 space-y-4">
+          <div className="flex items-center justify-between">
+            <h4 className="font-bold text-sm text-neutral-800">Chapter 3: Handwritten Love Letter</h4>
+            <button
+              type="button"
+              onClick={addLetterParagraph}
+              className="px-3 py-1 bg-rose-CTA text-white text-xs font-bold rounded-full hover:bg-rose-CTA-hover transition-colors flex items-center gap-1 cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Paragraph</span>
+            </button>
+          </div>
 
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 mb-1">
-                  Envelope Label
-                </label>
-                <input
-                  type="text"
-                  value={content.loveLetter.envelopeLabel}
-                  onChange={(e) =>
-                    onChange({
-                      ...content,
-                      loveLetter: {
-                        ...content.loveLetter,
-                        envelopeLabel: e.target.value,
-                      },
-                    })
-                  }
-                  className="w-full p-2.5 bg-white border border-stone-300 rounded-xl text-sm text-neutral-800"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 mb-1">
-                  Wax Seal Hint
-                </label>
-                <input
-                  type="text"
-                  value={content.loveLetter.waxSealHint}
-                  onChange={(e) =>
-                    onChange({
-                      ...content,
-                      loveLetter: {
-                        ...content.loveLetter,
-                        waxSealHint: e.target.value,
-                      },
-                    })
-                  }
-                  className="w-full p-2.5 bg-white border border-stone-300 rounded-xl text-sm text-neutral-800"
-                />
-              </div>
-            </div>
-
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-neutral-700 mb-1">
-                Salutation
-              </label>
+              <label className="block text-xs font-bold text-neutral-700 mb-1">Salutation</label>
               <input
                 type="text"
                 value={content.loveLetter.salutation}
                 onChange={(e) =>
                   onChange({
                     ...content,
-                    loveLetter: {
-                      ...content.loveLetter,
-                      salutation: e.target.value,
-                    },
+                    loveLetter: { ...content.loveLetter, salutation: e.target.value },
                   })
                 }
-                className="w-full p-2.5 bg-white border border-stone-300 rounded-xl text-sm text-neutral-800 font-bold"
+                className="w-full p-2 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
               />
             </div>
+            <div>
+              <label className="block text-xs font-bold text-neutral-700 mb-1">Sign-off Phrase</label>
+              <input
+                type="text"
+                value={content.loveLetter.signOff}
+                onChange={(e) =>
+                  onChange({
+                    ...content,
+                    loveLetter: { ...content.loveLetter, signOff: e.target.value },
+                  })
+                }
+                className="w-full p-2 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
+              />
+            </div>
+          </div>
 
-            {/* Paragraphs List */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-neutral-700">
-                  Letter Paragraphs ({content.loveLetter.paragraphs.length})
-                </label>
+          {/* Letter Paragraphs */}
+          <div className="space-y-3 pt-2">
+            <label className="block text-xs font-bold text-neutral-700">Paragraphs</label>
+            {content.loveLetter.paragraphs.map((p, idx) => (
+              <div key={idx} className="flex gap-2 items-start">
+                <span className="text-xs font-bold text-rose-CTA mt-2">#{idx + 1}</span>
+                <textarea
+                  rows={3}
+                  value={p}
+                  onChange={(e) => handleLetterParagraphChange(idx, e.target.value)}
+                  className="flex-1 p-2 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
+                />
                 <button
                   type="button"
-                  onClick={addLetterParagraph}
-                  className="text-xs font-bold text-rose-CTA flex items-center gap-1 hover:underline"
+                  onClick={() => removeLetterParagraph(idx)}
+                  className="text-stone-400 hover:text-red-500 p-2 cursor-pointer"
+                  title="Delete paragraph"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add Paragraph
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
-
-              {content.loveLetter.paragraphs.map((p, idx) => (
-                <div key={idx} className="flex gap-2 items-start">
-                  <span className="text-xs font-bold text-neutral-400 mt-2">
-                    #{idx + 1}
-                  </span>
-                  <textarea
-                    rows={3}
-                    value={p}
-                    onChange={(e) => handleLetterParagraphChange(idx, e.target.value)}
-                    className="flex-1 p-2 bg-white border border-stone-300 rounded-xl text-xs text-neutral-800 leading-relaxed"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeLetterParagraph(idx)}
-                    className="p-1 text-stone-400 hover:text-red-500 mt-2"
-                    title="Remove paragraph"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 mb-1">
-                  Sign-off
-                </label>
-                <input
-                  type="text"
-                  value={content.loveLetter.signOff}
-                  onChange={(e) =>
-                    onChange({
-                      ...content,
-                      loveLetter: { ...content.loveLetter, signOff: e.target.value },
-                    })
-                  }
-                  className="w-full p-2.5 bg-white border border-stone-300 rounded-xl text-sm text-neutral-800"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 mb-1">
-                  Signature
-                </label>
-                <input
-                  type="text"
-                  value={content.loveLetter.signature}
-                  onChange={(e) =>
-                    onChange({
-                      ...content,
-                      loveLetter: { ...content.loveLetter, signature: e.target.value },
-                    })
-                  }
-                  className="w-full p-2.5 bg-white border border-stone-300 rounded-xl text-sm text-neutral-800 font-bold"
-                />
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Tab 5: Chapter 4 Reasons Why */}
+      {/* SECTION 5: Reasons Why */}
       {activeSection === 'reasons' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-bold text-neutral-800 flex items-center gap-2">
-              <Smile className="w-4 h-4 text-rose-CTA" />
-              Chapter 4: Reasons Why I Love You ({content.reasons.length} Cards)
+            <h4 className="font-bold text-sm text-neutral-800">
+              Chapter 4: Reasons Why I Love You ({content.reasons.length})
             </h4>
             <button
               type="button"
               onClick={addReason}
-              className="px-3.5 py-1.5 rounded-full bg-rose-CTA hover:bg-rose-CTA-hover text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all"
+              className="px-3.5 py-1.5 rounded-full bg-rose-CTA text-white text-xs font-bold flex items-center gap-1.5 hover:bg-rose-CTA-hover transition-colors cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Add Reason Card</span>
+              <span>Add Reason</span>
             </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {content.reasons.map((item) => (
+            {content.reasons.map((r) => (
               <div
-                key={item.id}
+                key={r.id}
                 className="bg-white p-4 rounded-xl border border-stone-200 shadow-sm space-y-2.5"
               >
                 <div className="flex items-center justify-between pb-1 border-b border-stone-100">
-                  <span className="text-xs font-bold text-neutral-400">
-                    Reason #{item.id}
-                  </span>
+                  <span className="text-xs font-bold text-rose-CTA">Reason #{r.id}</span>
                   <button
                     type="button"
-                    onClick={() => removeReason(item.id)}
-                    className="text-stone-400 hover:text-red-500 p-1"
+                    onClick={() => removeReason(r.id)}
+                    className="text-stone-400 hover:text-red-500 p-1 cursor-pointer"
                     title="Delete reason"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
 
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <label className="block text-[11px] font-bold text-neutral-600 mb-0.5">
-                      Card Title
-                    </label>
-                    <input
-                      type="text"
-                      value={item.title}
-                      onChange={(e) => updateReason(item.id, { title: e.target.value })}
-                      className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs font-bold text-neutral-800"
-                    />
-                  </div>
-
-                  <div className="w-28">
-                    <label className="block text-[11px] font-bold text-neutral-600 mb-0.5">
-                      Icon
-                    </label>
-                    <select
-                      value={item.iconName}
-                      onChange={(e) => updateReason(item.id, { iconName: e.target.value })}
-                      className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
-                    >
-                      <option value="Heart">Heart ❤️</option>
-                      <option value="Smile">Smile 😊</option>
-                      <option value="Moon">Moon 🌙</option>
-                      <option value="Sparkles">Sparkles ✨</option>
-                      <option value="Star">Star ⭐</option>
-                      <option value="Home">Home 🏡</option>
-                    </select>
-                  </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-neutral-600 mb-0.5">Title</label>
+                  <input
+                    type="text"
+                    value={r.title}
+                    onChange={(e) => updateReason(r.id, { title: e.target.value })}
+                    className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs font-bold text-neutral-800"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-neutral-600 mb-0.5">
-                    Description
-                  </label>
+                  <label className="block text-[11px] font-bold text-neutral-600 mb-0.5">Description</label>
                   <textarea
                     rows={2}
-                    value={item.description}
-                    onChange={(e) => updateReason(item.id, { description: e.target.value })}
-                    className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-700"
+                    value={r.description}
+                    onChange={(e) => updateReason(r.id, { description: e.target.value })}
+                    className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800 resize-none"
                   />
+                </div>
+
+                {/* Photo Pairing */}
+                <div className="flex items-center justify-between pt-1 border-t border-stone-100">
+                  <div className="flex items-center gap-2">
+                    {r.photoUrl ? (
+                      <div className="w-8 h-8 rounded-lg overflow-hidden border border-stone-200">
+                        <img
+                          src={resolveMediaUrl(r.photoUrl)}
+                          alt={r.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <span className="text-[11px] text-neutral-400 italic">No photo attached</span>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      openPhotoPicker(`Select Photo for Reason #${r.id}`, (url) =>
+                        updateReason(r.id, { photoUrl: url })
+                      )
+                    }
+                    className="text-xs font-bold text-rose-CTA hover:underline cursor-pointer"
+                  >
+                    {r.photoUrl ? 'Change Photo 📷' : '+ Attach Photo 📷'}
+                  </button>
                 </div>
               </div>
             ))}
@@ -697,18 +611,400 @@ export const AdminTextTab: React.FC<AdminTextTabProps> = ({
         </div>
       )}
 
-      {/* Tab 6: Chapter 6 Finale */}
+      {/* SECTION 6: Cute vs Chaos Museum */}
+      {activeSection === 'museum' && content.chaosMuseum && (
+        <div className="space-y-4">
+          <div className="bg-white p-4 rounded-xl border border-stone-200 space-y-3">
+            <h4 className="font-bold text-sm text-neutral-800 flex items-center gap-2">
+              <Crown className="w-4 h-4 text-rose-CTA" />
+              Chapter 5: Cute vs. Chaos Museum
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-1">Badge</label>
+                <input
+                  type="text"
+                  value={content.chaosMuseum.badge}
+                  onChange={(e) => updateMuseumField('badge', e.target.value)}
+                  className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-1">Title</label>
+                <input
+                  type="text"
+                  value={content.chaosMuseum.title}
+                  onChange={(e) => updateMuseumField('title', e.target.value)}
+                  className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-neutral-700 mb-1">Subtitle</label>
+              <input
+                type="text"
+                value={content.chaosMuseum.subtitle}
+                onChange={(e) => updateMuseumField('subtitle', e.target.value)}
+                className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs"
+              />
+            </div>
+          </div>
+
+          {/* Pretty Girl Exhibits */}
+          <div className="bg-white p-4 rounded-xl border border-stone-200 space-y-3">
+            <h5 className="font-bold text-xs text-rose-CTA uppercase tracking-wider">
+              My Pretty Girl Exhibits ({content.chaosMuseum.cuteItems.length})
+            </h5>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {content.chaosMuseum.cuteItems.map((item) => (
+                <div key={item.id} className="p-3 bg-stone-50 rounded-xl border border-stone-200 flex gap-3">
+                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-stone-200 flex-shrink-0">
+                    <img
+                      src={resolveMediaUrl(item.imageUrl)}
+                      alt={item.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <input
+                      type="text"
+                      value={item.title}
+                      onChange={(e) => updateMuseumItem('cute', item.id, { title: e.target.value })}
+                      className="w-full p-1 bg-white border border-stone-300 rounded text-xs font-bold"
+                    />
+                    <input
+                      type="text"
+                      value={item.caption}
+                      onChange={(e) => updateMuseumItem('cute', item.id, { caption: e.target.value })}
+                      className="w-full p-1 bg-white border border-stone-300 rounded text-[11px]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openPhotoPicker(`Select Photo for "${item.title}"`, (url) =>
+                          updateMuseumItem('cute', item.id, { imageUrl: url })
+                        )
+                      }
+                      className="text-[10px] font-bold text-rose-CTA hover:underline cursor-pointer"
+                    >
+                      Change Photo 📷
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Little Menace Exhibits */}
+          <div className="bg-white p-4 rounded-xl border border-stone-200 space-y-3">
+            <h5 className="font-bold text-xs text-lavender-700 uppercase tracking-wider">
+              Little Menace Exhibits ({content.chaosMuseum.chaosItems.length})
+            </h5>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {content.chaosMuseum.chaosItems.map((item) => (
+                <div key={item.id} className="p-3 bg-stone-50 rounded-xl border border-stone-200 flex gap-3">
+                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-stone-200 flex-shrink-0">
+                    <img
+                      src={resolveMediaUrl(item.imageUrl)}
+                      alt={item.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <input
+                      type="text"
+                      value={item.title}
+                      onChange={(e) => updateMuseumItem('chaos', item.id, { title: e.target.value })}
+                      className="w-full p-1 bg-white border border-stone-300 rounded text-xs font-bold"
+                    />
+                    <input
+                      type="text"
+                      value={item.caption}
+                      onChange={(e) => updateMuseumItem('chaos', item.id, { caption: e.target.value })}
+                      className="w-full p-1 bg-white border border-stone-300 rounded text-[11px]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openPhotoPicker(`Select Photo for "${item.title}"`, (url) =>
+                          updateMuseumItem('chaos', item.id, { imageUrl: url })
+                        )
+                      }
+                      className="text-[10px] font-bold text-lavender-700 hover:underline cursor-pointer"
+                    >
+                      Change Photo 📷
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SECTION 7: Birthday Blessings */}
+      {activeSection === 'blessings' && content.blessings && (
+        <div className="space-y-4">
+          <div className="bg-white p-4 rounded-xl border border-stone-200 space-y-3">
+            <h4 className="font-bold text-sm text-neutral-800 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              Chapter 7: Birthday Blessings
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-1">Badge</label>
+                <input
+                  type="text"
+                  value={content.blessings.badge}
+                  onChange={(e) =>
+                    onChange({
+                      ...content,
+                      blessings: { ...content.blessings!, badge: e.target.value },
+                    })
+                  }
+                  className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-1">Title</label>
+                <input
+                  type="text"
+                  value={content.blessings.title}
+                  onChange={(e) =>
+                    onChange({
+                      ...content,
+                      blessings: { ...content.blessings!, title: e.target.value },
+                    })
+                  }
+                  className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-neutral-700 mb-1">Subtitle</label>
+              <input
+                type="text"
+                value={content.blessings.subtitle}
+                onChange={(e) =>
+                  onChange({
+                    ...content,
+                    blessings: { ...content.blessings!, subtitle: e.target.value },
+                  })
+                }
+                className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {content.blessings.blessings.map((b) => (
+              <div key={b.id} className="p-3 bg-white rounded-xl border border-stone-200 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-rose-CTA">Blessing #{b.id}</span>
+                </div>
+                <input
+                  type="text"
+                  value={b.title}
+                  onChange={(e) => updateBlessing(b.id, { title: e.target.value })}
+                  className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs font-bold"
+                />
+                <textarea
+                  rows={2}
+                  value={b.blessing}
+                  onChange={(e) => updateBlessing(b.id, { blessing: e.target.value })}
+                  className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800 resize-none"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* SECTION 8: Open When Envelopes */}
+      {activeSection === 'openWhen' && content.openWhen && (
+        <div className="space-y-4">
+          <div className="bg-white p-4 rounded-xl border border-stone-200 space-y-3">
+            <h4 className="font-bold text-sm text-neutral-800 flex items-center gap-2">
+              <Mail className="w-4 h-4 text-rose-CTA" />
+              Chapter 8: Open When... Envelopes
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-1">Badge</label>
+                <input
+                  type="text"
+                  value={content.openWhen.badge}
+                  onChange={(e) =>
+                    onChange({
+                      ...content,
+                      openWhen: { ...content.openWhen!, badge: e.target.value },
+                    })
+                  }
+                  className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-1">Title</label>
+                <input
+                  type="text"
+                  value={content.openWhen.title}
+                  onChange={(e) =>
+                    onChange({
+                      ...content,
+                      openWhen: { ...content.openWhen!, title: e.target.value },
+                    })
+                  }
+                  className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {content.openWhen.envelopes.map((env) => (
+              <div key={env.id} className="p-4 bg-white rounded-xl border border-stone-200 space-y-2">
+                <span className="text-xs font-bold text-rose-CTA">Envelope #{env.id}</span>
+                <input
+                  type="text"
+                  value={env.title}
+                  onChange={(e) => updateEnvelope(env.id, { title: e.target.value })}
+                  className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs font-bold"
+                />
+                <input
+                  type="text"
+                  value={env.preview}
+                  onChange={(e) => updateEnvelope(env.id, { preview: e.target.value })}
+                  placeholder="Preview text..."
+                  className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs"
+                />
+                <textarea
+                  rows={3}
+                  value={env.message}
+                  onChange={(e) => updateEnvelope(env.id, { message: e.target.value })}
+                  className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
+                />
+                <div className="flex items-center justify-between pt-1 border-t border-stone-100">
+                  {env.photoUrl && (
+                    <div className="w-8 h-8 rounded-lg overflow-hidden border border-stone-200">
+                      <img
+                        src={resolveMediaUrl(env.photoUrl)}
+                        alt={env.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      openPhotoPicker(`Select Photo for "${env.title}"`, (url) =>
+                        updateEnvelope(env.id, { photoUrl: url })
+                      )
+                    }
+                    className="text-xs font-bold text-rose-CTA hover:underline cursor-pointer"
+                  >
+                    {env.photoUrl ? 'Change Photo 📷' : '+ Attach Photo 📷'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* SECTION 9: Future Dreams */}
+      {activeSection === 'future' && content.futureDreams && (
+        <div className="space-y-4">
+          <div className="bg-white p-4 rounded-xl border border-stone-200 space-y-3">
+            <h4 className="font-bold text-sm text-neutral-800 flex items-center gap-2">
+              <Compass className="w-4 h-4 text-rose-CTA" />
+              Chapter 9: A Little Future With You
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-1">Badge</label>
+                <input
+                  type="text"
+                  value={content.futureDreams.badge}
+                  onChange={(e) =>
+                    onChange({
+                      ...content,
+                      futureDreams: { ...content.futureDreams!, badge: e.target.value },
+                    })
+                  }
+                  className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-1">Title</label>
+                <input
+                  type="text"
+                  value={content.futureDreams.title}
+                  onChange={(e) =>
+                    onChange({
+                      ...content,
+                      futureDreams: { ...content.futureDreams!, title: e.target.value },
+                    })
+                  }
+                  className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-neutral-700 mb-1">Concluding Note</label>
+              <input
+                type="text"
+                value={content.futureDreams.note}
+                onChange={(e) =>
+                  onChange({
+                    ...content,
+                    futureDreams: { ...content.futureDreams!, note: e.target.value },
+                  })
+                }
+                className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {content.futureDreams.dreams.map((d) => (
+              <div key={d.id} className="p-3 bg-white rounded-xl border border-stone-200 space-y-2">
+                <span className="text-xs font-bold text-rose-CTA">Dream #{d.id}</span>
+                <input
+                  type="text"
+                  value={d.title}
+                  onChange={(e) => updateFutureDream(d.id, { title: e.target.value })}
+                  className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs font-bold"
+                />
+                <textarea
+                  rows={2}
+                  value={d.description}
+                  onChange={(e) => updateFutureDream(d.id, { description: e.target.value })}
+                  className="w-full p-1.5 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800 resize-none"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* SECTION 10: Finale */}
       {activeSection === 'finale' && (
-        <div className="bg-stone-50 p-5 rounded-2xl border border-stone-200 space-y-4">
-          <h4 className="text-sm font-bold text-neutral-800">
-            Chapter 6: Grand Finale Closing Screen
-          </h4>
+        <div className="bg-white p-5 rounded-xl border border-stone-200 space-y-4">
+          <div className="flex items-center justify-between">
+            <h4 className="font-bold text-sm text-neutral-800">Chapter 10: Grand Finale</h4>
+            <button
+              type="button"
+              onClick={addFinaleParagraph}
+              className="px-3 py-1 bg-rose-CTA text-white text-xs font-bold rounded-full hover:bg-rose-CTA-hover transition-colors flex items-center gap-1 cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Paragraph</span>
+            </button>
+          </div>
 
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-bold text-neutral-700 mb-1">
-                Climax Romantic Headline
-              </label>
+              <label className="block text-xs font-bold text-neutral-700 mb-1">Finale Headline</label>
               <input
                 type="text"
                 value={content.finale.title}
@@ -718,87 +1014,72 @@ export const AdminTextTab: React.FC<AdminTextTabProps> = ({
                     finale: { ...content.finale, title: e.target.value },
                   })
                 }
-                className="w-full p-2.5 bg-white border border-stone-300 rounded-xl text-sm font-bold text-neutral-800"
+                className="w-full p-2 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-neutral-700 mb-1">Sign-off</label>
+              <input
+                type="text"
+                value={content.finale.signOff}
+                onChange={(e) =>
+                  onChange({
+                    ...content,
+                    finale: { ...content.finale, signOff: e.target.value },
+                  })
+                }
+                className="w-full p-2 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-neutral-700 mb-1">Replay Button Text</label>
+              <input
+                type="text"
+                value={content.finale.replayText}
+                onChange={(e) =>
+                  onChange({
+                    ...content,
+                    finale: { ...content.finale, replayText: e.target.value },
+                  })
+                }
+                className="w-full p-2 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
               />
             </div>
 
-            {/* Finale Paragraphs */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-neutral-700">
-                  Closing Paragraphs ({content.finale.paragraphs.length})
-                </label>
-                <button
-                  type="button"
-                  onClick={addFinaleParagraph}
-                  className="text-xs font-bold text-rose-CTA flex items-center gap-1 hover:underline"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Add Paragraph
-                </button>
-              </div>
-
+            {/* Paragraphs */}
+            <div className="space-y-2 pt-2">
+              <label className="block text-xs font-bold text-neutral-700">Paragraphs</label>
               {content.finale.paragraphs.map((p, idx) => (
                 <div key={idx} className="flex gap-2 items-start">
-                  <span className="text-xs font-bold text-neutral-400 mt-2">
-                    #{idx + 1}
-                  </span>
+                  <span className="text-xs font-bold text-rose-CTA mt-2">#{idx + 1}</span>
                   <textarea
                     rows={2}
                     value={p}
                     onChange={(e) => handleFinaleParagraphChange(idx, e.target.value)}
-                    className="flex-1 p-2 bg-white border border-stone-300 rounded-xl text-xs text-neutral-800"
+                    className="flex-1 p-2 bg-stone-50 border border-stone-300 rounded text-xs text-neutral-800"
                   />
                   <button
                     type="button"
                     onClick={() => removeFinaleParagraph(idx)}
-                    className="p-1 text-stone-400 hover:text-red-500 mt-2"
-                    title="Remove paragraph"
+                    className="text-stone-400 hover:text-red-500 p-2 cursor-pointer"
+                    title="Delete paragraph"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               ))}
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 mb-1">
-                  Sign-off
-                </label>
-                <input
-                  type="text"
-                  value={content.finale.signOff}
-                  onChange={(e) =>
-                    onChange({
-                      ...content,
-                      finale: { ...content.finale, signOff: e.target.value },
-                    })
-                  }
-                  className="w-full p-2.5 bg-white border border-stone-300 rounded-xl text-sm text-neutral-800"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 mb-1">
-                  Replay Button Text
-                </label>
-                <input
-                  type="text"
-                  value={content.finale.replayText}
-                  onChange={(e) =>
-                    onChange({
-                      ...content,
-                      finale: { ...content.finale, replayText: e.target.value },
-                    })
-                  }
-                  className="w-full p-2.5 bg-white border border-stone-300 rounded-xl text-sm text-neutral-800"
-                />
-              </div>
-            </div>
           </div>
         </div>
       )}
+
+      {/* Visual Photo Picker Modal */}
+      <MediaAssetPickerModal
+        isOpen={pickerOpen}
+        title={pickerTitle}
+        onSelect={pickerCallback}
+        onClose={() => setPickerOpen(false)}
+      />
     </div>
   );
 };
