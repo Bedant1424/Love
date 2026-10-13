@@ -60,11 +60,12 @@
 
 ---
 
-### ADR-07: Automated Predeploy Build Hook
-- **Decision:** Configure `"predeploy": "npm run build"` in `package.json` scripts.
+### ADR-07: Automated Predeploy Build Hook (Milestone 1 Implementation Requirement)
+- **Decision:** Require adding `"predeploy": "npm run build"` to `package.json` scripts during Milestone 1 implementation (not added during the documentation-only phase).
 - **Rationale:**
-  - `gh-pages -d dist` only pushes the contents of `dist/` and does not compile code on its own.
-  - Adding the `predeploy` hook guarantees that running `npm run deploy` always compiles a fresh, typechecked production bundle before pushing to GitHub Pages.
+  - `package.json` currently only contains `"deploy": "gh-pages -d dist"` without a build step.
+  - The documentation-only phase strictly avoids editing application files.
+  - Adding the `predeploy` hook during Milestone 1 implementation guarantees that running `npm run deploy` always compiles a fresh, typechecked production bundle before pushing to GitHub Pages.
 
 ---
 

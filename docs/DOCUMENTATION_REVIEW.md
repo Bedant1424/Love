@@ -68,7 +68,7 @@ To adhere strictly to truthfulness and avoid unverified claims, all corrections 
 - **Issue:** Previous documentation mentioned Tailwind v4 and React 19 in several sections, and stated `gh-pages -d dist` alone would deploy the built app.
 - **Resolution:**
   - Aligned dependencies exactly with the repository baseline: React `18.3.1`, Tailwind `3.4.1`, Vite `5.4.2`, TypeScript `5.5.3`.
-  - Configured `"predeploy": "npm run build"` in `package.json` scripts so that running `npm run deploy` automatically compiles fresh production bundles before pushing `dist/`.
+  - Identified that `package.json` currently contains only `"deploy": "gh-pages -d dist"` without a preceding build step. Specified that adding `"predeploy": "npm run build"` to `package.json` is a required task during Milestone 1 implementation, preserving the documentation-only phase boundary without modifying application files.
   - Verified `base: '/Love/'` in `vite.config.ts` matching the intended GitHub Pages URL `https://bedant1424.github.io/Love/`.
 
 ---
@@ -84,7 +84,7 @@ To adhere strictly to truthfulness and avoid unverified claims, all corrections 
 | **Zero Bracket Placeholders in UI** | Section 4, 6 | Section 2.2 | Section 1.1 | Milestone 1 (Task 6) | Test FT-15 | **100% UNIFIED** |
 | **SVG & Audio Fallback Architecture** | Section 4, 5.1 | Section 4.4 | Section 2.1, 2.5 | Milestone 1, 2 | Test FT-13, FT-14 | **100% UNIFIED** |
 | **React 18.3.1 + Tailwind 3.4.1** | Section 6 | Baseline | Baseline | Milestone 1 (Task 2) | Section 1 | **100% UNIFIED** |
-| **Predeploy Hook Configuration** | Section 6 | N/A | N/A | Milestone 1 (Task 3) | Section 1 | **100% UNIFIED** |
+| **Predeploy Hook (Required in Milestone 1)** | Section 6 | N/A | N/A | Milestone 1 (Task 3) | Section 1 | **100% UNIFIED** |
 | **Vite Base Path (/Love/)** | Section 1.2 | N/A | N/A | Milestone 1 (Task 4) | Section 1, 5 | **100% UNIFIED** |
 | **Git Feature Branch Ancestry** | Section 1 | N/A | N/A | Milestone 1 (Task 1) | Section 1 | **100% UNIFIED** |
 

@@ -53,7 +53,7 @@ gantt
      - `motion: ^11.11.17`, `canvas-confetti: ^1.9.4`, `@types/canvas-confetti: ^1.9.0`
      - `tailwindcss: ^3.4.1`, `postcss: ^8.4.35`, `autoprefixer: ^10.4.18`
      - `vite: ^5.4.2`, `typescript: ^5.5.3`, `gh-pages: ^6.3.0`
-  3. Configure `"predeploy": "npm run build"` in `package.json` scripts.
+  3. Add `"predeploy": "npm run build"` to `package.json` scripts (required to automate build before publish in Milestone 1).
   4. Verify `base: '/Love/'` in `vite.config.ts`.
   5. Setup `tailwind.config.js` with semantic tokens (`rose-CTA: #C2315D`, `lavender-CTA: #7A4AC2`, `cream-50: #FAF7F2`, `plum-950: #160B1F`) and typography font families.
   6. Create `src/data/content.ts` with publication-safe default copy and SVG fallback definitions.

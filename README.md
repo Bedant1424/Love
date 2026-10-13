@@ -63,4 +63,4 @@ Once this documentation is approved:
 2. Install exact dependencies: `react: ^18.3.1`, `tailwindcss: ^3.4.1`, `vite: ^5.4.2`, `motion: ^11.11.17`, `canvas-confetti: ^1.9.4`.
 3. Implement components following [`docs/ARCHITECTURE.md`](file:///c:/Users/17042/Desktop/ROSE%20Arya/docs/ARCHITECTURE.md).
 4. Run verification tests per [`docs/QA_AND_RELEASE.md`](file:///c:/Users/17042/Desktop/ROSE%20Arya/docs/QA_AND_RELEASE.md).
-5. Deploy to GitHub Pages via `npm run deploy` (automatically builds via `predeploy`).
+5. Add `"predeploy": "npm run build"` to `package.json` during Milestone 1, then deploy to GitHub Pages via `npm run deploy`.

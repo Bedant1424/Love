@@ -24,9 +24,10 @@ npm run build
 npm run preview
 # (Opens local server serving dist/ build)
 
-# 4. Deploy to GitHub Pages (Automatically triggers predeploy build):
+# 4. Deploy to GitHub Pages (Automated via predeploy in Milestone 1):
 npm run deploy
-# (Executes: predeploy hook "npm run build" THEN "gh-pages -d dist")
+# (In Milestone 1, predeploy hook executes "npm run build" THEN "gh-pages -d dist")
+# (Manual fallback before Milestone 1: npm run build && npm run deploy)
 ```
 
 ### Pre-Flight Criteria
@@ -34,7 +35,7 @@ npm run deploy
 - [ ] No TypeScript warnings or `any` type violations.
 - [ ] Total JavaScript bundle size < 250KB gzipped.
 - [ ] No absolute path references (`/assets/...`) that break on subpath hosting (`/Love/`).
-- [ ] Predeploy script is configured so `npm run deploy` automatically builds `dist/`.
+- [ ] Predeploy script is configured in Milestone 1 so `npm run deploy` automatically builds `dist/`.
 
 ---
 

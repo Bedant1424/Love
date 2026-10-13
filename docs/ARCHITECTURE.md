@@ -128,8 +128,8 @@ export default defineConfig({
 })
 ```
 
-### 3.2 Predeploy Hook Configuration
-In `package.json`, `gh-pages -d dist` pushes the `dist/` directory but **does not build it**. To make the deploy command safe and self-contained, configure a `predeploy` script:
+### 3.2 Predeploy Hook Requirement (Milestone 1 Implementation Task)
+In `package.json`, the existing script is `"deploy": "gh-pages -d dist"`, which pushes the `dist/` directory but **does not build it**. The documentation-only phase does not modify application files. During Milestone 1 implementation, adding a `predeploy` script to `package.json` is required:
 
 ```json
 "scripts": {
@@ -142,10 +142,10 @@ In `package.json`, `gh-pages -d dist` pushes the `dist/` directory but **does no
 }
 ```
 
-Running `npm run deploy` will now:
+Once configured in Milestone 1, running `npm run deploy` will:
 1. Automatically execute `predeploy` (`npm run build`).
 2. Typecheck with TypeScript and compile optimized bundles to `dist/`.
-3. Push `dist/` to the `gh-pages` branch on GitHub.
+3. Push `dist/` to the `gh-pages` branch on GitHub. (Manual fallback before Milestone 1: run `npm run build && npm run deploy`).
 
 ### 3.3 Routing Strategy
 Hash-based navigation (`#scene-1`, `#scene-2`, `#scene-10`) is used instead of HTML5 History pushState. This guarantees that refreshing the page at `https://bedant1424.github.io/Love/#scene-3` will never trigger a GitHub Pages 404 error.
