@@ -23,10 +23,10 @@ export const birthdayContent: BirthdayContent = {
   },
   birthdayMoment: {
     countdownHeader: 'Counting down the moments until your special day... ⏳',
-    celebrationHeader: "🎉 IT'S FINALLY HERE! HAPPY BIRTHDAY, MY LOVE! 🎉",
-    instructionPre: 'Close your eyes, make the sweetest wish in your heart, and tap the flame to blow it out! 🕯️',
+    celebrationHeader: 'Happy Birthday, My Love! 🎉',
+    instructionPre: 'Close your eyes, make a sweet wish in your heart, and tap the flame to blow it out! 🕯️',
     instructionPost:
-      '✨ Wish locked in! May every single dream of yours come true this year. You deserve all the happiness in the universe.',
+      '✨ Wish locked in! May all your sweetest dreams come true.',
     ctaText: 'Open Your Birthday Letter 💌',
   },
   loveLetter: {

@@ -231,7 +231,7 @@ export const App: React.FC = () => {
       }`}
     >
       {/* Top Header / Status Bar */}
-      <header className="flex-shrink-0 w-full z-40 px-3 sm:px-6 pt-1.5 sm:pt-2.5 pb-1 flex items-center justify-between">
+      <header className="flex-shrink-0 w-full z-40 px-3 sm:px-6 pt-[max(0.35rem,env(safe-area-inset-top))] pb-1 flex items-center justify-between">
         <ProgressBar
           currentChapter={chapterNumber}
           totalChapters={totalChapters}
@@ -245,7 +245,7 @@ export const App: React.FC = () => {
       </header>
 
       {/* Main Story Scene Viewport */}
-      <main className="flex-1 min-h-0 w-full overflow-hidden flex flex-col items-center justify-center p-2 sm:p-4">
+      <main className="flex-1 min-h-0 w-full overflow-hidden flex flex-col items-center justify-center p-1 sm:p-2">
         {currentView === 1 && (
           <Scene1Greeting
             content={content.greeting}
@@ -306,7 +306,7 @@ export const App: React.FC = () => {
       </main>
 
       {/* Footer with Dedication & Admin Entrance Link */}
-      <footer className="flex-shrink-0 w-full py-1 px-3 text-center text-[11px] opacity-80 font-body flex items-center justify-center gap-3">
+      <footer className="flex-shrink-0 w-full pt-0.5 pb-[max(0.35rem,env(safe-area-inset-bottom))] px-3 text-center text-[11px] opacity-80 font-body flex items-center justify-center gap-3">
         <p className="truncate">Made with all my love for {content.recipient.name} 💕</p>
         <button
           type="button"
