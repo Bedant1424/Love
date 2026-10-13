@@ -269,3 +269,12 @@ export function generateActivationKeysCsv(
 
   return rows.join('\r\n') + '\r\n';
 }
+
+export {
+  generateActivationKeysPdf,
+  formatActivationKeysPdfFilename,
+  formatAdminMappingPdfFilename,
+  calculateActivationKeysPdfTotalPages,
+  type ActivationKeyExportItem,
+  type ActivationKeysPdfOptions,
+} from './activation-keys-pdf';

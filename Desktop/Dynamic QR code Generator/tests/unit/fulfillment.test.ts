@@ -20,6 +20,10 @@ import {
   FORBIDDEN_SUPPLIER_TOKENS,
   generateActivationKeysCsv,
   formatActivationKeysCsvFilename,
+  generateActivationKeysPdf,
+  formatActivationKeysPdfFilename,
+  formatAdminMappingPdfFilename,
+  calculateActivationKeysPdfTotalPages,
 } from '../../src/shared/fulfillment';
 import { generateQrSheetPdf } from '../../src/shared/pdf-sheet';
 
@@ -491,6 +495,113 @@ describe('Supplier Fulfillment & QR Export Engine', () => {
       expect(csv).not.toContain('activation_code_hash');
       expect(csv).not.toContain('token');
       expect(csv).not.toContain('secret');
+    });
+  });
+
+  describe('Confidential Activation Keys Export (Admin-Only PDF)', () => {
+    const VAULT_KEYS = [
+      {
+        publicId: '8T2K9M4W1X7P3N5Q',
+        activationCode: 'K7XM-92PR-V8Q2',
+        batchName: 'Batch 2026-A',
+        status: 'UNACTIVATED',
+      },
+      {
+        publicId: '3H5V7N2R9B4M6K8W',
+        activationCode: 'B4WT-81MK-P5Q9',
+        batchName: 'Batch 2026-A',
+        status: 'ACTIVE',
+      },
+    ];
+
+    it('formats correct PDF filename with QRoute_Activation_Keys_ prefix', () => {
+      expect(formatActivationKeysPdfFilename('Batch 2026-A')).toBe(
+        'QRoute_Activation_Keys_Batch-2026-A.pdf'
+      );
+      expect(formatActivationKeysPdfFilename('Batch@Test#01')).toBe(
+        'QRoute_Activation_Keys_Batch-Test-01.pdf'
+      );
+    });
+
+    it('formats correct admin mapping PDF filename with QRoute_Admin_Keys_ prefix', () => {
+      expect(formatAdminMappingPdfFilename('Batch 2026-A')).toBe(
+        'QRoute_Admin_Keys_Batch-2026-A.pdf'
+      );
+    });
+
+    it('calculates total pages correctly based on row capacity', () => {
+      expect(calculateActivationKeysPdfTotalPages(1)).toBe(1);
+      expect(calculateActivationKeysPdfTotalPages(28)).toBe(1);
+      expect(calculateActivationKeysPdfTotalPages(29)).toBe(2);
+      expect(calculateActivationKeysPdfTotalPages(62)).toBe(2);
+      expect(calculateActivationKeysPdfTotalPages(63)).toBe(3);
+    });
+
+    it('throws error if items array is empty', () => {
+      expect(() => generateActivationKeysPdf([], 'Batch 1')).toThrow(
+        'At least one card record is required to generate an activation keys PDF'
+      );
+    });
+
+    it('generates a valid standards-compliant PDF 1.4 document', () => {
+      const pdfBytes = generateActivationKeysPdf(VAULT_KEYS, 'Batch 2026-A');
+      expect(pdfBytes).toBeInstanceOf(Uint8Array);
+      expect(pdfBytes.length).toBeGreaterThan(500);
+
+      const pdfText = new TextDecoder().decode(pdfBytes);
+      expect(pdfText.startsWith('%PDF-1.4')).toBe(true);
+      expect(pdfText).toContain('%%EOF');
+      expect(pdfText).toContain('/Type /Catalog');
+      expect(pdfText).toContain('/Type /Pages');
+      expect(pdfText).toContain('/Type /Page');
+      expect(pdfText).toContain('/BaseFont /Helvetica');
+      expect(pdfText).toContain('/BaseFont /Helvetica-Bold');
+      expect(pdfText).toContain('/BaseFont /Courier');
+      expect(pdfText).toContain('/BaseFont /Courier-Bold');
+      expect(pdfText).toContain('xref');
+      expect(pdfText).toContain('trailer');
+    });
+
+    it('embeds all public IDs, activation codes, and batch metadata in PDF stream', () => {
+      const pdfBytes = generateActivationKeysPdf(VAULT_KEYS, 'Batch 2026-A');
+      const pdfText = new TextDecoder().decode(pdfBytes);
+
+      expect(pdfText).toContain('8T2K9M4W1X7P3N5Q');
+      expect(pdfText).toContain('K7XM-92PR-V8Q2');
+      expect(pdfText).toContain('3H5V7N2R9B4M6K8W');
+      expect(pdfText).toContain('B4WT-81MK-P5Q9');
+      expect(pdfText).toContain('Batch 2026-A');
+      expect(pdfText).toContain('CONFIDENTIAL');
+      expect(pdfText).toContain('QROUTE');
+      expect(pdfText).toContain('ACTIVATION KEYS VAULT');
+    });
+
+    it('strictly excludes Google destination URLs, tokens, and customer identity from PDF stream', () => {
+      const pdfBytes = generateActivationKeysPdf(VAULT_KEYS, 'Batch 2026-A');
+      const pdfText = new TextDecoder().decode(pdfBytes);
+
+      expect(pdfText).not.toContain('google.com');
+      expect(pdfText).not.toContain('writereview');
+      expect(pdfText).not.toContain('activation_code_hash');
+      expect(pdfText).not.toContain('token');
+      expect(pdfText).not.toContain('business_name');
+    });
+
+    it('paginates large batches across multiple A4 pages with page counters', () => {
+      const largeBatch = Array.from({ length: 40 }, (_, i) => ({
+        publicId: `CARD${String(i + 1).padStart(12, '0')}`,
+        activationCode: `CODE-${String(i + 1).padStart(4, '0')}-TEST`,
+        status: i % 2 === 0 ? 'ACTIVE' : 'UNACTIVATED',
+      }));
+
+      const pdfBytes = generateActivationKeysPdf(largeBatch, 'Large Batch');
+      const pdfText = new TextDecoder().decode(pdfBytes);
+
+      expect(pdfText).toContain('/Count 2');
+      expect(pdfText).toContain('Page 1 of 2');
+      expect(pdfText).toContain('Page 2 of 2');
+      expect(pdfText).toContain('CARD000000000001');
+      expect(pdfText).toContain('CARD000000000040');
     });
   });
 });

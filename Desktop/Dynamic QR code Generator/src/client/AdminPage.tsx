@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Download,
-  FileSpreadsheet,
+  FileText,
   RefreshCw,
   CheckCircle2,
   MoreHorizontal,
@@ -40,10 +40,10 @@ import type {
 } from '../shared/types';
 import {
   generateBatchZipPackage,
-  generateAdminMappingCsv,
   formatBatchZipFilename,
-  generateActivationKeysCsv,
-  formatActivationKeysCsvFilename,
+  generateActivationKeysPdf,
+  formatActivationKeysPdfFilename,
+  formatAdminMappingPdfFilename,
 } from '../shared/fulfillment';
 import { CANONICAL_PUBLIC_HOST } from '../shared/url';
 import { validateGoogleReviewUrl } from '../shared/google-url-validator';
@@ -576,17 +576,23 @@ export const AdminPage: React.FC = () => {
     }
   };
 
-  // Download Admin Key Mapping CSV
+  // Download Admin Key Mapping PDF
   const handleDownloadAdminMapping = () => {
     if (!provisionResult) return;
     try {
-      const csv = generateAdminMappingCsv(provisionResult.cards, provisionResult.batch.name);
-      const filename = `QRoute_Admin_Keys_${provisionResult.batch.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}.csv`;
-      downloadFile(csv, filename, 'text/csv;charset=utf-8;');
-      showToast('success', 'Admin key mapping backup downloaded.');
+      const items = provisionResult.cards.map((c) => ({
+        publicId: c.publicId,
+        activationCode: c.activationCode,
+        status: 'UNACTIVATED',
+        batchName: provisionResult.batch.name,
+      }));
+      const pdfBytes = generateActivationKeysPdf(items, provisionResult.batch.name);
+      const filename = formatAdminMappingPdfFilename(provisionResult.batch.name);
+      downloadFile(pdfBytes, filename, 'application/pdf');
+      showToast('success', `Admin key mapping PDF "${filename}" downloaded.`);
     } catch (err) {
       console.error('Admin mapping download failed:', err);
-      showToast('error', 'Failed to generate admin mapping');
+      showToast('error', 'Failed to generate admin mapping PDF');
     }
   };
 
@@ -673,14 +679,22 @@ export const AdminPage: React.FC = () => {
     }
   };
 
-  const handleExportVaultKeysCsv = () => {
+  const handleExportVaultKeysPdf = () => {
     if (vaultKeys.length === 0) return;
     const bName =
       vaultModalBatch?.name || batches.find((b) => b.id === vaultBatchId)?.name || 'batch';
-    const csv = generateActivationKeysCsv(vaultKeys, bName);
-    const filename = formatActivationKeysCsvFilename(bName);
-    downloadFile(csv, filename, 'text/csv;charset=utf-8;');
-    showToast('success', `Exported confidential activation keys: ${filename}`);
+    try {
+      const pdfBytes = generateActivationKeysPdf(vaultKeys, bName);
+      const filename = formatActivationKeysPdfFilename(bName);
+      downloadFile(pdfBytes, filename, 'application/pdf');
+      showToast('success', `Exported confidential activation keys: ${filename}`);
+    } catch (err) {
+      console.error('Failed to export vault keys PDF:', err);
+      showToast(
+        'error',
+        err instanceof Error ? err.message : 'Failed to export activation keys PDF'
+      );
+    }
   };
 
   // Badge helper
@@ -1644,8 +1658,8 @@ export const AdminPage: React.FC = () => {
                               onClick={handleDownloadAdminMapping}
                               className="text-xs text-zinc-600"
                             >
-                              <FileSpreadsheet className="h-3.5 w-3.5 mr-1 text-zinc-500" />
-                              Admin Keys (CSV)
+                              <FileText className="h-3.5 w-3.5 mr-1 text-zinc-500" />
+                              Admin Keys (PDF)
                             </Button>
                             <Button
                               variant="outline"
@@ -2285,12 +2299,12 @@ export const AdminPage: React.FC = () => {
                 <Button
                   variant="primary"
                   size="sm"
-                  onClick={handleExportVaultKeysCsv}
+                  onClick={handleExportVaultKeysPdf}
                   disabled={vaultLoading || vaultKeys.length === 0}
                   className="text-xs h-7 inline-flex items-center gap-1"
                 >
-                  <Download className="h-3 w-3" />
-                  Export Activation Keys (CSV)
+                  <FileText className="h-3 w-3" />
+                  Export Activation Keys (PDF)
                 </Button>
               </div>
             </div>
