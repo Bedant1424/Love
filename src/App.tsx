@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { BirthdayContent } from './types/content.types';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { BirthdayContent, CustomPageItem } from './types/content.types';
 import { getStoredContent } from './utils/storage';
 import { applyThemeConfig } from './utils/themeApplier';
 import { fetchLiveContent } from './utils/githubPublisher';
@@ -21,6 +21,12 @@ export const App: React.FC = () => {
   const [content, setContent] = useState<BirthdayContent>(() => getStoredContent());
   const [currentView, setCurrentView] = useState<ViewId>(1);
   const [hasInteracted, setHasInteracted] = useState(false);
+
+  const customPages = useMemo(
+    () => content.customPages || [],
+    [content.customPages]
+  );
+  const totalChapters = 5 + customPages.length + 1; // 1 to 5 + customs + Finale
 
   // Fetch live content directly from GitHub Pages CDN on launch
   // Ensures any visitor (e.g. Arya on her phone) loads the live published content directly!
@@ -64,6 +70,27 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('birthday_content_updated', handleContentUpdated);
   }, [content.theme]);
 
+  // Helper to reliably match custom pages regardless of ID prefixing
+  const findCustomPage = useCallback(
+    (viewId: ViewId): { page: CustomPageItem; index: number } | null => {
+      if (typeof viewId !== 'string' || viewId === 'admin') return null;
+      const cleanId = viewId.replace(/^scene-/, '').replace(/^custom-/, '');
+      for (let i = 0; i < customPages.length; i++) {
+        const p = customPages[i];
+        if (
+          p.id === viewId ||
+          p.id === cleanId ||
+          p.id === `custom-${cleanId}` ||
+          p.id.replace(/^custom-/, '') === cleanId
+        ) {
+          return { page: p, index: i };
+        }
+      }
+      return null;
+    },
+    [customPages]
+  );
+
   // Sync hash and path on initial load & hash changes
   useEffect(() => {
     const parseUrl = (): ViewId => {
@@ -75,10 +102,10 @@ export const App: React.FC = () => {
       if (hash === '#scene-3') return 3;
       if (hash === '#scene-4') return 4;
       if (hash === '#scene-5') return 5;
-      if (hash.startsWith('#scene-custom-')) {
+      if (hash === '#scene-10') return 10;
+      if (hash.startsWith('#scene-')) {
         return hash.replace('#scene-', '');
       }
-      if (hash === '#scene-10') return 10;
       return 1;
     };
 
@@ -109,13 +136,11 @@ export const App: React.FC = () => {
       return;
     }
 
-    // Determine if cinematic theme applies
+    const customMatch = findCustomPage(currentView);
     const isCinematic =
       currentView === 2 ||
       currentView === 10 ||
-      (typeof currentView === 'string' &&
-        currentView.startsWith('custom-') &&
-        content.customPages?.find((p) => p.id === currentView.replace('custom-', ''))?.theme === 'cinematic');
+      customMatch?.page.theme === 'cinematic';
 
     if (isCinematic) {
       document.documentElement.setAttribute('data-theme', 'cinematic');
@@ -129,22 +154,18 @@ export const App: React.FC = () => {
     const targetHash =
       typeof currentView === 'number'
         ? `#scene-${currentView}`
-        : `#scene-${currentView}`;
+        : `#scene-${currentView.replace(/^scene-/, '')}`;
     if (window.location.hash !== targetHash) {
       window.history.replaceState(null, '', targetHash);
     }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [currentView, content.customPages]);
+  }, [currentView, findCustomPage]);
 
   const goToView = (viewId: ViewId) => {
     setHasInteracted(true);
     setCurrentView(viewId);
   };
-
-  // Chapter Calculations
-  const customPages = content.customPages || [];
-  const totalChapters = 5 + customPages.length + 1; // 1 to 5 + customs + Finale
 
   const getCurrentChapterInfo = (): { chapterNumber: number; title: string } => {
     if (currentView === 1) return { chapterNumber: 1, title: 'Greeting' };
@@ -153,15 +174,12 @@ export const App: React.FC = () => {
     if (currentView === 4) return { chapterNumber: 4, title: 'Reasons Why' };
     if (currentView === 5) return { chapterNumber: 5, title: 'Memories' };
 
-    if (typeof currentView === 'string' && currentView.startsWith('custom-')) {
-      const customId = currentView.replace('custom-', '');
-      const idx = customPages.findIndex((p) => p.id === customId);
-      if (idx !== -1) {
-        return {
-          chapterNumber: 6 + idx,
-          title: customPages[idx].title || `Chapter ${6 + idx}`,
-        };
-      }
+    const customMatch = findCustomPage(currentView);
+    if (customMatch) {
+      return {
+        chapterNumber: 6 + customMatch.index,
+        title: customMatch.page.title || `Chapter ${6 + customMatch.index}`,
+      };
     }
 
     return { chapterNumber: totalChapters, title: 'Finale' };
@@ -170,7 +188,7 @@ export const App: React.FC = () => {
   // Navigation handlers between chapters
   const handleAfterGallery = () => {
     if (customPages.length > 0) {
-      goToView(`custom-${customPages[0].id}`);
+      goToView(customPages[0].id);
     } else {
       goToView(10);
     }
@@ -178,7 +196,7 @@ export const App: React.FC = () => {
 
   const handleAfterCustom = (currentIndex: number) => {
     if (currentIndex < customPages.length - 1) {
-      goToView(`custom-${customPages[currentIndex + 1].id}`);
+      goToView(customPages[currentIndex + 1].id);
     } else {
       goToView(10);
     }
@@ -263,22 +281,18 @@ export const App: React.FC = () => {
           />
         )}
 
-        {typeof currentView === 'string' &&
-          currentView.startsWith('custom-') &&
-          (() => {
-            const customId = currentView.replace('custom-', '');
-            const idx = customPages.findIndex((p) => p.id === customId);
-            if (idx === -1) return null;
-            const page = customPages[idx];
-            return (
-              <SceneCustom
-                page={page}
-                chapterNumber={6 + idx}
-                totalChapters={totalChapters}
-                onNext={() => handleAfterCustom(idx)}
-              />
-            );
-          })()}
+        {(() => {
+          const customMatch = findCustomPage(currentView);
+          if (!customMatch) return null;
+          return (
+            <SceneCustom
+              page={customMatch.page}
+              chapterNumber={6 + customMatch.index}
+              totalChapters={totalChapters}
+              onNext={() => handleAfterCustom(customMatch.index)}
+            />
+          );
+        })()}
 
         {currentView === 10 && (
           <Scene10Finale
