@@ -14,10 +14,10 @@ import {
   Image as ImageIcon,
   FileText,
   Layers,
-  Download,
   Save,
   Eye,
   CheckCircle2,
+  UploadCloud,
 } from 'lucide-react';
 
 interface AdminPortalProps {
@@ -171,10 +171,19 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
           <button
             type="button"
             onClick={handleSave}
-            className="px-5 py-2 rounded-full bg-rose-CTA hover:bg-rose-CTA-hover text-white text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-md hover:scale-102 active:scale-98 transition-all"
+            className="px-4 py-2 rounded-full border border-stone-300 hover:bg-stone-50 text-neutral-700 text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-colors"
           >
-            <Save className="w-4 h-4" />
-            <span>Save & Apply</span>
+            <Save className="w-4 h-4 text-stone-600" />
+            <span>Save Draft</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('sync')}
+            className="px-5 py-2 rounded-full bg-gradient-to-r from-rose-CTA to-purple-600 hover:from-rose-CTA-hover hover:to-purple-700 text-white text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-md hover:scale-102 active:scale-98 transition-all"
+          >
+            <UploadCloud className="w-4 h-4" />
+            <span>Publish Live 🚀</span>
           </button>
         </div>
       </header>
@@ -258,8 +267,8 @@ export const AdminPortal: React.FC<AdminPortalProps> = ({
                   : 'text-neutral-600 hover:bg-stone-50 hover:text-neutral-900'
               }`}
             >
-              <Download className="w-4 h-4" />
-              <span>Export & Backup</span>
+              <UploadCloud className="w-4 h-4 text-rose-CTA" />
+              <span>Publish to Live Site 🚀</span>
             </button>
           </div>
         </aside>
