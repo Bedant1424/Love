@@ -4,10 +4,15 @@
 
 @layer base {
   :root {
+    --font-heading: 'Pacifico', cursive, serif;
+    --font-body: 'Quicksand', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-handwriting: 'Caveat', cursive;
+
     --surface-base: #FAF7F2;
     --surface-card: #FFFFFF;
     --surface-paper: #FDFBF7;
     --surface-muted: #EFE9FA;
+    --surface-cinematic: #160B1F;
     --text-primary: #2D2635;
     --text-secondary: #736882;
     --text-accent: #C2315D;
@@ -27,9 +32,40 @@
 
   body {
     min-height: 100dvh;
-    font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--font-body);
     overflow-x: hidden;
   }
+}
+
+/* Dynamic font bindings */
+.font-heading {
+  font-family: var(--font-heading) !important;
+}
+.font-body {
+  font-family: var(--font-body) !important;
+}
+.font-handwriting {
+  font-family: var(--font-handwriting) !important;
+}
+
+/* Dynamic CTA color bindings */
+.bg-rose-CTA {
+  background-color: var(--cta-primary) !important;
+}
+.text-rose-CTA {
+  color: var(--cta-primary) !important;
+}
+.border-rose-CTA {
+  border-color: var(--cta-primary) !important;
+}
+.bg-lavender-CTA {
+  background-color: var(--cta-secondary) !important;
+}
+.text-lavender-CTA {
+  color: var(--cta-secondary) !important;
+}
+.border-lavender-CTA {
+  border-color: var(--cta-secondary) !important;
 }
 
 /* Reduced-motion overrides */
@@ -44,7 +80,7 @@
 
 /* Custom parchment paper styling */
 .parchment-texture {
-  background-color: #FAF7F2;
+  background-color: var(--surface-base);
   background-image: radial-gradient(rgba(159, 122, 234, 0.04) 1px, transparent 0);
   background-size: 24px 24px;
 }

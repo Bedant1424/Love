@@ -64,6 +64,27 @@ export interface FinaleContent {
   replayText: string;
 }
 
+export interface CustomPageItem {
+  id: string;
+  title: string;
+  subtitle?: string;
+  badge?: string;
+  content: string; // Paragraphs separated by newlines
+  imageUrl?: string;
+  theme?: 'light' | 'cinematic';
+  ctaText?: string;
+}
+
+export interface ThemeConfig {
+  primaryColor: string; // e.g. '#C2315D'
+  secondaryColor: string; // e.g. '#7A4AC2'
+  surfaceBase: string; // e.g. '#FAF7F2'
+  cinematicBase: string; // e.g. '#160B1F'
+  headingFont: string; // e.g. 'Pacifico'
+  bodyFont: string; // e.g. 'Quicksand'
+  handwritingFont: string; // e.g. 'Caveat'
+}
+
 export interface BirthdayContent {
   recipient: RecipientInfo;
   sender: SenderInfo;
@@ -73,5 +94,7 @@ export interface BirthdayContent {
   loveLetter: LoveLetterContent;
   reasons: ReasonItem[];
   gallery: GalleryItem[];
+  customPages?: CustomPageItem[];
   finale: FinaleContent;
+  theme?: ThemeConfig;
 }
