@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --surface-base: #FAF7F2;
+    --surface-card: #FFFFFF;
+    --surface-paper: #FDFBF7;
+    --surface-muted: #EFE9FA;
+    --text-primary: #2D2635;
+    --text-secondary: #736882;
+    --text-accent: #C2315D;
+    --cta-primary: #C2315D;
+    --cta-secondary: #7A4AC2;
+  }
+
+  [data-theme="cinematic"] {
+    --surface-base: #160B1F;
+    --surface-card: #241530;
+    --surface-paper: #2F1C3F;
+    --surface-muted: #3D2552;
+    --text-primary: #FAF7F2;
+    --text-secondary: #DFD2F5;
+    --text-accent: #FFD166;
+  }
+
+  body {
+    min-height: 100dvh;
+    font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow-x: hidden;
+  }
+}
+
+/* Reduced-motion overrides */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Custom parchment paper styling */
+.parchment-texture {
+  background-color: #FAF7F2;
+  background-image: radial-gradient(rgba(159, 122, 234, 0.04) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+/* Washi tape effect */
+.washi-tape {
+  background: rgba(249, 168, 189, 0.7);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(1px);
+}
