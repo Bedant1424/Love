@@ -298,6 +298,7 @@ export const App: React.FC = () => {
           <Scene10Finale
             content={content.finale}
             sender={content.sender}
+            chapterNumber={totalChapters}
             onReplay={() => goToView(1)}
           />
         )}

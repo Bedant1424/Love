@@ -7,12 +7,14 @@ import { Heart, Sparkles, RotateCcw } from 'lucide-react';
 interface Scene10FinaleProps {
   content: FinaleContent;
   sender: SenderInfo;
+  chapterNumber?: number;
   onReplay: () => void;
 }
 
 export const Scene10Finale: React.FC<Scene10FinaleProps> = ({
   content,
   sender,
+  chapterNumber,
   onReplay,
 }) => {
   const [imageError, setImageError] = useState(false);
@@ -61,7 +63,9 @@ export const Scene10Finale: React.FC<Scene10FinaleProps> = ({
         {/* Floating Accent Icons */}
         <div className="flex items-center gap-2 text-amber-300 font-heading text-sm mb-4">
           <Sparkles className="w-5 h-5 text-amber-300 animate-pulse" />
-          <span>Chapter 6: Our Endless Story</span>
+          <span>
+            {chapterNumber ? `Chapter ${chapterNumber}: Our Endless Story` : 'Our Endless Story'}
+          </span>
           <Sparkles className="w-5 h-5 text-amber-300 animate-pulse" />
         </div>
 
